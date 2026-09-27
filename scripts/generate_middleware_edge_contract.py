@@ -207,6 +207,17 @@ def render() -> tuple[str, str]:
         "rule": "api.codestra.co reaches Middleware, Odoo and N8N only through Kong",
     }
 
+    edge["unknownRoutePolicy"] = {
+        "classification": "DENIED_UNKNOWN_ROUTE",
+        "fallbackUpstream": None,
+        "status": 404,
+        "rule": "unmatched public paths fail closed at Caddy and never reach Kong, Middleware, Odoo, n8n, or a provider",
+    }
+    edge["approvedCompatibilityRoutes"] = [
+        {"paths": ["/ws/agent", "/api/v1/realtime/sessions", "/healthz", "/readyz", "/version"],
+         "upstream": "CADDY_REALTIME_UPSTREAM", "classification": "TRANSITIONAL_EXPLICIT"}
+    ]
+
     edge["middlewareHandoff"] = {
         "authorizationHeaderPreservedByKong": True,
         "middlewareIdentityRevalidation": True,
@@ -217,6 +228,10 @@ def render() -> tuple[str, str]:
     }
 
     site = SITE.read_text(encoding="utf-8")
+    if "{$CADDY_LEGACY_API_UPSTREAM}" in site:
+        raise SystemExit("legacy unknown-route upstream is forbidden")
+    if "\t\thandle {\n\t\t\trespond 404\n\t\t}" not in site:
+        raise SystemExit("fail-closed unknown-route handler missing")
     generated = route_block(shared)
     if START in site and END in site:
         before, rest = site.split(START, 1)

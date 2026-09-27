@@ -21,7 +21,7 @@ class Resolution(NamedTuple):
 class MatrixResult(NamedTuple):
     canonical_routes: int
     fail_closed_routes: int
-    legacy_probes: int
+    unknown_route_probes: int
 
 
 # Matcher kinds that pin an exact request path: a literal ``path`` without a
@@ -213,7 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         "CADDY_ADAPTED_ROUTE_MATRIX=PASS "
         f"CANONICAL={result.canonical_routes} "
         f"FAIL_CLOSED={result.fail_closed_routes} "
-        f"LEGACY_PROBES={result.legacy_probes}"
+        f"UNKNOWN_ROUTE_PROBES={result.unknown_route_probes}"
     )
     return 0
 

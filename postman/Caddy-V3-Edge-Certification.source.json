@@ -391,6 +391,30 @@
           }
         }
       ]
+    },
+    {
+      "name": "Unknown Route Denial",
+      "item": [
+        {
+          "name": "Unknown path denied at Caddy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/__codestra_unknown_route_probe__"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unknown route fail-closed',()=>pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

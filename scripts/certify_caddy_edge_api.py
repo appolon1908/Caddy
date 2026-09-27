@@ -158,10 +158,12 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
                 raise CertificationError(f"webhook {row.get('id')} missing {field}")
 
     unknown = by_id.get("edge.unknown-fallback")
-    if not unknown or unknown.get("classification") != "RETIRED_FAIL_CLOSED":
-        raise CertificationError("unknown fallback must remain retired fail-closed")
-    if unknown.get("legacy_fallback") is not False or unknown.get("caddy_upstream") != "NONE":
-        raise CertificationError("unknown fallback retirement state changed unexpectedly")
+    if not unknown or unknown.get("classification") != "DENIED_UNKNOWN_ROUTE":
+        raise CertificationError("unknown routes must be classified fail-closed")
+    if unknown.get("legacy_fallback") is not False or unknown.get("expected_public_status") != 404:
+        raise CertificationError("unknown-route fallback must be retired with edge 404")
+    if unknown.get("caddy_upstream") != "NONE":
+        raise CertificationError("unknown route must not have upstream")
 
     return {
         "canonical": len(required_canonical),

@@ -237,7 +237,7 @@ def test_real_adapted_config_resolves_the_complete_edge_matrix():
     result = resolver.validate_edge_matrix(document, "127.0.0.1:8000", "127.0.0.1:18101")
     assert result.canonical_routes == len(resolver.CANONICAL_PROBES)
     assert result.fail_closed_routes == len(resolver.FAIL_CLOSED_PROBES)
-    assert result.legacy_probes == 1
+    assert result.unknown_route_probes == 1
 
 
 def test_adapted_matrix_rejects_wrong_method_reaching_legacy():

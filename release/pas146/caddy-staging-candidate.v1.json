@@ -16,7 +16,7 @@
   },
   "configuration": {
     "digest_algorithm": "sha256",
-    "configuration_sha256": "ffe4d651d67ac4cad35c7a5f56555fabb1f9fe05e9b7fd935cee37c1a4777bc0",
+    "configuration_sha256": "c9172692e95cc31ccf8824b2689e11e459dcd79e910a4517eba6dac0c34d4db9",
     "digest_command": "python scripts/config_digest.py",
     "caddyfile": "Caddyfile",
     "format_required": true,
@@ -171,7 +171,7 @@
   },
   "production_gate": {
     "unknown_route_fallback_required": 0,
-    "observed_unknown_route_fallback": "TRANSITIONAL_NONZERO",
+    "observed_unknown_route_fallback": "ZERO",
     "unclassified_public_routes_required": 0,
     "unclassified_webhooks_required": 0,
     "unclassified_upstreams_required": 0,

@@ -8,7 +8,6 @@
   "canonicalHost": "api.codestra.co",
   "kongUpstreamEnvironmentVariable": "CADDY_KONG_UPSTREAM",
   "kongReferenceListener": "127.0.0.1:8000",
-  "legacyApiUpstreamEnvironmentVariable": "CADDY_LEGACY_API_UPSTREAM",
   "realtimeUpstreamEnvironmentVariable": "CADDY_REALTIME_UPSTREAM",
   "identityBoundary": {
     "caddyAuthenticatesUsersOrServices": false,
@@ -997,5 +996,24 @@
       8095
     ],
     "rule": "Caddy never calls Middleware directly; Kong owns the only public-to-Middleware service handoff."
-  }
+  },
+  "unknownRoutePolicy": {
+    "classification": "DENIED_UNKNOWN_ROUTE",
+    "fallbackUpstream": null,
+    "status": 404,
+    "rule": "unmatched public paths fail closed at Caddy and never reach Kong, Middleware, Odoo, n8n, or a provider"
+  },
+  "approvedCompatibilityRoutes": [
+    {
+      "paths": [
+        "/ws/agent",
+        "/api/v1/realtime/sessions",
+        "/healthz",
+        "/readyz",
+        "/version"
+      ],
+      "upstream": "CADDY_REALTIME_UPSTREAM",
+      "classification": "TRANSITIONAL_EXPLICIT"
+    }
+  ]
 }
