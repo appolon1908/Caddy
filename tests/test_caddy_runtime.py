@@ -65,3 +65,12 @@ def test_manual_rollback_has_history_and_active_digest(tmp_path):
     r=rt.rollback(expected_active_digest=rt.active_readback()["active_runtime_sha256"])
     assert r["kind"]=="MANUAL_ROLLBACK" and r["active_runtime_sha256"]
     assert live.read_text()=="known-good\n"
+
+
+def test_idempotent_retry_precedes_stale_expected_digest(tmp_path):
+    active={"value":b'{"config":"old\\n"}'}; rt,live,_,_=runtime(tmp_path,lambda a:CommandResult(0)); rt.runtime_get=lambda *_:active["value"]; rt.runner=runner_for(active)
+    live.parent.mkdir(); live.write_text("old\n"); c=tmp_path/"c"; c.write_text("new\n")
+    before=rt.active_readback()["active_runtime_sha256"]
+    first=rt.apply(c,source_sha=SOURCE,candidate_digest=sha256_file(c),expected_active_digest=before,idempotency_key="retry")
+    second=rt.apply(c,source_sha=SOURCE,candidate_digest=sha256_file(c),expected_active_digest=before,idempotency_key="retry")
+    assert second["execution_id"]==first["execution_id"]

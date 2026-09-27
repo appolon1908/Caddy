@@ -139,7 +139,12 @@ class ActivationManager:
             if existing.get("idempotency_key") == idempotency_key:
                 if existing.get("candidate_sha256") != candidate_sha:
                     raise ActivationError("IDEMPOTENCY_CONFLICT", "idempotency key was used with a different candidate")
-                return existing
+                if existing.get("status") == "COMPLETED":
+                    return existing
+                if existing.get("status") == "FAILED":
+                    error=existing.get("error") or {}
+                    raise ActivationError(error.get("code","ACTIVATION_FAILED"),error.get("message","prior activation failed"))
+                raise ActivationError("IDEMPOTENCY_INDETERMINATE", "prior activation with this idempotency key is not terminal")
         metadata = self._preflight(candidate_sha, candidate)
 
         execution_id = str(uuid.uuid4())
@@ -218,6 +223,12 @@ class ActivationManager:
         pre_state = record.get("pre_state")
         if not isinstance(pre_state, dict):
             raise ActivationError("ROLLBACK_STATE_MISSING", "execution has no restorable pre-state")
+        expected_current = record.get("result_state_sha256")
+        if record.get("status") != "COMPLETED" or not expected_current:
+            raise ActivationError("ROLLBACK_EXECUTION_NOT_COMPLETED", "only a completed activation can be rolled back")
+        current_sha = sha256_json(self.runtime.config())
+        if current_sha != expected_current:
+            raise ActivationError("STALE_ROLLBACK_RUNTIME_ADVANCED", "runtime no longer matches the selected execution result")
         self.runtime.validate_json(pre_state)
         self.runtime.load_json(pre_state)
         restored = self.runtime.config()

@@ -116,15 +116,15 @@ class CaddyRuntime:
             actual=sha256_file(candidate)
             if actual!=candidate_digest: raise RuntimeApplyError("candidate_digest_mismatch")
             adapted=self.validate(candidate)
-            active_before=self.active_readback()
-            if expected_active_digest and active_before["active_runtime_sha256"]!=expected_active_digest:
-                raise RuntimeApplyError("stale_plan_active_runtime_changed")
             if idempotency_key:
                 for old in self.history():
                     if old.get("idempotency_key")==idempotency_key:
                         if old.get("source_sha")!=source_sha or old.get("candidate_sha256")!=actual:
                             raise RuntimeApplyError("idempotency_key_conflict")
                         return old
+            active_before=self.active_readback()
+            if expected_active_digest and active_before["active_runtime_sha256"]!=expected_active_digest:
+                raise RuntimeApplyError("stale_plan_active_runtime_changed")
             live=self.paths.live_config; previous=live.is_file(); previous_sha=sha256_file(live) if previous else None
             backup=self.paths.state_dir/"last-known-good.caddy"
             if previous: shutil.copy2(live,backup)

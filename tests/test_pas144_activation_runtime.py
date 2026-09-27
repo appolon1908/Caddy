@@ -159,11 +159,41 @@ def test_manual_rollback_restores_pre_state(tmp_path: Path):
         mutation_enabled=True,
     )
     record = manager.apply(idempotency_key="apply")
-    transport.config = {"unexpected": True}
     restored = manager.rollback(record["execution_id"])
     assert restored["rollback_status"] == "ROLLED_BACK"
     assert transport.config == {"old": True}
 
+
+
+def test_manual_rollback_rejects_stale_execution_after_runtime_advances(tmp_path: Path):
+    transport = FakeTransport({"old": True})
+    manager = ActivationManager(
+        runtime=CaddyRuntime(transport=transport),
+        store=ExecutionStore(tmp_path / "evidence"),
+        source_sha_provider=lambda: "source-a",
+        candidate_path=candidate(tmp_path, {"new": True}),
+        mutation_enabled=True,
+    )
+    record = manager.apply(idempotency_key="first")
+    transport.config = {"newer": True}
+    with pytest.raises(ActivationError, match="runtime no longer matches"):
+        manager.rollback(record["execution_id"])
+
+
+def test_failed_idempotency_replay_remains_failure(tmp_path: Path):
+    transport = FakeTransport({"old": True}, mismatch_after_load=True)
+    manager = ActivationManager(
+        runtime=CaddyRuntime(transport=transport),
+        store=ExecutionStore(tmp_path / "evidence"),
+        source_sha_provider=lambda: "source-a",
+        candidate_path=candidate(tmp_path, {"new": True}),
+        mutation_enabled=True,
+    )
+    with pytest.raises(ActivationError):
+        manager.apply(idempotency_key="failed-key")
+    transport.mismatch_after_load = False
+    with pytest.raises(ActivationError):
+        manager.apply(idempotency_key="failed-key")
 
 def _control_service(tmp_path: Path, *, mutation_enabled=True):
     transport = FakeTransport({"old": True})
