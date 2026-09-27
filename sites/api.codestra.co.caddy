@@ -187,6 +187,29 @@ api.codestra.co {
 			reverse_proxy {$CADDY_REALTIME_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
 			}
 		}
 

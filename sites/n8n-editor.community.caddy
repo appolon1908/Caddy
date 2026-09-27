@@ -48,10 +48,10 @@
 		}
 		format filter {
 			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
 			request>headers>Apikey delete
 			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
 			request>uri query {
 				delete apikey
 				delete code

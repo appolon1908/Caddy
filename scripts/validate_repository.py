@@ -13,12 +13,14 @@ from caddy_kong_contract import (
     validate_exact_kong_routes,
     validate_identity_header_boundary,
     validate_private_only_paths,
+    validate_upstream_identity_header_boundary,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 README_PATH = ROOT / "README.md"
 SITE_PATH = ROOT / "sites" / "api.codestra.co.caddy"
 N8N_SITE_PATH = ROOT / "sites" / "n8n-editor.community.caddy"
+AUTOMATION_SITE_PATH = ROOT / "sites" / "automation.codestra.co.caddy"
 ROOT_CADDYFILE = ROOT / "Caddyfile"
 SECURITY_HEADERS = ROOT / "snippets" / "security_headers.caddy"
 CONTRACT_PATH = ROOT / "config" / "caddy-kong-contract.v1.json"
@@ -48,6 +50,7 @@ for path in (
     README_PATH,
     SITE_PATH,
     N8N_SITE_PATH,
+    AUTOMATION_SITE_PATH,
     ROOT_CADDYFILE,
     SECURITY_HEADERS,
     CONTRACT_PATH,
@@ -143,10 +146,22 @@ if "header_up Authorization" in SITE or "header_up -Authorization" in SITE:
 # Caddy never creates a trusted identity header. The only permitted mention of
 # one is its deletion on the Kong handoff (``header_up -Name``), which keeps a
 # client-asserted value from ever reaching Kong or Middleware.
+DELETED_IDENTITY_HEADERS = (CONTRACT.get("identityHeaders") or {}).get("deletedBeforeKong") or ()
 try:
-    validate_identity_header_boundary(SITE, (CONTRACT.get("identityHeaders") or {}).get("deletedBeforeKong") or ())
+    validate_identity_header_boundary(SITE, DELETED_IDENTITY_HEADERS)
 except ValueError as exc:
     raise SystemExit(f"CADDY_AUTHORITY_ERROR={exc}") from exc
+
+# Every public upstream must strip the same client-asserted identity set, not
+# only the canonical Kong handoff. This makes the repository authority gate
+# enforce the invariant already exercised by the focused contract tests.
+for site_path in (SITE_PATH, AUTOMATION_SITE_PATH):
+    try:
+        validate_upstream_identity_header_boundary(
+            site_path.read_text(encoding="utf-8"), DELETED_IDENTITY_HEADERS
+        )
+    except ValueError as exc:
+        raise SystemExit(f"CADDY_AUTHORITY_ERROR={exc}:{site_path.name}") from exc
 
 for forbidden_target in (
     "codestra-middleware-integration-api-1",

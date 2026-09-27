@@ -16,6 +16,8 @@ app.kyyow.com {
 		output file /var/log/caddy/app-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -55,9 +57,10 @@ api.kyyow.com {
 		output file /var/log/caddy/api-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
-			request>headers>X-Api-Key delete
 			request>uri query {
 				delete access_token
 				delete api_key
@@ -92,9 +95,10 @@ search.kyyow.com {
 		output file /var/log/caddy/search-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
-			request>headers>X-Api-Key delete
 			request>uri query {
 				delete access_token
 				delete api_key
@@ -126,8 +130,21 @@ docs.kyyow.com {
 		output file /var/log/caddy/docs-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
 			resp_headers>Set-Cookie delete
 		}
 	}
@@ -152,6 +169,8 @@ auth.kyyow.com {
 		output file /var/log/caddy/auth-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -188,8 +207,21 @@ status.kyyow.com {
 		output file /var/log/caddy/status-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
 			resp_headers>Set-Cookie delete
 		}
 	}

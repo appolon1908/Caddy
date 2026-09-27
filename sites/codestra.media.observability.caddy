@@ -38,6 +38,8 @@ graf.codestra.media {
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -95,6 +97,8 @@ supe.codestra.media {
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -160,6 +164,8 @@ bao.codestra.media {
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>headers>X-Vault-Token delete
