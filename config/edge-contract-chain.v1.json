@@ -19,7 +19,7 @@
   },
   "postman": {
     "collection": "postman/Caddy-V3-Edge-Certification.postman_collection.json",
-    "sha256": "6d287acd5dc917f0e7db6bea79f941a894acac87885d5bd1f4081c55529622bc",
+    "sha256": "146730776132c946bd559178ec1062c92674e9502c7d4ed27f5b6057493a01e8",
     "sha256_material": "committed collection bytes, LF line endings"
   },
   "required_matches": [

@@ -57,14 +57,35 @@
               }
             ],
             "url": "{{base_url}}/platform/v1/kernel/describe"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('kernel describe reaches Kong, never the edge denial or legacy fallback',()=>pm.expect(pm.response.code).to.be.oneOf([200,401,403]));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Unknown route transitional evidence",
+          "name": "Unknown route fails closed",
           "request": {
             "method": "GET",
             "url": "{{base_url}}/__caddy_unclassified_probe__"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"unknown route fails closed\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -202,7 +223,17 @@
               "raw": "{}"
             },
             "url": "{{base_url}}/v2/automation/commands"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('wrong audience rejected by Kong',()=>pm.expect(pm.response.code).to.be.oneOf([401,403]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -214,14 +245,34 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/v1/integrations/n8n/results"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('webhook wrong method fail-closed at Kong',()=>pm.expect(pm.response.code).to.be.oneOf([401,403,404,405]));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Odoo event wrong method",
           "request": {
             "method": "GET",
             "url": "{{base_url}}/api/v1/odoo/events"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('webhook wrong method fail-closed at Kong',()=>pm.expect(pm.response.code).to.be.oneOf([401,403,404,405]));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Telnexa pending contract denied",
@@ -299,6 +350,105 @@
               "script": {
                 "exec": [
                   "pm.test('pending route fail-closed',()=>pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Private Caddy Control API",
+      "item": [
+        {
+          "name": "Control health",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"control health 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activation preflight",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/activation/preflight"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"preflight is read-only success\", function () { pm.response.to.have.status(200); const j=pm.response.json(); pm.expect(j.valid).to.eql(true); pm.expect(j.mutation_performed).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Runtime status",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/runtime/status"
+          }
+        },
+        {
+          "name": "Control telemetry",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/telemetry"
+          }
+        },
+        {
+          "name": "Execution evidence",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/activation/executions"
+          }
+        },
+        {
+          "name": "Reconcile plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Caddy-Reconcile-Mode",
+                "value": "plan"
+              }
+            ],
+            "url": "{{caddy_control_url}}/platform/v1/caddy/reconcile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unknown Route Denial",
+      "item": [
+        {
+          "name": "Unknown path denied at Caddy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/__codestra_unknown_route_probe__"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unknown route fail-closed',()=>pm.response.to.have.status(404));"
                 ]
               }
             }

@@ -12,6 +12,7 @@ from caddy_kong_contract import (
     validate_exact_kong_routes,
     validate_identity_header_boundary,
     validate_private_only_paths,
+    validate_upstream_identity_header_boundary,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,12 +113,12 @@ class PrivateOnlyPathTests(unittest.TestCase):
 
     def test_site_denies_the_contracted_private_paths_ahead_of_every_upstream(self) -> None:
         validate_private_only_paths(self.site, self.private)
-        self.assertEqual(set(private_only_paths(self.site)), {"/metrics", "/metrics/*", "/internal/*"})
+        self.assertEqual(set(private_only_paths(self.site)), {"/metrics", "/metrics/*", "/internal", "/internal/*"})
         deny_at = self.site.index("handle @private_only")
         self.assertLess(deny_at, self.site.index("@kong path"))
         self.assertLess(deny_at, self.site.index("{$CADDY_KONG_UPSTREAM}"))
         self.assertLess(deny_at, self.site.index("{$CADDY_REALTIME_UPSTREAM}"))
-        self.assertLess(deny_at, self.site.index("{$CADDY_LEGACY_API_UPSTREAM}"))
+        self.assertNotIn("{$CADDY_LEGACY_API_UPSTREAM}", self.site)
 
     def test_private_paths_are_not_kong_managed(self) -> None:
         for path in self.private:
@@ -125,21 +126,21 @@ class PrivateOnlyPathTests(unittest.TestCase):
             self.assertFalse(any(bare == p or bare.startswith(p + "/") for p in self.managed), path)
 
     def test_missing_deny_is_rejected(self) -> None:
-        mutated = self.site.replace("@private_only path /metrics /metrics/* /internal/*", "@private_only path /internal/*")
+        mutated = self.site.replace("@private_only path /metrics /metrics/* /internal /internal/*", "@private_only path /internal/*")
         with self.assertRaisesRegex(ValueError, "private_only_paths_mismatch"):
             validate_private_only_paths(mutated, self.private)
-        removed = self.site.replace("\t\t@private_only path /metrics /metrics/* /internal/*\n\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}\n", "")
+        removed = self.site.replace("\t\t@private_only path /metrics /metrics/* /internal /internal/*\n\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}\n", "")
         self.assertNotIn("@private_only", removed)
         with self.assertRaisesRegex(ValueError, "private_only_matcher_count:0"):
             validate_private_only_paths(removed, self.private)
 
     def test_deny_after_the_kong_handoff_is_rejected(self) -> None:
-        block = "\t\t@private_only path /metrics /metrics/* /internal/*\n\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}\n"
+        block = "\t\t@private_only path /metrics /metrics/* /internal /internal/*\n\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}\n"
         self.assertIn(block, self.site)
         moved = self.site.replace(block, "")
-        legacy = "\t\thandle {\n\t\t\treverse_proxy {$CADDY_LEGACY_API_UPSTREAM} {"
-        self.assertIn(legacy, moved)
-        moved = moved.replace(legacy, block + legacy)
+        fail_closed = "\t\thandle {\n\t\t\trespond 404\n\t\t}"
+        self.assertIn(fail_closed, moved)
+        moved = moved.replace(fail_closed, block + fail_closed)
         with self.assertRaisesRegex(ValueError, "private_only_not_before_kong_handoff"):
             validate_private_only_paths(moved, self.private)
 
@@ -152,6 +153,62 @@ class PrivateOnlyPathTests(unittest.TestCase):
         mutated = self.site.replace("\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}", "\t\thandle @private_only {\n\t\t\treverse_proxy {$CADDY_KONG_UPSTREAM}\n\t\t}")
         with self.assertRaisesRegex(ValueError, "private_only_handle_count:0"):
             validate_private_only_paths(mutated, self.private)
+
+
+class UpstreamIdentityHeaderBoundaryTests(unittest.TestCase):
+    """Client identity never reaches any upstream of a Kong-fronted host."""
+
+    def setUp(self) -> None:
+        self.sites = {
+            name: (ROOT / "sites" / name).read_text(encoding="utf-8")
+            for name in ("api.codestra.co.caddy", "automation.codestra.co.caddy")
+        }
+        contract = json.loads(
+            (ROOT / "config" / "caddy-kong-contract.v1.json").read_text(encoding="utf-8")
+        )
+        self.deleted = contract["identityHeaders"]["deletedBeforeKong"]
+
+    @staticmethod
+    def unstripped(site: str, upstream: str) -> str:
+        # Reproduce the pre-fix shape: the proxy keeps Host/X-Real-IP only.
+        lines = site.split("\n")
+        start = next(i for i, line in enumerate(lines) if line.strip() == f"reverse_proxy {{${upstream}}} {{")
+        closer = lines[start][: len(lines[start]) - len(lines[start].lstrip())] + "}"
+        end = lines.index(closer, start)
+        body = [line for line in lines[start + 1 : end] if "header_up -" not in line and "#" not in line]
+        return "\n".join(lines[: start + 1] + body + lines[end:])
+
+    def test_every_upstream_of_kong_fronted_hosts_deletes_client_identity(self) -> None:
+        for name, site in self.sites.items():
+            with self.subTest(site=name):
+                validate_upstream_identity_header_boundary(site, self.deleted)
+
+    def test_realtime_and_reintroduced_legacy_proxy_strip_admin_and_user_headers(self) -> None:
+        api = self.sites["api.codestra.co.caddy"]
+        for upstream in ("CADDY_REALTIME_UPSTREAM", "CADDY_LEGACY_API_UPSTREAM"):
+            with self.subTest(upstream=upstream):
+                if upstream == "CADDY_LEGACY_API_UPSTREAM":
+                    self.assertNotIn("CADDY_LEGACY_API_UPSTREAM", api)
+                    # Retain the TLS lane's regression check for a reintroduced proxy,
+                    # without requiring the retired fallback in the live authority.
+                    mutated = api + "\nlegacy.invalid {\n\treverse_proxy {$CADDY_LEGACY_API_UPSTREAM} {\n\t\theader_up Host {host}\n\t}\n}\n"
+                else:
+                    mutated = self.unstripped(api, upstream)
+                self.assertNotEqual(mutated, api)
+                # The Kong-only check cannot see this regression; the upstream check must.
+                validate_identity_header_boundary(mutated, self.deleted)
+                with self.assertRaisesRegex(ValueError, "identity_header_not_deleted:.*X-Admin.*X-User-ID"):
+                    validate_upstream_identity_header_boundary(mutated, self.deleted)
+
+    def test_automation_kong_handoff_without_strip_is_rejected(self) -> None:
+        mutated = self.unstripped(self.sites["automation.codestra.co.caddy"], "CADDY_KONG_UPSTREAM")
+        with self.assertRaisesRegex(ValueError, "identity_header_not_deleted:.*X-Authenticated-UserID"):
+            validate_upstream_identity_header_boundary(mutated, self.deleted)
+
+    def test_single_line_reverse_proxy_is_rejected(self) -> None:
+        mutated = self.sites["api.codestra.co.caddy"] + "\nexample.invalid {\n\treverse_proxy 127.0.0.1:9\n}\n"
+        with self.assertRaisesRegex(ValueError, "reverse_proxy_without_header_block"):
+            validate_upstream_identity_header_boundary(mutated, self.deleted)
 
 
 if __name__ == "__main__":

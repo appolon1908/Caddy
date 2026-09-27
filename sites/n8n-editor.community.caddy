@@ -8,6 +8,8 @@
 	respond @reserved_observability_host "Not Found" 404
 
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 
 	# Keep the edge ceiling aligned with the n8n N8N_PAYLOAD_SIZE_MAX value.
@@ -41,16 +43,16 @@
 	}
 
 	log {
-		output file /var/log/caddy/n8n-editor-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/n8n-editor-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}
 		format filter {
 			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
 			request>headers>Apikey delete
 			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
 			request>uri query {
 				delete apikey
 				delete code

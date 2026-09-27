@@ -1,0 +1,71 @@
+{
+  "schema": "codestra.mcr-k.edge.v1",
+  "phase": "post-PAS-141-intent",
+  "host": "api.codestra.co",
+  "deny": [
+    "/internal",
+    "/internal/*",
+    "/metrics",
+    "/metrics/*"
+  ],
+  "private_only": "edge-404",
+  "mcr_prefixes": [
+    "/platform/v1"
+  ],
+  "upstream": "CADDY_KONG_UPSTREAM",
+  "fallback": false,
+  "preserve": [
+    "authorization",
+    "idempotency-key",
+    "x-correlation-id",
+    "traceparent",
+    "tracestate",
+    "x-tenant-id",
+    "x-causation-id",
+    "x-codestra-event-id",
+    "x-codestra-timestamp",
+    "x-codestra-signature"
+  ],
+  "strip": [
+    "x-user-id",
+    "x-username",
+    "x-email",
+    "x-roles",
+    "x-scopes",
+    "x-authenticated-*",
+    "x-codestra-tenant",
+    "x-codestra-scopes",
+    "x-codestra-gateway-secret",
+    "x-internal-service",
+    "x-admin",
+    "x-consumer-*",
+    "x-credential-identifier",
+    "x-anonymous-consumer"
+  ],
+  "forwarded": [
+    "forwarded",
+    "x-forwarded-*",
+    "x-real-ip"
+  ],
+  "redact": [
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+    "access_token",
+    "refresh_token",
+    "id_token",
+    "password",
+    "secret",
+    "client_secret",
+    "api_key",
+    "token",
+    "code",
+    "state",
+    "session_state",
+    "request_body",
+    "response_body",
+    "query_string"
+  ],
+  "live_apply_authorized": false
+}

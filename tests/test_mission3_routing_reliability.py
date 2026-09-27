@@ -20,16 +20,14 @@ def test_m3_required_documents_exist():
     assert required.issubset(present)
 
 
-def test_api_site_routes_kong_before_legacy_fallback():
+def test_api_site_routes_kong_and_unknown_routes_fail_closed():
     source = SITE.read_text(encoding="utf-8")
     assert "api.codestra.co {" in source
     assert "@kong path" in source
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in source
-    assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" in source
+    assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" not in source
     assert source.index("@private_only path") < source.index("@kong path")
-    assert source.rindex("reverse_proxy {$CADDY_KONG_UPSTREAM}") < source.rindex(
-        "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}"
-    )
+    assert source.rindex("reverse_proxy {$CADDY_KONG_UPSTREAM}") < source.rindex("respond 404")
 
 
 def test_known_paths_and_maintenance_behavior_are_explicit():

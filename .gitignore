@@ -27,3 +27,7 @@ caddy_config/
 autosave.json
 acme/
 *.caddy.bak
+
+# Private generated runtime candidates are not source authority.
+generated/pas144-runtime-candidate.json
+generated/pas144-runtime-candidate.json.meta.json

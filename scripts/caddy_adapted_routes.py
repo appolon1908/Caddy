@@ -21,7 +21,7 @@ class Resolution(NamedTuple):
 class MatrixResult(NamedTuple):
     canonical_routes: int
     fail_closed_routes: int
-    legacy_probes: int
+    unknown_route_probes: int
 
 
 # Matcher kinds that pin an exact request path: a literal ``path`` without a
@@ -195,9 +195,9 @@ def validate_edge_matrix(
         if resolution.method_constrained:
             raise ValueError(f"noncanonical_route_matched_exact_rule:{method} {path}:{resolution}")
 
-    legacy = resolve_request(document, "GET", "/api/v2/unrelated")
-    if legacy.upstream != legacy_upstream:
-        raise ValueError(f"legacy_fallback_not_last:{legacy}")
+    unknown = resolve_request(document, "GET", "/api/v2/unrelated")
+    if unknown.upstream is not None or unknown.response_status != 404:
+        raise ValueError(f"unknown_route_not_fail_closed:{unknown}")
     return MatrixResult(len(CANONICAL_PROBES), len(FAIL_CLOSED_PROBES), 1)
 
 
@@ -213,7 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         "CADDY_ADAPTED_ROUTE_MATRIX=PASS "
         f"CANONICAL={result.canonical_routes} "
         f"FAIL_CLOSED={result.fail_closed_routes} "
-        f"LEGACY_PROBES={result.legacy_probes}"
+        f"UNKNOWN_ROUTE_PROBES={result.unknown_route_probes}"
     )
     return 0
 

@@ -3,6 +3,8 @@
 
 graf.codestra.media {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 
 	request_body {
@@ -31,12 +33,14 @@ graf.codestra.media {
 	}
 
 	log {
-		output file /var/log/caddy/graf-codestra-media-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/graf-codestra-media-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -60,6 +64,8 @@ graf.codestra.media {
 
 supe.codestra.media {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 
 	request_body {
@@ -88,12 +94,14 @@ supe.codestra.media {
 	}
 
 	log {
-		output file /var/log/caddy/supe-codestra-media-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/supe-codestra-media-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -117,6 +125,8 @@ supe.codestra.media {
 
 bao.codestra.media {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 
 	@openbao_allowed remote_ip {$CADDY_OPENBAO_ALLOWED_CIDRS}
@@ -153,12 +163,14 @@ bao.codestra.media {
 	}
 
 	log {
-		output file /var/log/caddy/bao-codestra-media-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/bao-codestra-media-access.log {
 			roll_size 20MiB
 			roll_keep 10
 		}
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>headers>X-Vault-Token delete

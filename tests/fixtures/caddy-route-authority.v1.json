@@ -1,0 +1,156 @@
+{
+  "schema": "codestra.caddy.route-authority.v1",
+  "version": 1,
+  "environment": "shared",
+  "canonical_api_upstream": {
+    "name": "kong",
+    "reference": "CADDY_KONG_UPSTREAM",
+    "canonical_middleware_port": 8095
+  },
+  "forbidden_public_upstreams": [
+    "CADDY_LEGACY_API_UPSTREAM",
+    "CADDY_REALTIME_UPSTREAM",
+    "middleware:8080",
+    "middleware:8096",
+    "postgres",
+    "redis",
+    "nats",
+    "openbao"
+  ],
+  "private_path_prefixes": [
+    "/metrics",
+    "/internal",
+    "/admin",
+    "/database",
+    "/debug"
+  ],
+  "profiles": {
+    "security_headers": {
+      "default": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Frame-Options": "DENY"
+      }
+    },
+    "timeouts": {
+      "api-default": {
+        "dial": "5s",
+        "response_header": "30s"
+      },
+      "webhook-standard": {
+        "dial": "5s",
+        "response_header": "60s"
+      }
+    }
+  },
+  "routes": [
+    {
+      "route_id": "edge.platform-v1",
+      "host": "api.codestra.co",
+      "path_prefix": "/platform/v1",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "visibility": "public",
+      "upstream_service": "kong",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "auth_mode": "gateway",
+      "body_limit": "10MB",
+      "rate_limit_profile": "gateway",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "api-default",
+      "owner": "ingtrader21-spec/Middleware-",
+      "environment": "shared"
+    },
+    {
+      "route_id": "edge.automation-v2",
+      "host": "api.codestra.co",
+      "path_prefix": "/v2/automation",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "visibility": "public",
+      "upstream_service": "kong",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "auth_mode": "gateway",
+      "body_limit": "10MB",
+      "rate_limit_profile": "gateway",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "api-default",
+      "owner": "ingtrader21-spec/Middleware-",
+      "environment": "shared"
+    },
+    {
+      "route_id": "edge.odoo-events",
+      "host": "api.codestra.co",
+      "path": "/api/v1/odoo/events",
+      "methods": ["POST"],
+      "visibility": "public",
+      "upstream_service": "kong",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "auth_mode": "gateway",
+      "body_limit": "10MB",
+      "rate_limit_profile": "gateway",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "webhook-standard",
+      "owner": "ingtrader21-spec/Middleware-",
+      "environment": "shared"
+    },
+    {
+      "route_id": "edge.n8n-results",
+      "host": "api.codestra.co",
+      "path_prefix": "/api/v1/integrations/n8n/results",
+      "methods": ["GET", "POST"],
+      "visibility": "public",
+      "upstream_service": "kong",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "auth_mode": "gateway",
+      "body_limit": "10MB",
+      "rate_limit_profile": "gateway",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "webhook-standard",
+      "owner": "ingtrader21-spec/Middleware-",
+      "environment": "shared"
+    },
+    {
+      "route_id": "edge.private-metrics",
+      "host": "api.codestra.co",
+      "path_prefix": "/metrics",
+      "methods": ["ANY"],
+      "visibility": "private",
+      "upstream_service": "none",
+      "upstream_ref": "NONE",
+      "auth_mode": "private",
+      "body_limit": "0",
+      "rate_limit_profile": "none",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "api-default",
+      "owner": "private-monitoring",
+      "environment": "shared"
+    },
+    {
+      "route_id": "edge.private-internal",
+      "host": "api.codestra.co",
+      "path_prefix": "/internal",
+      "methods": ["ANY"],
+      "visibility": "private",
+      "upstream_service": "none",
+      "upstream_ref": "NONE",
+      "auth_mode": "private",
+      "body_limit": "0",
+      "rate_limit_profile": "none",
+      "websocket": false,
+      "sse": false,
+      "security_header_profile": "default",
+      "timeout_profile": "api-default",
+      "owner": "private-service",
+      "environment": "shared"
+    }
+  ]
+}

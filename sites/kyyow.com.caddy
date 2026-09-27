@@ -2,6 +2,8 @@
 # Authentication and authorization remain with Keycloak and the owning API.
 app.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
@@ -12,9 +14,11 @@ app.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/app-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/app-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -38,6 +42,8 @@ app.kyyow.com {
 
 api.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 10MB
@@ -51,12 +57,13 @@ api.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/api-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
-			request>headers>X-Api-Key delete
 			request>uri query {
 				delete access_token
 				delete api_key
@@ -75,6 +82,8 @@ api.kyyow.com {
 
 search.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 2MB
@@ -88,12 +97,13 @@ search.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/search-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/search-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
-			request>headers>X-Api-Key delete
 			request>uri query {
 				delete access_token
 				delete api_key
@@ -112,6 +122,8 @@ search.kyyow.com {
 
 docs.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
@@ -122,11 +134,24 @@ docs.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/docs-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/docs-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
 			resp_headers>Set-Cookie delete
 		}
 	}
@@ -134,6 +159,8 @@ docs.kyyow.com {
 
 auth.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 2MB
@@ -148,9 +175,11 @@ auth.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/auth-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
 			request>uri query {
@@ -174,6 +203,8 @@ auth.kyyow.com {
 
 status.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
@@ -184,11 +215,24 @@ status.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/status-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/status-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
 			request>headers>Proxy-Authorization delete
 			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
 			resp_headers>Set-Cookie delete
 		}
 	}
