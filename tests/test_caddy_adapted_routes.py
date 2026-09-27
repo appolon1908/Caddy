@@ -144,8 +144,8 @@ def adapted_fixture() -> dict:
                                             {
                                                 "handle": [
                                                     {
-                                                        "handler": "reverse_proxy",
-                                                        "upstreams": [{"dial": "legacy:18101"}],
+                                                        "handler": "static_response",
+                                                        "status_code": 404,
                                                     }
                                                 ]
                                             },
@@ -183,10 +183,11 @@ def test_resolves_nested_adapted_routes_in_declared_order():
     assert noncanonical.upstream == "kong:8000"
     assert noncanonical.method_constrained is False
 
-    legacy = resolver.resolve_request(document, "GET", "/api/v2/unrelated")
-    assert legacy.upstream == "legacy:18101"
-    assert legacy.method_constrained is False
-    assert legacy.path_matcher is None
+    unknown = resolver.resolve_request(document, "GET", "/api/v2/unrelated")
+    assert unknown.upstream is None
+    assert unknown.response_status == 404
+    assert unknown.method_constrained is False
+    assert unknown.path_matcher is None
 
 
 def test_fixture_distinguishes_exact_prefix_and_regexp_matchers():

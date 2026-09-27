@@ -8,6 +8,7 @@
 # upstreams remain explicit until their equivalent Kong routes are accepted.
 api.codestra.co {
 	import security_headers
+	import public_boundary
 	encode zstd gzip
 
 	request_body {
@@ -189,14 +190,11 @@ api.codestra.co {
 			}
 		}
 
-		# Transitional legacy API fallback. The Caddy principal-source migration is
-		# complete only when this fallback is no longer required and Kong owns the
-		# corresponding route contracts.
+		# Unknown public API paths fail closed. Compatibility is allowlisted above
+		# (for example @realtime) and must never be recovered through a generic
+		# legacy catch-all.
 		handle {
-			reverse_proxy {$CADDY_LEGACY_API_UPSTREAM} {
-				header_up Host {host}
-				header_up X-Real-IP {remote_host}
-			}
+			respond 404
 		}
 	}
 

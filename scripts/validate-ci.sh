@@ -5,6 +5,7 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly CADDY_VALIDATOR_IMAGE='docker.io/library/caddy@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c'
 
 cd "$ROOT_DIR"
+python3 scripts/caddy_route_compiler.py --check
 python3 scripts/test_caddy_kong_contract.py
 python3 scripts/validate_repository.py
 python3 scripts/validate_community_n8n.py

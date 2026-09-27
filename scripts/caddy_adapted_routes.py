@@ -195,9 +195,9 @@ def validate_edge_matrix(
         if resolution.method_constrained:
             raise ValueError(f"noncanonical_route_matched_exact_rule:{method} {path}:{resolution}")
 
-    legacy = resolve_request(document, "GET", "/api/v2/unrelated")
-    if legacy.upstream != legacy_upstream:
-        raise ValueError(f"legacy_fallback_not_last:{legacy}")
+    unknown = resolve_request(document, "GET", "/api/v2/unrelated")
+    if unknown.upstream is not None or unknown.response_status != 404:
+        raise ValueError(f"unknown_route_not_fail_closed:{unknown}")
     return MatrixResult(len(CANONICAL_PROBES), len(FAIL_CLOSED_PROBES), 1)
 
 

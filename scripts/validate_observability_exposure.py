@@ -80,7 +80,7 @@ def validate_fragment_imports(path: Path, source: str) -> None:
         if line.startswith("import "):
             imports.append(line.removeprefix("import ").strip())
     relative_parent = path.parent.relative_to(ROOT)
-    allowed = {"security_headers"} if relative_parent == Path("sites") else set()
+    allowed = {"security_headers", "public_boundary"} if relative_parent == Path("sites") else set()
     unexpected = sorted({value for value in imports if value not in allowed})
     if unexpected:
         raise ExposureError(

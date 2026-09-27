@@ -1,0 +1,85 @@
+{
+  "generated_sha256": "473d7367556ade12d3d65ab17ed25e71a5b13f2eee01e0e6a5a9510967adfb86",
+  "private_count": 2,
+  "public_count": 4,
+  "route_count": 6,
+  "routes": [
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "owner": "ingtrader21-spec/Middleware-",
+      "path": "/api/v1/integrations/n8n/results*",
+      "route_id": "edge.n8n-results",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "visibility": "public"
+    },
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "ingtrader21-spec/Middleware-",
+      "path": "/api/v1/odoo/events",
+      "route_id": "edge.odoo-events",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "visibility": "public"
+    },
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "ANY"
+      ],
+      "owner": "private-service",
+      "path": "/internal*",
+      "route_id": "edge.private-internal",
+      "upstream_ref": "NONE",
+      "visibility": "private"
+    },
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "ANY"
+      ],
+      "owner": "private-monitoring",
+      "path": "/metrics*",
+      "route_id": "edge.private-metrics",
+      "upstream_ref": "NONE",
+      "visibility": "private"
+    },
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH",
+        "POST",
+        "PUT"
+      ],
+      "owner": "ingtrader21-spec/Middleware-",
+      "path": "/platform/v1*",
+      "route_id": "edge.platform-v1",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "visibility": "public"
+    },
+    {
+      "host": "api.codestra.co",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH",
+        "POST",
+        "PUT"
+      ],
+      "owner": "ingtrader21-spec/Middleware-",
+      "path": "/v2/automation*",
+      "route_id": "edge.automation-v2",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "visibility": "public"
+    }
+  ],
+  "schema": "codestra.caddy.route-inventory.v1",
+  "source_sha256": "5611ca51f2c8146e4152f308e09a65ccbd28351b633c3fff486d0b042b78e0fd"
+}

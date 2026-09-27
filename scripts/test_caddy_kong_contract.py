@@ -117,7 +117,7 @@ class PrivateOnlyPathTests(unittest.TestCase):
         self.assertLess(deny_at, self.site.index("@kong path"))
         self.assertLess(deny_at, self.site.index("{$CADDY_KONG_UPSTREAM}"))
         self.assertLess(deny_at, self.site.index("{$CADDY_REALTIME_UPSTREAM}"))
-        self.assertLess(deny_at, self.site.index("{$CADDY_LEGACY_API_UPSTREAM}"))
+        self.assertNotIn("{$CADDY_LEGACY_API_UPSTREAM}", self.site)
 
     def test_private_paths_are_not_kong_managed(self) -> None:
         for path in self.private:
@@ -137,9 +137,9 @@ class PrivateOnlyPathTests(unittest.TestCase):
         block = "\t\t@private_only path /metrics /metrics/* /internal /internal/*\n\t\thandle @private_only {\n\t\t\trespond 404\n\t\t}\n"
         self.assertIn(block, self.site)
         moved = self.site.replace(block, "")
-        legacy = "\t\thandle {\n\t\t\treverse_proxy {$CADDY_LEGACY_API_UPSTREAM} {"
-        self.assertIn(legacy, moved)
-        moved = moved.replace(legacy, block + legacy)
+        fail_closed = "\t\thandle {\n\t\t\trespond 404\n\t\t}"
+        self.assertIn(fail_closed, moved)
+        moved = moved.replace(fail_closed, block + fail_closed)
         with self.assertRaisesRegex(ValueError, "private_only_not_before_kong_handoff"):
             validate_private_only_paths(moved, self.private)
 

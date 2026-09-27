@@ -14,6 +14,7 @@
 # so there is deliberately no direct upstream to n8n in this file.
 automation.codestra.co {
 	import security_headers
+	import public_boundary
 	encode zstd gzip
 
 	# The editor accepts workflow imports, so the body ceiling is lower than the

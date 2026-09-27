@@ -66,7 +66,7 @@ def test_postman_covers_api_webhook_private_and_pending_negative_paths() -> None
 def test_pas162_chain_is_exact_and_fully_bound() -> None:
     state = certifier.chain_state(CHAIN, certifier.sha256_file(certifier.COLLECTION_PATH))
     expected_contract = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    expected_postman = "6d287acd5dc917f0e7db6bea79f941a894acac87885d5bd1f4081c55529622bc"
+    expected_postman = "c6cbdeaf91089b5e9c9ca2f1286569a25fd25844f9ecf3aa414e9905293da341"
     assert state["required_digest"] == expected_contract
     assert state["middleware_digest"] == expected_contract
     assert state["kong_digest"] == expected_contract

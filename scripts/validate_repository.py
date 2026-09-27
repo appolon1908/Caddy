@@ -5,6 +5,10 @@ import json
 import re
 from pathlib import Path
 
+from mission5_desired_state import (
+    build_plan, classify_drift, configuration_identity, desired_state_paths,
+    desired_state_material, plan_outcome, promotion_allowed, validate_plan,
+)
 from caddy_kong_contract import (
     validate_exact_kong_routes,
     validate_identity_header_boundary,
@@ -24,6 +28,21 @@ INTEGRATION_DOC = ROOT / "docs" / "CADDY_KONG_INTEGRATION.md"
 N8N_DOC = ROOT / "docs" / "N8N_COMMUNITY_EDITOR_PROTECTION.md"
 READONLY_VALIDATOR = ROOT / "scripts" / "caddy_readonly_validator.py"
 READONLY_DOC = ROOT / "docs" / "READONLY_PRODUCTION_VALIDATION.md"
+MISSION4_CONTRACTS = {
+    "correlation": ROOT / "docs" / "correlation-contract-v1.md",
+    "metrics": ROOT / "docs" / "metrics-contract-v1.md",
+    "monitoring": ROOT / "docs" / "monitoring-boundary-v1.md",
+    "alert": ROOT / "docs" / "alert-contract-v1.md",
+    "reload": ROOT / "docs" / "reload-rollback-contract-v1.md",
+}
+MISSION5_CONTRACTS = {
+    "desired": ROOT / "docs" / "desired-state-contract-v1.md",
+    "plan": ROOT / "docs" / "deployment-plan-contract-v1.md",
+    "drift": ROOT / "docs" / "drift-reconciliation-contract-v1.md",
+    "promotion": ROOT / "docs" / "environment-promotion-contract-v1.md",
+    "evidence": ROOT / "docs" / "deployment-evidence-contract-v1.md",
+}
+
 
 for path in (
     README_PATH,
@@ -237,6 +256,62 @@ if "admin 127.0.0.1:2019" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=admin_api_not_private")
 if "import snippets/*.caddy" not in CADDYFILE or "import sites/*.caddy" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=canonical_imports_missing")
+
+# Mission 4/5 semantic contract enforcement. Historical evidence matrices are
+# deliberately not inputs: they contain point-in-time test counts and runtime
+# dispositions, while these checks bind the current executable source to the
+# current contracts.
+m4 = {name: path.read_text(encoding="utf-8") for name, path in MISSION4_CONTRACTS.items()}
+m5 = {name: path.read_text(encoding="utf-8") for name, path in MISSION5_CONTRACTS.items()}
+if "repository does not configure Caddy request-ID generation" not in m4["correlation"]:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=correlation_implementation_status_missing")
+if "does not configure a Caddy metrics endpoint" not in m4["metrics"]:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=metrics_implementation_status_missing")
+if "Prometheus" not in m4["monitoring"]:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=monitoring_boundary_missing")
+if "TLS certificate" not in m4["alert"]:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=alert_contract_missing")
+for required in ("Git SHA", "configuration hash", "environment", "UTC timestamp", "known-good"):
+    if required not in m4["reload"]:
+        raise SystemExit(f"CADDY_AUTHORITY_ERROR=reload_identity_contract_missing:{required}")
+
+desired_paths = desired_state_paths(ROOT)
+required_desired_paths = {
+    ROOT / "Caddyfile",
+    ROOT / "config" / "runtime-values.example",
+    ROOT / "sites" / "api.codestra.co.caddy",
+    ROOT / "snippets" / "security_headers.caddy",
+}
+if not required_desired_paths <= set(desired_paths):
+    raise SystemExit("CADDY_AUTHORITY_ERROR=desired_state_inventory_incomplete")
+if not desired_state_material(ROOT):
+    raise SystemExit("CADDY_AUTHORITY_ERROR=desired_state_material_empty")
+identity_sample = configuration_identity(
+    git_sha="0" * 40, environment="staging", configuration_sha="0" * 64,
+    desired_state_version="desired-state-v1", generated_at="2026-01-01T00:00:00Z",
+)
+plan_sample = build_plan(
+    candidate=identity_sample, hosts=("api.codestra.co",),
+    routes=("/api/v1/health",), upstreams=("CADDY_KONG_UPSTREAM",), changes=("none",),
+)
+validate_plan(plan_sample)
+if plan_outcome(plan_sample, dict(plan_sample)) != "NO_CHANGE":
+    raise SystemExit("CADDY_AUTHORITY_ERROR=plan_not_idempotent")
+if classify_drift({"route": "kong"}, {"route": "kong"}) != {"route": "IN_SYNC"}:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=drift_model_invalid")
+if not promotion_allowed("development", "staging", "staging"):
+    raise SystemExit("CADDY_AUTHORITY_ERROR=promotion_chain_invalid")
+if promotion_allowed("production", "development", "development"):
+    raise SystemExit("CADDY_AUTHORITY_ERROR=promotion_downgrade_allowed")
+for name, required in {
+    "desired": ("canonical deployable desired state", "configuration SHA-256"),
+    "plan": ("PLAN_ONLY", "Caddy format/adapt"),
+    "drift": ("IN_SYNC", "UNKNOWN", "NO_CHANGE"),
+    "promotion": ("development -> staging -> production", "adjacent"),
+    "evidence": ("candidate Git SHA", "configuration SHA-256", "UTC timestamp"),
+}.items():
+    if any(value not in m5[name] for value in required):
+        raise SystemExit(f"CADDY_AUTHORITY_ERROR=mission5_contract_incomplete:{name}")
 
 # Every public site block must import the shared header snippet. HSTS and the
 # other shared response headers are defined once in snippets/security_headers.caddy,

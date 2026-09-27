@@ -25,10 +25,11 @@ def test_api_site_routes_kong_before_legacy_fallback():
     assert "api.codestra.co {" in source
     assert "@kong path" in source
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in source
-    assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" in source
+    assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" not in source
+    assert "Unknown public API paths fail closed" in source
     assert source.index("@private_only path") < source.index("@kong path")
     assert source.rindex("reverse_proxy {$CADDY_KONG_UPSTREAM}") < source.rindex(
-        "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}"
+        "Unknown public API paths fail closed"
     )
 
 

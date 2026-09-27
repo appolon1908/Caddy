@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -15,7 +16,7 @@ class KyyowIngressTests(unittest.TestCase):
 
     def test_validator_passes(self):
         result = subprocess.run(
-            ["python3", "scripts/validate_kyyow_ingress.py"],
+            [sys.executable, "scripts/validate_kyyow_ingress.py"],
             cwd=ROOT, capture_output=True, text=True, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)

@@ -44,7 +44,10 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git stores these certification artifacts with LF line endings. Normalize
+    # CRLF checkouts so Windows/Appolon and Linux CI hash the same committed text.
+    material = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(material).hexdigest()
 
 
 def flatten_items(items: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
@@ -155,10 +158,10 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
                 raise CertificationError(f"webhook {row.get('id')} missing {field}")
 
     unknown = by_id.get("edge.unknown-fallback")
-    if not unknown or unknown.get("classification") != "TRANSITIONAL":
-        raise CertificationError("legacy unknown fallback must remain explicitly transitional")
-    if unknown.get("legacy_fallback") is not True:
-        raise CertificationError("unknown fallback state changed unexpectedly")
+    if not unknown or unknown.get("classification") != "RETIRED_FAIL_CLOSED":
+        raise CertificationError("unknown fallback must remain retired fail-closed")
+    if unknown.get("legacy_fallback") is not False or unknown.get("caddy_upstream") != "NONE":
+        raise CertificationError("unknown fallback retirement state changed unexpectedly")
 
     return {
         "canonical": len(required_canonical),
@@ -256,8 +259,9 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
             raise CertificationError(f"Postman pending-contract 404 assertion missing: {key}")
 
     unknown_probe = ("GET", "/__caddy_unclassified_probe__")
-    if unknown_probe not in by_request:
-        raise CertificationError("Postman transitional unknown-route evidence probe missing")
+    candidates = by_request.get(unknown_probe)
+    if not candidates or not any(has_status_assertion(item, {404}) for item in candidates):
+        raise CertificationError("Postman fail-closed unknown-route 404 assertion missing")
 
     return {
         "api": "PASS",
@@ -322,7 +326,7 @@ def certify(
         "adapted": adapted,
         "postman": postman,
         "chain": chain_report,
-        "unknown_route_fallback": "TRANSITIONAL",
+        "unknown_route_fallback": "ZERO_FAIL_CLOSED",
         "runtime_reload_authorized": False,
     }
 
@@ -378,7 +382,7 @@ def main(argv: list[str] | None = None) -> int:
             "POSTMAN_DIGEST_CHAIN="
             + ("PASS" if report["chain"]["postman_match"] else "PENDING_PAS_162")
         )
-        print("UNKNOWN_ROUTE_FALLBACK=TRANSITIONAL")
+        print("UNKNOWN_ROUTE_FALLBACK_ZERO=YES")
         print("CADDY_LIVE_RELOAD_AUTHORIZED=NO")
     return 0
 

@@ -60,11 +60,22 @@
           }
         },
         {
-          "name": "Unknown route transitional evidence",
+          "name": "Unknown route fails closed",
           "request": {
             "method": "GET",
             "url": "{{base_url}}/__caddy_unclassified_probe__"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"unknown route fails closed\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -303,6 +314,81 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Private Caddy Control API",
+      "item": [
+        {
+          "name": "Control health",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"control health 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activation preflight",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/activation/preflight"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"preflight is read-only success\", function () { pm.response.to.have.status(200); const j=pm.response.json(); pm.expect(j.valid).to.eql(true); pm.expect(j.mutation_performed).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Runtime status",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/runtime/status"
+          }
+        },
+        {
+          "name": "Control telemetry",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/telemetry"
+          }
+        },
+        {
+          "name": "Execution evidence",
+          "request": {
+            "method": "GET",
+            "url": "{{caddy_control_url}}/platform/v1/caddy/activation/executions"
+          }
+        },
+        {
+          "name": "Reconcile plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Caddy-Reconcile-Mode",
+                "value": "plan"
+              }
+            ],
+            "url": "{{caddy_control_url}}/platform/v1/caddy/reconcile"
+          }
         }
       ]
     }

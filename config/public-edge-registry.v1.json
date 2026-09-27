@@ -141,20 +141,20 @@
       "traffic_type": "compatibility"
     },
     {
-      "caddy_upstream": "CADDY_LEGACY_API_UPSTREAM",
-      "classification": "TRANSITIONAL",
+      "caddy_upstream": "NONE",
+      "classification": "RETIRED_FAIL_CLOSED",
       "gateway": "NONE",
       "host": "api.codestra.co",
       "id": "edge.unknown-fallback",
       "identity_gate_owner": "legacy",
-      "legacy_fallback": true,
+      "legacy_fallback": false,
       "method_class": "ANY",
       "owner": "migration-review-required",
       "path": "<unmatched>",
-      "postman_test_id": "edge.unknown_route_transitional",
+      "postman_test_id": "edge.unknown_route_fail_closed",
       "public": true,
       "target_state": "DENIED_404",
-      "traffic_type": "legacy-fallback"
+      "traffic_type": "fail-closed"
     },
     {
       "caddy_upstream": "NONE",

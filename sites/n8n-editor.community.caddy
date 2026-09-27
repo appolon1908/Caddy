@@ -8,6 +8,7 @@
 	respond @reserved_observability_host "Not Found" 404
 
 	import security_headers
+	import public_boundary
 	encode zstd gzip
 
 	# Keep the edge ceiling aligned with the n8n N8N_PAYLOAD_SIZE_MAX value.

@@ -3,6 +3,7 @@
 
 graf.codestra.media {
 	import security_headers
+	import public_boundary
 	encode zstd gzip
 
 	request_body {

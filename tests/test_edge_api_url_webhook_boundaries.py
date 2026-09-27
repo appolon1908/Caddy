@@ -36,13 +36,13 @@ def test_database_and_control_plane_destinations_are_never_public():
         assert forbidden not in lowered
 
 
-def test_legacy_unknown_fallback_is_declared_transitional_not_passed():
+def test_unknown_fallback_is_retired_and_fails_closed():
     entry = next(e for e in PUBLIC["entries"] if e["id"] == "edge.unknown-fallback")
-    assert entry["classification"] == "TRANSITIONAL"
-    assert entry["legacy_fallback"] is True
-    assert entry["target_state"] == "DENIED_404"
-    assert "CADDY_LEGACY_API_UPSTREAM" in API_SITE
-
+    assert entry["classification"] == "RETIRED_FAIL_CLOSED"
+    assert entry["legacy_fallback"] is False
+    assert entry["caddy_upstream"] == "NONE"
+    assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" not in API_SITE
+    assert "Unknown public API paths fail closed" in API_SITE
 
 def test_webhooks_have_exact_methods_and_explicit_owners():
     assert WEBHOOKS["entries"]

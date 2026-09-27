@@ -2,6 +2,7 @@
 # Authentication and authorization remain with Keycloak and the owning API.
 app.kyyow.com {
 	import security_headers
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
