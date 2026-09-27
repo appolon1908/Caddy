@@ -30,6 +30,7 @@ def desired_state_paths(root: Path) -> tuple[Path, ...]:
 
     paths = [root / "Caddyfile", root / "config" / "runtime-values.example"]
     paths.extend(sorted((root / "config").glob("*.json")))
+    paths.extend(sorted((root / "config").glob("*.caddy")))
     paths.extend(sorted((root / "snippets").glob("*.caddy")))
     paths.extend(sorted((root / "sites").glob("*.caddy")))
     return tuple(path for path in paths if path.is_file())

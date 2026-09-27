@@ -8,6 +8,8 @@
 # upstreams remain explicit until their equivalent Kong routes are accepted.
 api.codestra.co {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 
 	request_body {
@@ -15,18 +17,11 @@ api.codestra.co {
 	}
 
 	route {
-		# Private Middleware surfaces. /metrics is scraped by Prometheus on the private
-		# network with a monitoring-readonly token and /internal plus /internal/* are service-to-service
-		# only; neither has a Kong route and neither may fall through to the legacy
-		# fallback. Answer 404 at the edge before any upstream is considered.
 		@private_only path /metrics /metrics/* /internal /internal/*
 		handle @private_only {
 			respond 404
 		}
 
-		# Pending ingress/event paths are explicitly fail-closed until their canonical
-		# Middleware/Kong contracts are reviewed. They must never fall through to the
-		# transitional legacy API listener.
 		@pending_contract path /api/v1/events/telnexa /api/v1/n8n/acknowledgements /v1/observability/incidents /v1/observability/kpis /webhooks/sms/inbound/* /webhooks/vicidial/call-result/*
 		handle @pending_contract {
 			respond 404
@@ -41,6 +36,7 @@ api.codestra.co {
 			path_regexp ^(/api/v1/callbacks|/api/v1/integrations/n8n/results/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/api/v1/integrations/odoo/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/desired\-state|/platform/v1/activity|/platform/v1/activity/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/agent\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/agents/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/presence|/platform/v1/agents/presence|/platform/v1/calls|/platform/v1/calls/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/campaigns|/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/channels|/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/health|/platform/v1/campaigns/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/members|/platform/v1/contacts|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/tasks|/platform/v1/email/identities|/platform/v1/email/production/audit|/platform/v1/email/production/quotas|/platform/v1/email/production/readiness|/platform/v1/email/production/status|/platform/v1/hosts|/platform/v1/hosts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/kernel/describe|/platform/v1/me/presence|/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/timeline|/platform/v1/opportunities|/platform/v1/opportunities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/queues|/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/calls|/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/members|/platform/v1/queues/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/metrics|/platform/v1/repositories|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/coverage|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/dependencies|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/deployments|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/endpoints|/platform/v1/session/context|/platform/v1/sms/identities|/platform/v1/sync/reconciliations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/sync/status|/platform/v1/telephony/assignments|/platform/v1/tenants|/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/campaigns|/platform/v1/tenants/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/health|/platform/v1/tenants/authorized|/platform/v1/tickets|/platform/v1/tickets/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/campaigns|/platform/v1/users/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/entitlements|/v2/automation/approvals/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/v2/automation/capabilities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/v2/automation/commands/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$
 		}
 		handle @canonical_get {
+			vars edge_route_id edge.canonical.get
 			reverse_proxy {$CADDY_KONG_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
@@ -75,6 +71,7 @@ api.codestra.co {
 			path_regexp ^(/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/opportunities/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/tasks/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}|/platform/v1/tickets/[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$
 		}
 		handle @canonical_patch {
+			vars edge_route_id edge.canonical.patch
 			reverse_proxy {$CADDY_KONG_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
@@ -109,6 +106,7 @@ api.codestra.co {
 			path_regexp ^(/api/v1/automation/policy\-check|/api/v1/control/callbacks|/api/v1/integrations/n8n/results|/api/v1/odoo/events|/platform/v1/agent\-provisioning/requests|/platform/v1/agent\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/reactivate|/platform/v1/agent\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/reconcile|/platform/v1/agent\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/revoke|/platform/v1/agent\-provisioning/requests/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/suspend|/platform/v1/commands|/platform/v1/contacts|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/notes|/platform/v1/contacts/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/tasks|/platform/v1/email/production/activate|/platform/v1/email/production/authorize|/platform/v1/email/production/kill\-switch|/platform/v1/email/production/revoke|/platform/v1/integrations/github/events|/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/cancel|/platform/v1/operations/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/replay|/platform/v1/opportunities|/platform/v1/runtime/observations|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/contract\-refresh|/platform/v1/services/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/telemetry\-profile|/platform/v1/session/context/select|/platform/v1/sync/reconciliations|/platform/v1/tasks/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/complete|/platform/v1/telemetry/heartbeats|/platform/v1/tickets|/v2/automation/approvals|/v2/automation/commands|/v2/automation/dead\-letters/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/replay|/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/complete|/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/fail|/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/heartbeat|/v2/automation/jobs/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}/steps|/v2/automation/jobs/claim|/v2/automation/jobs/reconcile)$
 		}
 		handle @canonical_post {
+			vars edge_route_id edge.canonical.post
 			reverse_proxy {$CADDY_KONG_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
@@ -140,19 +138,13 @@ api.codestra.co {
 
 		# END GENERATED MIDDLEWARE CONTRACT ROUTES
 
-		# Paths already represented by reviewed Kong source (the vendored Middleware
-		# edge contract's shared_edge and denied operations plus the earlier Kong
-		# route families). Preserve the public host because Kong uses host-based
-		# routing for api.codestra.co. No legacy fallback exists for these paths:
-		# when Kong is unavailable they fail, they never reach Middleware directly.
-		@kong path /api/v1/control* /api/v1/messages* /api/v1/events* /api/v1/results* /api/v1/reconciliation* /api/v1/health* /api/v1/callbacks* /api/v1/automation/policy-check /api/v1/integration/campaign-actions /api/v1/integrations/n8n/results* /api/v1/integrations/odoo* /api/v1/odoo* /platform/v1* /v2/automation* /v1/integrations/n8n* /v1/admin/system* /v1/crm* /v1/email* /v1/sms* /v1/webhooks* /v1/intake*
+		# Paths already represented by reviewed Kong source
+		@kong path /api/v1/automation/policy-check /api/v1/callbacks* /api/v1/control* /api/v1/events* /api/v1/health* /api/v1/integration/campaign-actions /api/v1/integrations/n8n/results* /api/v1/integrations/odoo* /api/v1/messages* /api/v1/odoo* /api/v1/reconciliation* /api/v1/results* /platform/v1* /v1/admin/system* /v1/crm* /v1/email* /v1/intake* /v1/integrations/n8n* /v1/sms* /v1/webhooks* /v2/automation*
 		handle @kong {
+			vars edge_route_id edge.kong
 			reverse_proxy {$CADDY_KONG_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
-				# Client-asserted identity is never trusted at the edge: delete it before
-				# Kong authenticates and mints its own. Authorization, X-Correlation-ID,
-				# Idempotency-Key, traceparent and tracestate pass through untouched.
 				header_up -X-User-ID
 				header_up -X-Username
 				header_up -X-Email
@@ -179,29 +171,47 @@ api.codestra.co {
 			}
 		}
 
-		# Transitional compatibility only. These paths are not yet proven to have
-		# equivalent accepted Kong routes in the reviewed source inventory.
+		# Transitional compatibility remains explicitly allowlisted.
 		@realtime path /ws/agent /api/v1/realtime/sessions /healthz /readyz /version
 		handle @realtime {
+			vars edge_route_id edge.realtime
 			reverse_proxy {$CADDY_REALTIME_UPSTREAM} {
 				header_up Host {host}
 				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
 			}
 		}
 
-		# Transitional legacy API fallback. The Caddy principal-source migration is
-		# complete only when this fallback is no longer required and Kong owns the
-		# corresponding route contracts.
+		# Unknown public API paths fail closed.
 		handle {
-			reverse_proxy {$CADDY_LEGACY_API_UPSTREAM} {
-				header_up Host {host}
-				header_up X-Real-IP {remote_host}
-			}
+			respond 404
 		}
 	}
 
 	log {
-		output file /var/log/caddy/api-codestra-co-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-codestra-co-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}

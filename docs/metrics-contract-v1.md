@@ -6,9 +6,10 @@ Caddy metrics should support operational incident response without exposing user
 
 ## Repository implementation status
 
-The current repository does not configure a Caddy metrics endpoint or custom
-metric labels. This contract is the source-level boundary for a future
-runtime integration; it does not claim that metrics are currently emitted.
+The global metrics option enables native metrics on the loopback Admin API at
+127.0.0.1:2019/metrics. Public sites deny /metrics before routing. There is no
+public metrics handler and per-host metrics are disabled. No request identifiers
+are used as metric labels. Release SHA and configuration digest appear in logs.
 
 ## Recommended low-cardinality metrics
 

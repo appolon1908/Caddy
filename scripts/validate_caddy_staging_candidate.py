@@ -195,7 +195,7 @@ def validate_candidate(candidate: dict[str, Any]) -> None:
     production = candidate.get("production_gate", {})
     require(production.get("unknown_route_fallback_required") == 0, "production requires zero unknown fallback")
     require(
-        production.get("observed_unknown_route_fallback") == "TRANSITIONAL_NONZERO",
+        production.get("observed_unknown_route_fallback") == "ZERO",
         "preparation must record transitional unknown fallback honestly",
     )
     require(production.get("unclassified_public_routes_required") == 0, "unclassified public routes must reach zero")
@@ -282,7 +282,7 @@ def main() -> int:
     print(f"START_GATES_SATISFIED={sum(row['satisfied'] is True for row in gates)}/10")
     print("STAGING_EXECUTION_AUTHORIZED=NO")
     print("PRODUCTION_CANARY_AUTHORIZED=NO")
-    print("UNKNOWN_ROUTE_FALLBACK_ZERO=NO")
+    print("UNKNOWN_ROUTE_FALLBACK_ZERO=YES")
     print("PROVIDER_EFFECTS=0")
     print("BUSINESS_WRITES=0")
     print("PRODUCTION_GO=NO")

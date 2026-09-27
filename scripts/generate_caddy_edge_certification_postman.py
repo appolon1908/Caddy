@@ -85,6 +85,7 @@ def validate_source(
         ("POST", "/api/v1/events/telnexa"),
         ("POST", "/webhooks/vicidial/call-result/"),
         ("POST", "/api/v1/n8n/acknowledgements"),
+        ("GET", "/__codestra_unknown_route_probe__"),
     }
     missing = sorted(required - requests)
     if missing:
@@ -94,6 +95,10 @@ def validate_source(
     private_paths = {str(row.get("path")) for row in public_entries if row.get("classification") == "PRIVATE"}
     if not {"/metrics*", "/internal", "/internal/*"} <= private_paths:
         raise GenerationError("private-route registry does not support Postman source")
+
+    unknown = [row for row in public_entries if row.get("classification") == "DENIED_UNKNOWN_ROUTE"]
+    if len(unknown) != 1 or unknown[0].get("caddy_upstream") != "NONE" or unknown[0].get("expected_public_status") != 404:
+        raise GenerationError("unknown-route registry must be a single fail-closed 404 with no upstream")
 
     pending_paths = {
         str(row.get("path"))

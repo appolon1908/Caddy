@@ -662,7 +662,7 @@ jobs:
 
             "$RUNNER_TEMP/cosign" sign --yes "$subject"
             caller_identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/codestra-deploy-readiness.yml@${GITHUB_REF}"
-            called_identity_pattern='^https://github.com/appolon1908-hue/Infustruction-repo/.github/workflows/reusable-codestra-deploy-readiness.yml@.*$'
+            called_identity_pattern='^https://github.com/ingtrader21-spec/(Infustruction-repo|Caddy)/.github/workflows/reusable-codestra-deploy-readiness.yml@.*$'
             "$RUNNER_TEMP/cosign" verify \
               --certificate-identity-regexp "^(${caller_identity}|${called_identity_pattern#^})" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
@@ -851,7 +851,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-            identity_pattern="^https://github.com/(${GITHUB_REPOSITORY}/.github/workflows/codestra-deploy-readiness.yml@${GITHUB_REF#refs/heads/}|appolon1908-hue/Infustruction-repo/.github/workflows/reusable-codestra-deploy-readiness.yml@.*)$"
+            identity_pattern="^https://github.com/(${GITHUB_REPOSITORY}/.github/workflows/codestra-deploy-readiness.yml@${GITHUB_REF#refs/heads/}|ingtrader21-spec/(Infustruction-repo|Caddy)/.github/workflows/reusable-codestra-deploy-readiness.yml@.*)$"
             "$RUNNER_TEMP/cosign" sign-blob --yes --bundle evidence/source-release-manifest.sigstore.json "$manifest"
             "$RUNNER_TEMP/cosign" verify-blob \
               --bundle evidence/source-release-manifest.sigstore.json \

@@ -15,6 +15,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from caddy_route_compiler import route_regex, proxy_lines, route_block, compile_caddy
 
 ROOT = Path(__file__).resolve().parents[1]
 VENDORED = ROOT / "config/middleware-public-api-route-contract.v1.json"
@@ -66,50 +67,6 @@ def canonical_sha256(document: dict) -> str:
     return hashlib.sha256(
         json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-
-
-def route_regex(path: str) -> str:
-    marker = "CODESTRAPARAMETER"
-    marked = re.sub(r"\{[a-z_]+\}", marker, path)
-    return re.escape(marked).replace(marker, PUBLIC_ID)
-
-
-def proxy_lines(indent: str = "\t\t\t") -> list[str]:
-    lines = [
-        f"{indent}reverse_proxy {{$CADDY_KONG_UPSTREAM}} {{",
-        f"{indent}\theader_up Host {{host}}",
-        f"{indent}\theader_up X-Real-IP {{remote_host}}",
-    ]
-    lines.extend(f"{indent}\theader_up -{name}" for name in DELETED_IDENTITY_HEADERS)
-    lines.append(f"{indent}}}")
-    return lines
-
-
-def route_block(routes: list[dict]) -> str:
-    lines = [
-        START,
-        "\t\t# Generated from config/middleware-public-api-route-contract.v1.json.",
-        "\t\t# Caddy selects exact method+path pairs; Kong owns authentication and policy.",
-        "\t\t# Client identity headers are stripped here; auth/correlation/idempotency/trace pass through.",
-    ]
-    for method in sorted({row["method"] for row in routes}):
-        selected = sorted(route_regex(row["path"]) for row in routes if row["method"] == method)
-        expression = "^(" + "|".join(selected) + ")$"
-        matcher = f"canonical_{method.lower()}"
-        lines.extend(
-            [
-                f"\t\t@{matcher} {{",
-                f"\t\t\tmethod {method}",
-                f"\t\t\tpath_regexp {expression}",
-                "\t\t}",
-                f"\t\thandle @{matcher} {{",
-                *proxy_lines(),
-                "\t\t}",
-                "",
-            ]
-        )
-    lines.append(END)
-    return "\n".join(lines)
 
 
 def retired_prefixes(denied: list[dict]) -> list[str]:
@@ -207,6 +164,17 @@ def render() -> tuple[str, str]:
         "rule": "api.codestra.co reaches Middleware, Odoo and N8N only through Kong",
     }
 
+    edge["unknownRoutePolicy"] = {
+        "classification": "DENIED_UNKNOWN_ROUTE",
+        "fallbackUpstream": None,
+        "status": 404,
+        "rule": "unmatched public paths fail closed at Caddy and never reach Kong, Middleware, Odoo, n8n, or a provider",
+    }
+    edge["approvedCompatibilityRoutes"] = [
+        {"paths": ["/ws/agent", "/api/v1/realtime/sessions", "/healthz", "/readyz", "/version"],
+         "upstream": "CADDY_REALTIME_UPSTREAM", "classification": "TRANSITIONAL_EXPLICIT"}
+    ]
+
     edge["middlewareHandoff"] = {
         "authorizationHeaderPreservedByKong": True,
         "middlewareIdentityRevalidation": True,
@@ -216,16 +184,7 @@ def render() -> tuple[str, str]:
         "rule": "Caddy never calls Middleware directly; Kong owns the only public-to-Middleware service handoff.",
     }
 
-    site = SITE.read_text(encoding="utf-8")
-    generated = route_block(shared)
-    if START in site and END in site:
-        before, rest = site.split(START, 1)
-        _old, after = rest.split(END, 1)
-        site = before + generated + after
-    else:
-        if INSERT_MARKER not in site:
-            raise SystemExit(f"site insertion marker not found: {INSERT_MARKER!r}")
-        site = site.replace(INSERT_MARKER, generated + "\n\n" + INSERT_MARKER, 1)
+    site = compile_caddy(edge)
 
     return json.dumps(edge, indent=2) + "\n", site
 

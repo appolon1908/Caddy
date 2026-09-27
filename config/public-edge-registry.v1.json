@@ -141,20 +141,21 @@
       "traffic_type": "compatibility"
     },
     {
-      "caddy_upstream": "CADDY_LEGACY_API_UPSTREAM",
-      "classification": "TRANSITIONAL",
+      "caddy_upstream": "NONE",
+      "classification": "DENIED_UNKNOWN_ROUTE",
       "gateway": "NONE",
       "host": "api.codestra.co",
       "id": "edge.unknown-fallback",
-      "identity_gate_owner": "legacy",
-      "legacy_fallback": true,
+      "identity_gate_owner": "caddy-edge",
+      "legacy_fallback": false,
       "method_class": "ANY",
-      "owner": "migration-review-required",
+      "owner": "ingtrader21-spec/Caddy",
       "path": "<unmatched>",
-      "postman_test_id": "edge.unknown_route_transitional",
-      "public": true,
+      "postman_test_id": "edge.unknown_route_denied",
+      "public": false,
       "target_state": "DENIED_404",
-      "traffic_type": "legacy-fallback"
+      "traffic_type": "edge-deny",
+      "expected_public_status": 404
     },
     {
       "caddy_upstream": "NONE",

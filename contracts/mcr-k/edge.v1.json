@@ -19,7 +19,12 @@
     "idempotency-key",
     "x-correlation-id",
     "traceparent",
-    "tracestate"
+    "tracestate",
+    "x-tenant-id",
+    "x-causation-id",
+    "x-codestra-event-id",
+    "x-codestra-timestamp",
+    "x-codestra-signature"
   ],
   "strip": [
     "x-user-id",
@@ -28,7 +33,9 @@
     "x-roles",
     "x-scopes",
     "x-authenticated-*",
-    "x-codestra-*",
+    "x-codestra-tenant",
+    "x-codestra-scopes",
+    "x-codestra-gateway-secret",
     "x-internal-service",
     "x-admin",
     "x-consumer-*",

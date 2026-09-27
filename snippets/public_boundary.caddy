@@ -1,0 +1,39 @@
+# Public boundary runs before site-specific routes and upstreams.
+(public_boundary) {
+	route {
+		@public_private_paths path /metrics /metrics/* /internal /internal/*
+		respond @public_private_paths 404
+
+		# Gateways derive identity; client assertions never cross this boundary.
+		request_header -X-User-ID
+		request_header -X-Username
+		request_header -X-Email
+		request_header -X-Roles
+		request_header -X-Scopes
+		request_header -X-Authenticated-UserID
+		request_header -X-Authenticated-User
+		request_header -X-Authenticated-Client
+		request_header -X-Authenticated-Subject
+		request_header -X-Authenticated-Tenant
+		request_header -X-Authenticated-Campaign
+		request_header -X-Authenticated-Role
+		request_header -X-Authenticated-Email
+		request_header -X-Codestra-Tenant
+		request_header -X-Codestra-Scopes
+		request_header -X-Codestra-Gateway-Secret
+		request_header -X-Internal-Service
+		request_header -X-Admin
+		request_header -X-Consumer-ID
+		request_header -X-Consumer-Username
+		request_header -X-Consumer-Custom-ID
+		request_header -X-Credential-Identifier
+		request_header -X-Anonymous-Consumer
+		request_header -Forwarded
+		request_header -X-Auth-Request-User
+		request_header -X-Auth-Request-Email
+		request_header -X-Auth-Request-Groups
+		request_header -X-Forwarded-User
+		request_header -X-Forwarded-Email
+		request_header -X-Forwarded-Groups
+	}
+}

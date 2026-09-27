@@ -60,7 +60,7 @@ def test_immutable_caddy_image_must_be_digest_pinned(documents):
 
 def test_configuration_digest_matches_exact_desired_state(documents):
     candidate, _ = documents
-    assert candidate["configuration"]["configuration_sha256"] == "95496f1532e2d1e7dece5b37e28f3819b83b3e86b2d1ddb34a9de6fabd2ec964"
+    assert candidate["configuration"]["configuration_sha256"] == "dbbd0bef363ea1661c9ed1da8e25b5ddb9a93a84b1149cc7e4f5bad734ae44d4"
 
     tampered = copy.deepcopy(candidate)
     tampered["configuration"]["configuration_sha256"] = "0" * 64
@@ -184,7 +184,7 @@ def test_unknown_route_fallback_blocks_production_canary_and_go(documents):
     candidate, evidence = documents
     gate = candidate["production_gate"]
     assert gate["unknown_route_fallback_required"] == 0
-    assert gate["observed_unknown_route_fallback"] == "TRANSITIONAL_NONZERO"
+    assert gate["observed_unknown_route_fallback"] == "ZERO"
     assert gate["production_go"] is False
     assert evidence["production_gate"]["unknown_route_fallback_zero"] is False
     assert evidence["verdict"] == "NO_GO"
