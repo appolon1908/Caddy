@@ -26,7 +26,7 @@ from caddy_route_compiler import (  # noqa: E402
 
 @pytest.fixture()
 def authority():
-    return load_authority(ROOT / "config" / "caddy-route-authority.v1.json")
+    return load_authority(ROOT / "tests/fixtures/caddy-route-authority.v1.json")
 
 
 def test_valid_authority_compiles_deterministically(authority) -> None:

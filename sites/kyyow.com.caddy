@@ -2,6 +2,7 @@
 # Authentication and authorization remain with Keycloak and the owning API.
 app.kyyow.com {
 	import security_headers
+	import edge_observability
 	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
@@ -13,7 +14,7 @@ app.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/app-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/app-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete
@@ -41,6 +42,8 @@ app.kyyow.com {
 
 api.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 10MB
@@ -54,7 +57,7 @@ api.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/api-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete
@@ -79,6 +82,8 @@ api.kyyow.com {
 
 search.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 2MB
@@ -92,7 +97,7 @@ search.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/search-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/search-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete
@@ -117,6 +122,8 @@ search.kyyow.com {
 
 docs.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
@@ -127,7 +134,7 @@ docs.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/docs-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/docs-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete
@@ -152,6 +159,8 @@ docs.kyyow.com {
 
 auth.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_body {
 		max_size 2MB
@@ -166,7 +175,7 @@ auth.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/auth-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete
@@ -194,6 +203,8 @@ auth.kyyow.com {
 
 status.kyyow.com {
 	import security_headers
+	import edge_observability
+	import public_boundary
 	encode zstd gzip
 	request_header -X-Authenticated-Client
 	request_header -X-Authenticated-Tenant
@@ -204,7 +215,7 @@ status.kyyow.com {
 		header_up X-Forwarded-Proto https
 	}
 	log {
-		output file /var/log/caddy/status-kyyow-com-access.log
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/status-kyyow-com-access.log
 		format filter {
 			request>headers>Authorization delete
 			request>headers>Apikey delete

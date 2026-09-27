@@ -1032,5 +1032,13 @@
       "upstream": "CADDY_REALTIME_UPSTREAM",
       "classification": "TRANSITIONAL_EXPLICIT"
     }
+  ],
+  "pendingContractPaths": [
+    "/api/v1/events/telnexa",
+    "/api/v1/n8n/acknowledgements",
+    "/v1/observability/incidents",
+    "/v1/observability/kpis",
+    "/webhooks/sms/inbound/*",
+    "/webhooks/vicidial/call-result/*"
   ]
 }

@@ -277,9 +277,9 @@ if "import snippets/*.caddy" not in CADDYFILE or "import sites/*.caddy" not in C
 # current contracts.
 m4 = {name: path.read_text(encoding="utf-8") for name, path in MISSION4_CONTRACTS.items()}
 m5 = {name: path.read_text(encoding="utf-8") for name, path in MISSION5_CONTRACTS.items()}
-if "repository does not configure Caddy request-ID generation" not in m4["correlation"]:
+if "records Caddy request UUIDs" not in m4["correlation"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=correlation_implementation_status_missing")
-if "does not configure a Caddy metrics endpoint" not in m4["metrics"]:
+if "loopback Admin API" not in m4["metrics"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=metrics_implementation_status_missing")
 if "Prometheus" not in m4["monitoring"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=monitoring_boundary_missing")

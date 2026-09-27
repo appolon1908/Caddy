@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_AUTHORITY = ROOT / "config" / "caddy-route-authority.v1.json"
-DEFAULT_OUTPUT = ROOT / "generated" / "pas144-edge.generated.caddy"
-DEFAULT_INVENTORY = ROOT / "generated" / "pas144-route-inventory.json"
+DEFAULT_AUTHORITY = ROOT / "config" / "caddy-kong-contract.v1.json"
+DEFAULT_OUTPUT = ROOT / "sites" / "api.codestra.co.caddy"
+DEFAULT_INVENTORY = ROOT / "generated" / "caddy-route-inventory.json"
 
 ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "ANY"}
 ALLOWED_VISIBILITY = {"public", "private"}
@@ -122,6 +122,9 @@ def normalize_routes(authority: dict[str, Any]) -> tuple[Route, ...]:
 
 
 def validate_authority(authority: dict[str, Any]) -> None:
+    if authority.get("schema") == "codestra.caddy-kong-edge.v1":
+        validate_edge_authority(authority)
+        return
     if authority.get("schema") != "codestra.caddy.route-authority.v1":
         raise RouteAuthorityError("unsupported_schema")
     if authority.get("version") != 1:
@@ -143,14 +146,26 @@ def validate_authority(authority: dict[str, Any]) -> None:
     security_profiles = (profiles.get("security_headers") or {}).keys()
     timeout_profiles = (profiles.get("timeouts") or {}).keys()
 
+    for headers in (profiles.get("security_headers") or {}).values():
+        for name, value in headers.items():
+            if not re.fullmatch(r"[A-Za-z][A-Za-z0-9-]*", name) or not isinstance(value, str) or any(c in value for c in '\r\n"{}\\'):
+                raise RouteAuthorityError("invalid_security_header")
+    for timeout in (profiles.get("timeouts") or {}).values():
+        if any(not re.fullmatch(r"[0-9]+(?:ms|s|m)", str(timeout.get(k, ""))) for k in ("dial", "response_header")):
+            raise RouteAuthorityError("invalid_timeout")
+
     for route in normalize_routes(authority):
         if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{2,127}", route.route_id):
             raise RouteAuthorityError(f"{route.route_id or 'unknown'}:invalid_route_id")
         if route.route_id in seen_ids:
             raise RouteAuthorityError(f"{route.route_id}:duplicate_route_id")
         seen_ids.add(route.route_id)
-        if not route.host or "." not in route.host:
+        if not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", route.host) or "." not in route.host:
             raise RouteAuthorityError(f"{route.route_id}:invalid_host")
+        if not re.fullmatch(r"/[A-Za-z0-9/._~%:@*+-]*", route.path):
+            raise RouteAuthorityError(f"{route.route_id}:invalid_path")
+        if not re.fullmatch(r"(?:0|[1-9][0-9]*(?:KB|MB|GB)?)", route.body_limit):
+            raise RouteAuthorityError(f"{route.route_id}:invalid_body_limit")
         if route.visibility not in ALLOWED_VISIBILITY:
             raise RouteAuthorityError(f"{route.route_id}:invalid_visibility")
         if not route.methods or any(x not in ALLOWED_METHODS for x in route.methods):
@@ -208,6 +223,8 @@ def _headers_block() -> list[str]:
 
 
 def compile_caddy(authority: dict[str, Any]) -> str:
+    if authority.get("schema") == "codestra.caddy-kong-edge.v1":
+        return compile_edge_site(authority)
     validate_authority(authority)
     profiles = authority["profiles"]
     timeout_profiles = profiles["timeouts"]
@@ -255,6 +272,8 @@ def compile_caddy(authority: dict[str, Any]) -> str:
 
 
 def build_inventory(authority: dict[str, Any], generated: str) -> dict[str, Any]:
+    if authority.get("schema") == "codestra.caddy-kong-edge.v1":
+        return edge_inventory(authority, generated)
     routes = normalize_routes(authority)
     source_bytes = json.dumps(authority, sort_keys=True, separators=(",", ":")).encode()
     return {
@@ -301,6 +320,124 @@ def compile_to_files(
         output_path.write_text(generated, encoding="utf-8")
         inventory_path.write_text(inventory_text, encoding="utf-8")
     return inventory
+
+
+
+START = "\t\t# BEGIN GENERATED MIDDLEWARE CONTRACT ROUTES"
+END = "\t\t# END GENERATED MIDDLEWARE CONTRACT ROUTES"
+PUBLIC_ID = r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}"
+DELETED_IDENTITY_HEADERS = FORBIDDEN_IDENTITY_HEADERS
+
+def route_regex(path: str) -> str:
+    marker = "CODESTRAPARAMETER"
+    marked = re.sub(r"\{[a-z_]+\}", marker, path)
+    return re.escape(marked).replace(marker, PUBLIC_ID)
+
+
+def proxy_lines(indent: str = "\t\t\t") -> list[str]:
+    lines = [
+        f"{indent}reverse_proxy {{$CADDY_KONG_UPSTREAM}} {{",
+        f"{indent}\theader_up Host {{host}}",
+        f"{indent}\theader_up X-Real-IP {{remote_host}}",
+    ]
+    lines.extend(f"{indent}\theader_up -{name}" for name in DELETED_IDENTITY_HEADERS)
+    lines.append(f"{indent}}}")
+    return lines
+
+
+def route_block(routes: list[dict]) -> str:
+    lines = [
+        START,
+        "\t\t# Generated from config/middleware-public-api-route-contract.v1.json.",
+        "\t\t# Caddy selects exact method+path pairs; Kong owns authentication and policy.",
+        "\t\t# Client identity headers are stripped here; auth/correlation/idempotency/trace pass through.",
+    ]
+    for method in sorted({row["method"] for row in routes}):
+        selected = sorted(route_regex(row["path"]) for row in routes if row["method"] == method)
+        expression = "^(" + "|".join(selected) + ")$"
+        matcher = f"canonical_{method.lower()}"
+        lines.extend(
+            [
+                f"\t\t@{matcher} {{",
+                f"\t\t\tmethod {method}",
+                f"\t\t\tpath_regexp {expression}",
+                "\t\t}",
+                f"\t\thandle @{matcher} {{",
+                f"\t\t\tvars edge_route_id edge.canonical.{method.lower()}",
+                *proxy_lines(),
+                "\t\t}",
+                "",
+            ]
+        )
+    lines.append(END)
+    return "\n".join(lines)
+
+
+
+def validate_edge_authority(authority: dict[str, Any]) -> None:
+    if authority.get('kongUpstreamEnvironmentVariable') != 'CADDY_KONG_UPSTREAM':
+        raise RouteAuthorityError('public_route_must_use_kong')
+    if authority.get('unknownRoutePolicy', {}).get('status') != 404 or authority.get('migration', {}).get('legacyFallbackTemporarilyAllowed') is not False:
+        raise RouteAuthorityError('unknown_routes_must_fail_closed')
+    if authority.get('canonicalHost') != 'api.codestra.co':
+        raise RouteAuthorityError('invalid_canonical_host')
+    paths = authority.get('privateOnlyPaths', []) + authority.get('pendingContractPaths', []) + authority.get('kongManagedPathPrefixes', []) + authority.get('transitionalPaths', [])
+    if any(not re.fullmatch(r'/[A-Za-z0-9/._*+-]*', x) for x in paths):
+        raise RouteAuthorityError('invalid_path')
+    for row in authority['serviceJwtRouteContract']['routes']:
+        if row['method'] not in ALLOWED_METHODS - {'ANY'} or not re.fullmatch(r'/[A-Za-z0-9/._{}-]*', row['path']):
+            raise RouteAuthorityError('invalid_contract_route')
+    if not {'/metrics', '/metrics/*', '/internal', '/internal/*'} <= set(authority['privateOnlyPaths']):
+        raise RouteAuthorityError('required_private_prefix_missing')
+    if set(authority['identityHeaders']['deletedBeforeKong']) != set(FORBIDDEN_IDENTITY_HEADERS):
+        raise RouteAuthorityError('identity_header_contract_drift')
+    if authority.get('realtimeUpstreamEnvironmentVariable') != 'CADDY_REALTIME_UPSTREAM':
+        raise RouteAuthorityError('invalid_compatibility_upstream')
+
+
+def kong_path_matcher(path: str) -> str:
+    return path if path in {'/api/v1/automation/policy-check', '/api/v1/integration/campaign-actions'} else path + '*'
+
+
+def compile_edge_site(authority: dict[str, Any]) -> str:
+    validate_edge_authority(authority)
+    lines = ['\troute {']
+    for matcher, paths in [('private_only', authority['privateOnlyPaths']), ('pending_contract', authority['pendingContractPaths'])]:
+        lines += [f'\t\t@{matcher} path ' + ' '.join(paths), f'\t\thandle @{matcher} {{', '\t\t\trespond 404', '\t\t}', '']
+    lines.append(route_block(authority['serviceJwtRouteContract']['routes']))
+    lines += ['', '\t\t# Paths already represented by reviewed Kong source']
+    prefixes = [kong_path_matcher(x) for x in authority['kongManagedPathPrefixes']]
+    lines += ['\t\t@kong path ' + ' '.join(prefixes), '\t\thandle @kong {', '\t\t\tvars edge_route_id edge.kong', *proxy_lines(), '\t\t}', '']
+    lines += ['\t\t# Transitional compatibility remains explicitly allowlisted.', '\t\t@realtime path ' + ' '.join(authority['transitionalPaths']), '\t\thandle @realtime {', '\t\t\tvars edge_route_id edge.realtime']
+    lines += [x.replace('CADDY_KONG_UPSTREAM', 'CADDY_REALTIME_UPSTREAM') for x in proxy_lines()]
+    lines += ['\t\t}', '', '\t\t# Unknown public API paths fail closed.', '\t\thandle {', '\t\t\trespond 404', '\t\t}', '\t}']
+    return (ROOT / 'config/api-site.template.caddy').read_text().replace('@@ROUTES@@', '\n'.join(lines))
+
+
+def edge_inventory(authority: dict[str, Any], generated: str) -> dict[str, Any]:
+    validate_edge_authority(authority)
+    rows = []
+    def add(path, methods, visibility, upstream, group):
+        identity = f'{authority["canonicalHost"]}:{",".join(methods)}:{path}'
+        rows.append({'route_id': 'edge.' + _sha256(identity.encode())[:20], 'handler_id': group,
+                     'host': authority['canonicalHost'], 'path': path, 'methods': methods,
+                     'visibility': visibility, 'upstream_ref': upstream,
+                     'upstream_service': 'kong' if upstream == 'CADDY_KONG_UPSTREAM' else ('none' if upstream == 'NONE' else 'realtime'),
+                     'owner': 'ingtrader21-spec/Caddy'})
+    for row in authority['serviceJwtRouteContract']['routes']:
+        add(row['path'], [row['method']], 'public', 'CADDY_KONG_UPSTREAM', 'edge.canonical.' + row['method'].lower())
+    for path in authority['kongManagedPathPrefixes']:
+        add(kong_path_matcher(path), ['ANY'], 'public', 'CADDY_KONG_UPSTREAM', 'edge.kong')
+    for path in authority['transitionalPaths']:
+        add(path, ['ANY'], 'compatibility', 'CADDY_REALTIME_UPSTREAM', 'edge.realtime')
+    for path in authority['privateOnlyPaths'] + authority['pendingContractPaths']:
+        add(path, ['ANY'], 'private', 'NONE', 'edge.denied')
+    add('*', ['ANY'], 'private', 'NONE', 'edge.unknown')
+    rows.sort(key=lambda x: (x['path'], x['methods']))
+    return {'schema': 'codestra.caddy.route-inventory.v1', 'source_sha256': _sha256(json.dumps(authority,sort_keys=True,separators=(',',':')).encode()),
+            'generated_sha256': _sha256(generated.encode()), 'route_count': len(rows),
+            'public_count': sum(x['visibility'] == 'public' for x in rows),
+            'private_count': sum(x['visibility'] == 'private' for x in rows), 'routes': rows}
 
 
 def main(argv: Iterable[str] | None = None) -> int:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Durable fail-closed Caddy apply/readback/rollback runtime."""
 from __future__ import annotations
+import urllib.parse
 import fcntl, hashlib, json, os, shutil, subprocess, tempfile, time, urllib.request, uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,8 +36,13 @@ class CaddyRuntime:
     def __init__(self,paths:RuntimePaths,*,caddy_bin="caddy",admin_url="127.0.0.1:2019",
                  health_urls:tuple[str,...]=(),runner:Callable[[Sequence[str]],CommandResult]=_runner,
                  health_check:Callable[[str,float],bool]=_health,
-                 runtime_get:Callable[[str,float],bytes]=_runtime_get)->None:
-        self.paths=paths; self.caddy_bin=caddy_bin; self.admin_url=admin_url.removeprefix("http://").removeprefix("https://").rstrip("/")
+                 runtime_get:Callable[[str,float],bytes]=_runtime_get, mutation_enabled:bool=False)->None:
+        parsed = urllib.parse.urlsplit(admin_url if "://" in admin_url else "http://" + admin_url)
+        if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"127.0.0.1", "::1", "localhost"} or parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+            raise RuntimeApplyError("admin_url_must_be_loopback")
+        self.paths=paths; self.caddy_bin=caddy_bin; self.admin_url=parsed.netloc
+        self.admin_base=parsed.scheme + "://" + parsed.netloc
+        self.mutation_enabled=mutation_enabled is True
         self.health_urls=health_urls; self.runner=runner; self.health_check=health_check; self.runtime_get=runtime_get
 
     def _run(self,argv,step):
@@ -57,7 +63,7 @@ class CaddyRuntime:
         return adapted
 
     def active_readback(self)->dict:
-        raw=self.runtime_get("http://"+self.admin_url+"/config/",3.0)
+        raw=self.runtime_get(self.admin_base+"/config/",3.0)
         try: canonical=json.dumps(json.loads(raw),sort_keys=True,separators=(",",":")).encode()
         except Exception as exc: raise RuntimeApplyError("runtime_readback_invalid_json") from exc
         return {"active_runtime_sha256":sha256_bytes(canonical),"active_runtime_bytes":len(canonical)}
@@ -101,6 +107,7 @@ class CaddyRuntime:
         return fh
 
     def apply(self,candidate:Path,*,source_sha:str,candidate_digest:str,expected_active_digest:str|None=None,idempotency_key:str|None=None)->dict:
+        if not self.mutation_enabled: raise RuntimeApplyError("activation_disabled")
         if len(source_sha)!=40 or any(c not in "0123456789abcdef" for c in source_sha): raise RuntimeApplyError("invalid_source_sha")
         lock=self._lock()
         try:
@@ -147,6 +154,7 @@ class CaddyRuntime:
             fcntl.flock(lock,fcntl.LOCK_UN); lock.close()
 
     def rollback(self,*,expected_active_digest:str|None=None)->dict:
+        if not self.mutation_enabled: raise RuntimeApplyError("activation_disabled")
         lock=self._lock()
         try:
             backup=self.paths.state_dir/"last-known-good.caddy"

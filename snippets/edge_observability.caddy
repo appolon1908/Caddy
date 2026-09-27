@@ -1,0 +1,12 @@
+# Bounded route labels; request IDs belong in logs, never metric labels.
+(edge_observability) {
+	vars edge_route_id edge.site
+	@invalid_correlation not header_regexp X-Correlation-ID ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$
+	request_header @invalid_correlation X-Correlation-ID {http.request.uuid}
+	log_append route_id {http.vars.edge_route_id}
+	log_append upstream {http.reverse_proxy.upstream.address}
+	log_append request_id {http.request.uuid}
+	log_append correlation_id {http.request.header.X-Correlation-ID}
+	log_append configuration_digest {$CADDY_CONFIGURATION_SHA256:UNSEALED}
+	log_append release_sha {$CADDY_RELEASE_SHA:UNSEALED}
+}

@@ -9,7 +9,7 @@ SOURCE="a"*40
 def runtime(tmp_path, runner, health=lambda _u,_t:True):
     live=tmp_path/"live"/"Caddyfile"; state=tmp_path/"state"; active={"value":b'{"apps":{"http":{"servers":{}}}}'}
     def get(_url,_timeout): return active["value"]
-    rt=CaddyRuntime(RuntimePaths(live,state),runner=runner,health_check=health,health_urls=("http://127.0.0.1/health",),runtime_get=get)
+    rt=CaddyRuntime(RuntimePaths(live,state),mutation_enabled=True,runner=runner,health_check=health,health_urls=("http://127.0.0.1/health",),runtime_get=get)
     return rt,live,state,active
 def runner_for(active,fail_reload=False):
     reloads=0

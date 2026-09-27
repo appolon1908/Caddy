@@ -67,6 +67,17 @@ docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
 python3 scripts/caddy_adapted_routes.py "$adapted_file" \
   --kong-upstream 127.0.0.1:8000 \
   --legacy-upstream 127.0.0.1:18101
+# Certify native HTTP, admin readback and Postman against this exact image binary.
+validator_container="$(docker create "$CADDY_VALIDATOR_IMAGE")"
+docker cp "$validator_container:/usr/bin/caddy" "$docker_root/caddy"
+docker rm "$validator_container" >/dev/null
+export CADDY_BIN="$docker_root/caddy"
+export CADDY_ADAPTED_JSON="$adapted_file"
+export CADDY_LOG_DIR="$docker_root/logs"
+export XDG_DATA_HOME="$docker_root/data"
+export XDG_CONFIG_HOME="$docker_root/config"
+export PATH="$docker_root:$PATH"
+mkdir -p "$CADDY_LOG_DIR"
 python3 -m pytest -q
 
 git diff --check

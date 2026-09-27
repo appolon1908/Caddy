@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import fcntl
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -103,7 +105,26 @@ class ActivationManager:
         self.store.put(execution_id, record)
         return {"execution_id": execution_id, **record}
 
+    @contextmanager
+    def _mutation_lock(self):
+        self.store.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        with (self.store.root / ".activation.lock").open("a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as exc:
+                raise ActivationError("ACTIVATION_IN_PROGRESS", "Caddy mutation is already in progress") from exc
+            try:
+                yield
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
+
     def apply(self, *, idempotency_key: str) -> dict[str, Any]:
+        if not self.mutation_enabled:
+            raise ActivationError("ACTIVATION_DISABLED", "Caddy runtime activation is disabled")
+        with self._mutation_lock():
+            return self._apply_locked(idempotency_key=idempotency_key)
+
+    def _apply_locked(self, *, idempotency_key: str) -> dict[str, Any]:
         if not self.mutation_enabled:
             raise ActivationError("ACTIVATION_DISABLED", "Caddy runtime activation is disabled")
         if not idempotency_key or len(idempotency_key) > 128:
@@ -185,6 +206,12 @@ class ActivationManager:
             raise ActivationError(record["error"]["code"], record["error"]["message"]) from exc
 
     def rollback(self, execution_id: str) -> dict[str, Any]:
+        if not self.mutation_enabled:
+            raise ActivationError("ACTIVATION_DISABLED", "Caddy runtime activation is disabled")
+        with self._mutation_lock():
+            return self._rollback_locked(execution_id)
+
+    def _rollback_locked(self, execution_id: str) -> dict[str, Any]:
         if not self.mutation_enabled:
             raise ActivationError("ACTIVATION_DISABLED", "Caddy runtime activation is disabled")
         record = self.store.get(execution_id)

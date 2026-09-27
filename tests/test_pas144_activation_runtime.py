@@ -15,6 +15,13 @@ from caddy_execution_store import ExecutionStore, ExecutionStoreError
 from caddy_runtime_readback import CaddyRuntime, RuntimeReadbackError, sha256_json
 
 
+@pytest.fixture(autouse=True)
+def stub_local_validator(monkeypatch):
+    # These tests exercise transaction state using synthetic configs. Actual module
+    # validation is certified against the pinned binary in test_convergence_runtime.
+    monkeypatch.setattr("caddy_runtime_readback.validate_configuration", lambda config: None)
+
+
 class FakeTransport:
     def __init__(self, config: dict, *, mismatch_after_load: bool = False) -> None:
         self.config = config

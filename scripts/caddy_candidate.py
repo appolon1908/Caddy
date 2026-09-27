@@ -45,13 +45,14 @@ class CandidateBuilder:
         try:
             result = self.runner(
                 [
-                    "caddy",
+                    os.environ.get("CADDY_BIN", "caddy"),
                     "adapt",
                     "--config",
                     str(self.caddyfile),
                     "--adapter",
                     "caddyfile",
                     "--pretty",
+                    "--validate",
                 ],
                 text=True,
                 capture_output=True,

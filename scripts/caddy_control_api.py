@@ -21,6 +21,7 @@ from caddy_route_compiler import (
     DEFAULT_OUTPUT,
     RouteAuthorityError,
     compile_caddy,
+    build_inventory,
     compile_to_files,
     load_authority,
     normalize_routes,
@@ -80,6 +81,9 @@ class ControlService:
     @staticmethod
     def _git_source_sha() -> str:
         try:
+            dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True, timeout=2)
+            if dirty.strip():
+                raise ActivationError("SOURCE_DIRTY", "candidate source worktree is dirty")
             return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=2).strip()
         except (OSError, subprocess.SubprocessError) as exc:
             raise ActivationError("SOURCE_SHA_UNAVAILABLE", "unable to resolve repository source SHA") from exc
@@ -98,6 +102,8 @@ class ControlService:
 
     def routes(self) -> dict[str, Any]:
         authority = load_authority(self.authority_path)
+        if authority.get("schema") == "codestra.caddy-kong-edge.v1":
+            return build_inventory(authority, compile_caddy(authority))
         return {
             "schema": "codestra.caddy.routes.readback.v1",
             "routes": [
@@ -157,7 +163,7 @@ class ControlService:
             "schema": "codestra.caddy.validate-result.v1",
             "valid": True,
             "generated_bytes": len(generated.encode("utf-8")),
-            "route_count": len(normalize_routes(authority)),
+            "route_count": build_inventory(authority, generated)["route_count"],
             "runtime_reload_performed": False,
         }
 

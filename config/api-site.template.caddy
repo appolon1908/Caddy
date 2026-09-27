@@ -1,0 +1,46 @@
+# Canonical shared API-edge source owned by ingtrader21-spec/Caddy.
+# Historical reference: appolon1908-hue/codestra-production-platform
+# ref: release/production-activation
+# path: operations/caddy/api.codestra.co.caddy
+#
+# Caddy terminates the public edge. Kong owns API authentication, authorization,
+# rate/route policy and the handoff to Middleware. Transitional legacy/realtime
+# upstreams remain explicit until their equivalent Kong routes are accepted.
+api.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	request_body {
+		max_size 10MB
+	}
+
+@@ROUTES@@
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-codestra-co-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}

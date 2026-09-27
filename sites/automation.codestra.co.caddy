@@ -14,6 +14,7 @@
 # so there is deliberately no direct upstream to n8n in this file.
 automation.codestra.co {
 	import security_headers
+	import edge_observability
 	import public_boundary
 	encode zstd gzip
 
@@ -71,7 +72,7 @@ automation.codestra.co {
 	}
 
 	log {
-		output file /var/log/caddy/automation-codestra-co-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/automation-codestra-co-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}

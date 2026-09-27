@@ -8,6 +8,7 @@
 	respond @reserved_observability_host "Not Found" 404
 
 	import security_headers
+	import edge_observability
 	import public_boundary
 	encode zstd gzip
 
@@ -42,7 +43,7 @@
 	}
 
 	log {
-		output file /var/log/caddy/n8n-editor-access.log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/n8n-editor-access.log {
 			roll_size 20MiB
 			roll_keep 5
 		}

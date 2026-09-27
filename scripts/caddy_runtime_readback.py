@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
+import subprocess
+import tempfile
 import hashlib
 import json
 import urllib.error
@@ -30,11 +33,26 @@ def _validate_admin_base(base_url: str) -> str:
     parsed = urllib.parse.urlparse(base_url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         raise RuntimeReadbackError("ADMIN_API_URL_INVALID", "invalid Caddy admin API URL")
-    if parsed.username or parsed.password:
+    if parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
         raise RuntimeReadbackError("ADMIN_API_URL_INVALID", "credentials are forbidden in Caddy admin API URL")
     if parsed.hostname not in {"127.0.0.1", "::1", "localhost"}:
         raise RuntimeReadbackError("ADMIN_API_NOT_PRIVATE", "Caddy admin API must bind to loopback/private control plane")
     return base_url.rstrip("/")
+
+
+def validate_configuration(config: dict[str, Any]) -> None:
+    # /adapt parses JSON but does not provision or validate module configuration.
+    # Validate locally before any /load request; a missing validator fails closed.
+    with tempfile.TemporaryDirectory(prefix="caddy-validate-") as directory:
+        path = os.path.join(directory, "candidate.json")
+        with open(path, "wb") as handle:
+            handle.write(canonical_json(config))
+        try:
+            result = subprocess.run([os.environ.get("CADDY_BIN", "caddy"), "validate", "--config", path], capture_output=True, text=True, timeout=30, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RuntimeReadbackError("CONFIG_VALIDATION_UNAVAILABLE", "Caddy validation unavailable") from exc
+        if result.returncode:
+            raise RuntimeReadbackError("CONFIG_VALIDATION_FAILED", "Caddy configuration validation failed")
 
 
 Transport = Callable[[str, str, bytes | None, str | None], tuple[int, bytes]]
@@ -131,6 +149,7 @@ class CaddyRuntime:
         }
 
     def validate_json(self, config: dict[str, Any]) -> None:
+        validate_configuration(config)
         body = canonical_json(config)
         status, raw = self.transport("POST", f"{self.base_url}/adapt", body, "application/json")
         if status not in {200, 204}:
