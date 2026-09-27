@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -63,10 +65,30 @@ def test_postman_covers_api_webhook_private_and_pending_negative_paths() -> None
     assert report["webhook_wrong_method_count"] == 2
 
 
+def test_postman_api_and_webhook_probes_assert_kong_answers() -> None:
+    items = {item["name"]: item for item in certifier.flatten_items(COLLECTION["item"])}
+    kernel = "\n".join(items["Kernel describe through public edge"]["event"][0]["script"]["exec"])
+    # An edge 404 or a failed Kong hop must never certify the canonical kernel route.
+    for status in ("404", "502", "503"):
+        assert status not in kernel
+    for name in (
+        "Kernel describe through public edge",
+        "Automation namespace auth negative",
+        "N8N result wrong method",
+        "Odoo event wrong method",
+    ):
+        broken = json.loads(json.dumps(COLLECTION))
+        for item in certifier.flatten_items(broken["item"]):
+            if item["name"] == name:
+                item.pop("event")
+        with pytest.raises(certifier.CertificationError, match="assertion missing"):
+            certifier.validate_postman(broken, ENVIRONMENT)
+
+
 def test_pas162_chain_is_exact_and_fully_bound() -> None:
     state = certifier.chain_state(CHAIN, certifier.sha256_file(certifier.COLLECTION_PATH))
     expected_contract = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    expected_postman = "0ace4d242352d8a55260ff06c59065d704066a24be84821f269f2a058fc56e8b"
+    expected_postman = "146730776132c946bd559178ec1062c92674e9502c7d4ed27f5b6057493a01e8"
     assert state["required_digest"] == expected_contract
     assert state["middleware_digest"] == expected_contract
     assert state["kong_digest"] == expected_contract

@@ -65,6 +65,32 @@ class McrKEdgeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             mcr.validate_observation(self.contract, '/internal', 'GET', observation)
 
+    def test_kong_required_mcr_headers_survive_and_gateway_secret_does_not(self):
+        headers = ['X-Tenant-ID', 'X-Correlation-ID', 'Idempotency-Key', 'X-Codestra-Event-ID',
+                   'X-Codestra-Timestamp', 'X-Codestra-Signature']
+        observation = {'edge': 'kong-only', 'upstream': 'CADDY_KONG_UPSTREAM',
+            'preserved': self.contract['preserve'], 'client_headers_survived': headers,
+            'redaction_pass': True, 'kong_failure_bypassed': False}
+        mcr.validate_observation(self.contract, '/platform/v1/delivery-events', 'POST', observation)
+        for spoofed in ['X-Codestra-Gateway-Secret', 'X-Codestra-Tenant', 'X-Codestra-Scopes']:
+            bad = dict(observation, client_headers_survived=headers + [spoofed])
+            with self.subTest(spoofed=spoofed), self.assertRaises(ValueError):
+                mcr.validate_observation(self.contract, '/platform/v1/delivery-events', 'POST', bad)
+        bad = copy.deepcopy(self.contract)
+        bad['strip'] = bad['strip'] + ['x-codestra-*']
+        with self.assertRaises(ValueError):
+            mcr.validate_contract(bad)
+
+    def test_caddy_kong_handoff_matches_normative_header_policy(self):
+        site = (ROOT / 'sites/api.codestra.co.caddy').read_text(encoding='utf-8')
+        start = site.index('@kong path')
+        block = site[start:site.index('# Transitional compatibility', start)].lower()
+        for name in self.contract['preserve']:
+            self.assertNotIn('header_up -' + name + '\n', block)
+        for name in self.contract['strip']:
+            if not name.endswith('*'):
+                self.assertIn('header_up -' + name + '\n', block)
+
     def test_evidence_rejects_missing_fields_unknown_statuses_and_secrets(self):
         for field in list(self.evidence):
             bad = copy.deepcopy(self.evidence)

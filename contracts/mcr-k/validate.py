@@ -7,9 +7,15 @@ from pathlib import Path
 import re
 
 HERE = Path(__file__).resolve().parent
-PRESERVE = ['authorization', 'idempotency-key', 'x-correlation-id', 'traceparent', 'tracestate']
+# PRESERVE mirrors Kong's MCR headerPolicy.doNotStrip (Kong:config/kong-mcr-routes.v1.json):
+# Kong requires X-Tenant-ID on every MCR route and the X-Codestra-Event-ID/Timestamp/
+# Signature triple on /platform/v1/delivery-events, so the edge must not strip them.
+PRESERVE = ['authorization', 'idempotency-key', 'x-correlation-id', 'traceparent', 'tracestate',
+            'x-tenant-id', 'x-causation-id', 'x-codestra-event-id', 'x-codestra-timestamp',
+            'x-codestra-signature']
 STRIP = ['x-user-id', 'x-username', 'x-email', 'x-roles', 'x-scopes',
-         'x-authenticated-*', 'x-codestra-*', 'x-internal-service', 'x-admin',
+         'x-authenticated-*', 'x-codestra-tenant', 'x-codestra-scopes',
+         'x-codestra-gateway-secret', 'x-internal-service', 'x-admin',
          'x-consumer-*', 'x-credential-identifier', 'x-anonymous-consumer']
 FORWARDED = ['forwarded', 'x-forwarded-*', 'x-real-ip']
 REDACT = ['authorization', 'proxy-authorization', 'cookie', 'set-cookie',
@@ -39,6 +45,9 @@ def require(condition, message):
 def validate_contract(contract):
     # Versioned normative policy: changes require explicit version review.
     require(contract == NORMATIVE, 'MCR-K v1 policy mismatch')
+    for name in contract['preserve']:
+        require(not any(matches(name, p) for p in contract['strip'] + contract['forwarded']),
+                'preserved header is also stripped: ' + name)
 
 
 def matches(value, pattern):

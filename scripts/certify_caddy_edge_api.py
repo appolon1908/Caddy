@@ -219,13 +219,19 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
         key = (str(request.get("method", "")).upper(), request_path(request))
         by_request.setdefault(key, []).append(item)
 
+    # Kong answers canonical API probes: a Caddy edge 404 or a failed Kong hop
+    # (5xx) must never satisfy them. That the probe reached Kong at all is proven
+    # by the adapted-route matrix, not by the status code.
     required_api = {
-        ("GET", "/platform/v1/kernel/describe"),
-        ("POST", "/v2/automation/commands"),
+        ("GET", "/platform/v1/kernel/describe"): {200, 401, 403},
+        ("POST", "/v2/automation/commands"): {401, 403},
     }
-    missing_api = sorted(required_api - set(by_request))
+    missing_api = sorted(set(required_api) - set(by_request))
     if missing_api:
         raise CertificationError(f"Postman API probes missing: {missing_api}")
+    for key, statuses in required_api.items():
+        if not any(has_status_assertion(item, statuses) for item in by_request[key]):
+            raise CertificationError(f"Postman API status assertion missing: {key}")
 
     private_required = {
         ("GET", "/metrics"),
@@ -249,6 +255,9 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
         raise CertificationError(
             f"Postman webhook wrong-method probes missing: {missing_webhook_wrong_methods}"
         )
+    for key in webhook_wrong_methods:
+        if not any(has_status_assertion(item, {404, 405}) for item in by_request[key]):
+            raise CertificationError(f"Postman webhook wrong-method assertion missing: {key}")
 
     pending_required = {
         ("POST", "/api/v1/events/telnexa"),

@@ -69,6 +69,23 @@
     "directUpstreamToN8nAllowed": false,
     "nativeN8nAuthRequiredBehindGateway": true
   },
+  "mcrBoundary": {
+    "mission": "MCR-K",
+    "productionCutoverAuthorizedBySource": false,
+    "kongOnly": true,
+    "authorizationHeaderForwarded": true,
+    "trustedIdentityHeadersCreatedByCaddy": false,
+    "publicInternalAndMetricsForbidden": true,
+    "kongRouteContract": "ingtrader21-spec/Kong:config/kong-mcr-routes.v1.json",
+    "coveredByKongManagedPrefix": "/platform/v1",
+    "managedPaths": [
+      "/platform/v1/campaign-engine",
+      "/platform/v1/leads",
+      "/platform/v1/campaigns",
+      "/platform/v1/delivery-events",
+      "/platform/v1/suppressions"
+    ]
+  },
   "middlewareEdgeContract": {
     "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
     "sourceSha": "2862af0aa97367b18cb360af69212abe4243a1ac",
