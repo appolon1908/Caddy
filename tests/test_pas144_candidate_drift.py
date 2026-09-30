@@ -151,7 +151,8 @@ def test_control_service_runtime_inventory(tmp_path: Path):
     assert service.runtime_upstreams()["upstreams"] == ["127.0.0.1:8000"]
 
 
-def test_candidate_builder_adapts_without_runtime_validation_side_effects(tmp_path: Path):
+def test_candidate_builder_adapts_without_runtime_validation_side_effects(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("CADDY_BIN", raising=False)
     caddyfile = tmp_path / "Caddyfile"
     caddyfile.write_text("example.invalid { respond 200 }\n")
     output = tmp_path / "candidate.json"

@@ -1,0 +1,239 @@
+# Kyyow public edge. Caddy terminates TLS and routes only reviewed public hosts.
+# Authentication and authorization remain with Keycloak and the owning API.
+app.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_APP_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/app-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete code
+				delete state
+				delete session_state
+				delete token
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+api.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_body {
+		max_size 10MB
+	}
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_API_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete access_token
+				delete api_key
+				delete token
+				delete apikey
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+search.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_body {
+		max_size 2MB
+	}
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_SEARCH_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/search-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete access_token
+				delete api_key
+				delete token
+				delete apikey
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+docs.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_DOCS_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/docs-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+auth.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_body {
+		max_size 2MB
+	}
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_AUTH_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete code
+				delete state
+				delete session_state
+				delete token
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+status.kyyow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	request_header -X-Authenticated-Client
+	request_header -X-Authenticated-Tenant
+	request_header -X-Authenticated-Role
+	reverse_proxy {$CADDY_KYYOW_STATUS_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/status-kyyow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
