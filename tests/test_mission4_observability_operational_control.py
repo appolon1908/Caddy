@@ -56,7 +56,7 @@ def test_correlation_contract_does_not_claim_unimplemented_runtime_features() ->
 
 def test_metrics_contract_rejects_high_cardinality_designs_by_policy() -> None:
     contract = read("docs/metrics-contract-v1.md")
-    assert "loopback Admin API" in contract
+    assert "private Admin API socket" in contract
     assert "user ID" in contract
     assert "correlation ID" in contract
     assert "unbounded query values" in contract

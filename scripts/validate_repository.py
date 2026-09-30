@@ -279,7 +279,7 @@ m4 = {name: path.read_text(encoding="utf-8") for name, path in MISSION4_CONTRACT
 m5 = {name: path.read_text(encoding="utf-8") for name, path in MISSION5_CONTRACTS.items()}
 if "records Caddy request UUIDs" not in m4["correlation"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=correlation_implementation_status_missing")
-if "loopback Admin API" not in m4["metrics"]:
+if "private Admin API socket" not in m4["metrics"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=metrics_implementation_status_missing")
 if "Prometheus" not in m4["monitoring"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=monitoring_boundary_missing")

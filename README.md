@@ -29,7 +29,7 @@ Each system keeps its own source authority:
 
 ## Canonical source layout
 
-- `Caddyfile` — complete root source; Caddy admin API is loopback-only.
+- `Caddyfile` — complete root source; the Caddy admin API listens only on a private Unix socket.
 - `snippets/security_headers.caddy` — shared security-header snippet owned here, including HSTS. Every site block must import it; `scripts/validate_repository.py` fails the build if one does not.
 - `sites/api.codestra.co.caddy` — shared API-edge routing source.
 - `sites/automation.codestra.co.caddy` — administrative editor host gated by Kong's Keycloak browser flow (see "Two editor hosts, two gates").
@@ -152,7 +152,7 @@ Before any Caddy cutover:
 
 1. Never commit TLS private keys, API tokens, credentials, passwords, `.env` files, ACME account data, or Caddy data-directory contents.
 2. Validate the complete root `Caddyfile` before a reload.
-3. Keep the Caddy admin API on `127.0.0.1:2019`; never expose it publicly.
+3. Keep the Caddy admin API on the `unix//run/caddy/admin.sock` socket; never expose it on a network listener.
 4. Caddy must not manufacture `X-Authenticated-*` or gateway-secret headers.
 5. Caddy must preserve the bearer token for Kong; Authorization is redacted from logs only.
 6. Shared API paths represented in Kong source must route Caddy -> Kong, never directly to Middleware.

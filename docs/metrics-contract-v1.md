@@ -6,9 +6,11 @@ Caddy metrics should support operational incident response without exposing user
 
 ## Repository implementation status
 
-The global metrics option enables native metrics on the loopback Admin API at
-127.0.0.1:2019/metrics. Public sites deny /metrics before routing. There is no
-public metrics handler and per-host metrics are disabled. No request identifiers
+The global metrics option enables native metrics on the private Admin API socket
+(unix//run/caddy/admin.sock) and on the private :2020 listener that Prometheus
+scrapes as caddy:2020; that listener binds CADDY_PRIVATE_METRICS_BIND only. Public
+sites deny /metrics before routing. There is no public metrics handler and
+per-host metrics are disabled. No request identifiers
 are used as metric labels. Release SHA and configuration digest appear in logs.
 
 ## Recommended low-cardinality metrics
