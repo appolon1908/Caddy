@@ -71,9 +71,10 @@ def test_health_and_readiness_contract_is_present() -> None:
     assert "health/readiness" in read("docs/mission4-observability-operational-control.md")
 
 
-def test_admin_api_is_loopback_only() -> None:
+def test_admin_api_is_private_socket_only() -> None:
     caddyfile = read("Caddyfile")
-    assert "admin 127.0.0.1:2019" in caddyfile
+    assert "admin unix//run/caddy/admin.sock" in caddyfile
+    assert "admin 127.0.0.1:2019" not in caddyfile
     assert "admin :2019" not in caddyfile
     assert "admin 0.0.0.0:2019" not in caddyfile
 

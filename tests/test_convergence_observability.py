@@ -18,6 +18,6 @@ def test_metrics_only_on_loopback_admin_without_host_cardinality():
     source = (ROOT / 'Caddyfile').read_text()
     assert '\tmetrics\n' in source
     assert 'per_host' not in source
-    assert 'admin 127.0.0.1:2019' in source
+    assert 'admin unix//run/caddy/admin.sock' in source
     for path in (ROOT / 'sites').glob('*.caddy'):
         assert '\n\tmetrics' not in path.read_text()

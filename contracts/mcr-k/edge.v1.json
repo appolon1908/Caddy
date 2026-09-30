@@ -40,7 +40,10 @@
     "x-admin",
     "x-consumer-*",
     "x-credential-identifier",
-    "x-anonymous-consumer"
+    "x-anonymous-consumer",
+    "x-codestra-contract-operation",
+    "x-codestra-expected-azp",
+    "x-codestra-required-scope"
   ],
   "forwarded": [
     "forwarded",

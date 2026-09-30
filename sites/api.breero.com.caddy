@@ -45,6 +45,9 @@ api.breero.com {
 				header_up -X-Consumer-Custom-ID
 				header_up -X-Credential-Identifier
 				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
 				transport http {
 					dial_timeout 5s
 					response_header_timeout 30s
@@ -83,6 +86,9 @@ api.breero.com {
 				header_up -X-Consumer-Custom-ID
 				header_up -X-Credential-Identifier
 				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
 				transport http {
 					dial_timeout 5s
 					response_header_timeout 30s

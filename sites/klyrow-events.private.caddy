@@ -42,6 +42,9 @@ https://middleware-email-events.internal.codestra.agency:18080 {
 		request_header -X-Consumer-Custom-ID
 		request_header -X-Credential-Identifier
 		request_header -X-Anonymous-Consumer
+		request_header -X-Codestra-Contract-Operation
+		request_header -X-Codestra-Expected-Azp
+		request_header -X-Codestra-Required-Scope
 		request_header -X-Forwarded-For
 
 		@klyrow_event {

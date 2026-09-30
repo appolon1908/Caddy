@@ -1,5 +1,5 @@
 {
-  "generated_sha256": "c586e687f83d7fb588a8bb17afefb23b603659ca205e2864e4f5196835132d98",
+  "generated_sha256": "f2594c4e55ea77107c03446e40c1c30f80ca817db7b7ff229bc3f692e26e3128",
   "private_count": 11,
   "public_count": 126,
   "route_count": 142,
@@ -1852,5 +1852,5 @@
     }
   ],
   "schema": "codestra.caddy.route-inventory.v1",
-  "source_sha256": "27c10b0dd6430ffae944c9fbd46b7b0cae4c234e520c6fec53e5b60e0b794650"
+  "source_sha256": "a1939fa82e01a783b3d14681f04456f14daa3368be5c4131141a179a1921c54a"
 }

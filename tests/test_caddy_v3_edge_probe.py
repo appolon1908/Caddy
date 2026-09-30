@@ -37,6 +37,9 @@ SPOOFABLE_IDENTITY_HEADERS = [
     "X-Consumer-Custom-ID",
     "X-Credential-Identifier",
     "X-Anonymous-Consumer",
+    "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp",
+    "X-Codestra-Required-Scope",
 ]
 
 # The same synthetic upstream values scripts/validate-ci.sh passes to the

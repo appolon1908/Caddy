@@ -110,6 +110,9 @@ REQUIRED_STRIPPED_HEADERS = frozenset(
         "X-Consumer-Custom-ID",
         "X-Credential-Identifier",
         "X-Anonymous-Consumer",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope",
     )
 )
 # Neither preserved transport headers nor spoofable identity headers may be

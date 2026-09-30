@@ -53,7 +53,7 @@ def test_admin_api_stays_on_loopback():
     assert admin
     for line in admin:
         target=line.split()[1]
-        assert target=="off" or re.fullmatch(r"(127\.0\.0\.1|localhost|\[::1\]):\d+",target),line
+        assert target=="off" or re.fullmatch(r"unix//run/caddy/[a-z.]+\.sock|(127\.0\.0\.1|localhost|\[::1\]):\d+",target),line
 def test_no_directive_weakens_automatic_https_or_verification():
     violations=[]
     for path in SOURCES:

@@ -12,6 +12,7 @@ import hashlib
 import http.client
 import json
 import re
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,9 @@ CADDY = "/usr/bin/caddy"
 SYSTEMCTL = "/usr/bin/systemctl"
 CONFIG = Path("/etc/caddy/Caddyfile")
 CONFIG_ROOT = Path("/etc/caddy")
+# Fixed admin socket; this program stays stdlib-only and installs standalone.
+ADMIN_SOCKET = "/run/caddy/admin.sock"
+ADMIN_ADDRESS = f"unix/{ADMIN_SOCKET}"
 SAFE_DIAL = re.compile(r"^(?:[A-Za-z0-9_.-]+|\[[0-9A-Fa-f:]+\])(?::[0-9]{1,5})?$")
 REQUIRED_REDACTIONS = (
     "request>headers>Authorization delete",
@@ -124,8 +128,8 @@ def require_proxy_upstreams(adapted: dict[str, Any]) -> None:
 
 def require_transport_security(adapted: dict[str, Any]) -> None:
     """Reject public administration and explicit weakening of Caddy TLS defaults."""
-    if (adapted.get("admin") or {}).get("listen") != "127.0.0.1:2019":
-        raise ValidationError("admin listener is not fixed loopback")
+    if (adapted.get("admin") or {}).get("listen") != ADMIN_ADDRESS:
+        raise ValidationError("admin listener is not the fixed private socket")
     servers = (((adapted.get("apps") or {}).get("http") or {}).get("servers") or {})
     if not servers:
         raise ValidationError("HTTP servers are missing")
@@ -149,9 +153,20 @@ def require_transport_security(adapted: dict[str, Any]) -> None:
     visit(adapted)
 
 
+class AdminSocketConnection(http.client.HTTPConnection):
+    def __init__(self, path: str, timeout: float) -> None:
+        super().__init__("localhost", timeout=timeout)
+        self.path = path
+
+    def connect(self) -> None:
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect(self.path)
+
+
 def active_configuration() -> dict[str, Any]:
-    """Read only the fixed loopback admin endpoint; never redirect or use proxies."""
-    connection = http.client.HTTPConnection("127.0.0.1", 2019, timeout=5)
+    """Read only the fixed private admin socket; never redirect or use proxies."""
+    connection = AdminSocketConnection(ADMIN_SOCKET, timeout=5)
     try:
         connection.request("GET", "/config/")
         response = connection.getresponse()

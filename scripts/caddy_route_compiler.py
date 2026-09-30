@@ -40,6 +40,10 @@ FORBIDDEN_IDENTITY_HEADERS = (
     "X-Consumer-Custom-ID",
     "X-Credential-Identifier",
     "X-Anonymous-Consumer",
+    # Kong-internal policy carriers; Kong derives them, clients never supply them.
+    "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp",
+    "X-Codestra-Required-Scope",
 )
 
 
@@ -317,8 +321,8 @@ def compile_to_files(
             raise RouteAuthorityError("generated_inventory_drift")
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(generated, encoding="utf-8")
-        inventory_path.write_text(inventory_text, encoding="utf-8")
+        output_path.write_text(generated, encoding="utf-8", newline="\n")
+        inventory_path.write_text(inventory_text, encoding="utf-8", newline="\n")
     return inventory
 
 
@@ -341,7 +345,13 @@ def proxy_lines(indent: str = "\t\t\t") -> list[str]:
         f"{indent}\theader_up X-Real-IP {{remote_host}}",
     ]
     lines.extend(f"{indent}\theader_up -{name}" for name in DELETED_IDENTITY_HEADERS)
-    lines.append(f"{indent}}}")
+    lines += [
+        f"{indent}\ttransport http {{",
+        f"{indent}\t\tdial_timeout 5s",
+        f"{indent}\t\tresponse_header_timeout 30s",
+        f"{indent}\t}}",
+        f"{indent}}}",
+    ]
     return lines
 
 

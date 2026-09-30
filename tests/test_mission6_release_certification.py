@@ -66,4 +66,4 @@ def test_architecture_bypass_scan_remains_enforced() -> None:
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in api
     assert "codestra-middleware-integration-api-1" not in api
     assert "header_up Authorization" not in api
-    assert "admin 127.0.0.1:2019" in read("Caddyfile")
+    assert "admin unix//run/caddy/admin.sock" in read("Caddyfile")

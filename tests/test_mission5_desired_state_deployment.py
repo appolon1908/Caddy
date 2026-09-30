@@ -178,7 +178,7 @@ def test_exact_release_identity_is_required() -> None:
 def test_m1_to_m4_contracts_remain_in_desired_state() -> None:
     caddyfile = (ROOT / "Caddyfile").read_text(encoding="utf-8")
     api = (ROOT / "sites" / "api.codestra.co.caddy").read_text(encoding="utf-8")
-    assert "admin 127.0.0.1:2019" in caddyfile
+    assert "admin unix//run/caddy/admin.sock" in caddyfile
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in api
     assert "Authorization delete" in api
     assert (ROOT / "docs" / "mission4-observability-operational-control.md").exists()

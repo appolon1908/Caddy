@@ -148,6 +148,8 @@ def test_native_production_lineage_behavior(tmp_path, monkeypatch):
     monkeypatch.setenv("CADDY_VICIDIAL_SOURCE_CIDRS", "127.0.0.1/32")
     monkeypatch.setenv("CADDY_KLYROW_SOURCE_CIDRS", "127.0.0.1/32")
     monkeypatch.setenv("CADDY_STAGING_EVENT_SOURCE_CIDRS", "192.0.2.9/32")
+    monkeypatch.setenv("CADDY_EDITOR_ADMIN_CIDRS", "127.0.0.1/32")
+    monkeypatch.setenv("CADDY_N8N_EDITOR_MAX_REQUEST_BODY", "16777216")
     monkeypatch.setenv("CADDY_LOG_DIR", str(tmp_path / "logs"))
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
@@ -157,7 +159,7 @@ def test_native_production_lineage_behavior(tmp_path, monkeypatch):
     (tmp_path / "sites").mkdir()
     for name in ("api.breero.com.caddy", "api.codestra.agency.caddy", "agent-desktop.codestra.agency.caddy",
                  "monitoring.codestra.co.caddy", "middleware-private.caddy", "klyrow-events.private.caddy",
-                 "staging-internal.caddy"):
+                 "staging-internal.caddy", "automation.codestra.co.caddy"):
         source = (ROOT / "sites" / name).read_text(encoding="utf-8")
         # Loopback HTTP stand-in: drop certificate material and serve each
         # reviewed address as a plain-HTTP virtual host on one test port.
@@ -202,11 +204,16 @@ def test_native_production_lineage_behavior(tmp_path, monkeypatch):
             pytest.fail("native Caddy did not start")
 
         spoof = {"X-User-ID": "forged", "X-Admin": "yes", "X-Auth-Request-User": "forged",
-                 "X-Codestra-Gateway-Secret": "forged", "Forwarded": "for=8.8.8.8"}
+                 "X-Codestra-Gateway-Secret": "forged", "Forwarded": "for=8.8.8.8",
+                 "X-Codestra-Required-Scope": "forged", "X-Codestra-Expected-Azp": "forged",
+                 "X-Codestra-Contract-Operation": "forged"}
+        kong_internal = {"x-codestra-required-scope", "x-codestra-expected-azp", "x-codestra-contract-operation"}
 
         # Breero: Kong-bound API with identity stripping and fail-closed defaults.
         assert request("api.breero.com", "/api/v1/orders", headers=spoof)[0] == 200
         assert not {"x-user-id", "x-admin", "x-auth-request-user", "x-codestra-gateway-secret", "forwarded"} & set(last()["headers"])
+        assert not kong_internal & set(last()["headers"])
+        assert "server" not in request("api.breero.com", "/api/v1/orders")[1]
         for path in ("/other", "/metrics", "/internal/v1/database/health"):
             assert request("api.breero.com", path)[0] == 404
 
@@ -230,6 +237,12 @@ def test_native_production_lineage_behavior(tmp_path, monkeypatch):
         assert headers["permissions-policy"] == "camera=(), geolocation=(), microphone=(self)"
         assert headers["x-frame-options"] == "SAMEORIGIN"
         assert request("api.breero.com", "/api/v1/x")[1]["x-frame-options"] == "DENY"
+
+        # Automation editor: n8n test hooks and owner bootstrap never reach Kong.
+        for path in ("/rest/owner/setup", "/webhook-test/x", "/form-test/x", "/rest/owner/dismiss-banner"):
+            assert request("automation.codestra.co", path, "POST")[0] == 404
+        assert request("automation.codestra.co", "/rest/workflows", headers=spoof)[0] == 200
+        assert not kong_internal & set(last()["headers"])
 
         # Monitoring receiver: only the receiver API is public.
         assert request("monitoring.codestra.co", "/api/v1/alerts/fire", "POST")[0] == 200

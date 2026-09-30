@@ -218,8 +218,8 @@ def test_fixed_admin_readback_does_not_follow_redirect_or_emit_body(monkeypatch)
         status = 302
 
     class Connection:
-        def __init__(self, host, port, timeout):
-            assert (host, port, timeout) == ("127.0.0.1", 2019, 5)
+        def __init__(self, path, timeout):
+            assert (path, timeout) == ("/run/caddy/admin.sock", 5)
         def request(self, method, path):
             assert (method, path) == ("GET", "/config/")
         def getresponse(self):
@@ -227,7 +227,7 @@ def test_fixed_admin_readback_does_not_follow_redirect_or_emit_body(monkeypatch)
         def close(self):
             pass
 
-    monkeypatch.setattr(validator.http.client, "HTTPConnection", Connection)
+    monkeypatch.setattr(validator, "AdminSocketConnection", Connection)
     with pytest.raises(validator.ValidationError) as caught:
         validator.active_configuration()
     assert "secret-body" not in str(caught.value)
@@ -247,9 +247,9 @@ def test_full_credential_floor_is_required_in_adapted_logs():
 def test_transport_policy_rejects_public_admin_and_disabled_tls():
     import copy
     import pytest
-    good = {"admin": {"listen": "127.0.0.1:2019"}, "apps": {"http": {"servers": {"srv0": {"listen": [":443"]}}}}}
+    good = {"admin": {"listen": validator.ADMIN_ADDRESS}, "apps": {"http": {"servers": {"srv0": {"listen": [":443"]}}}}}
     validator.require_transport_security(good)
-    for address in (":2019", "0.0.0.0:2019", "[::]:2019"):
+    for address in (":2019", "0.0.0.0:2019", "[::]:2019", "127.0.0.1:2019", "unix//tmp/admin.sock"):
         broken = copy.deepcopy(good)
         broken['admin']['listen'] = address
         with pytest.raises(validator.ValidationError):
@@ -274,7 +274,7 @@ def test_main_does_not_report_success_when_served_configuration_drifts(monkeypat
             'apikey', 'api_key', 'access_token', 'refresh_token', 'id_token',
             'client_secret', 'password', 'secret', 'token')]}
     desired = {
-        'admin': {'listen': '127.0.0.1:2019'},
+        'admin': {'listen': validator.ADMIN_ADDRESS},
         'logging': {'logs': {'log0': {'include': ['http.log.access.log0'], 'encoder': {'fields': fields}}}},
         'apps': {'http': {'servers': {'srv0': {
             'listen': [':443'], 'logs': {'logger_names': {'api.codestra.co': ['log0']}},

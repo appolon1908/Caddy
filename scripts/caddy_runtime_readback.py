@@ -7,9 +7,11 @@ import tempfile
 import hashlib
 import json
 import urllib.error
-import urllib.parse
 import urllib.request
 from typing import Any, Callable
+
+import caddy_admin_endpoint
+from caddy_admin_endpoint import ADMIN_ADDRESS, AdminEndpointError
 
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
@@ -30,14 +32,11 @@ def sha256_json(value: Any) -> str:
 
 
 def _validate_admin_base(base_url: str) -> str:
-    parsed = urllib.parse.urlparse(base_url)
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise RuntimeReadbackError("ADMIN_API_URL_INVALID", "invalid Caddy admin API URL")
-    if parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
-        raise RuntimeReadbackError("ADMIN_API_URL_INVALID", "credentials are forbidden in Caddy admin API URL")
-    if parsed.hostname not in {"127.0.0.1", "::1", "localhost"}:
-        raise RuntimeReadbackError("ADMIN_API_NOT_PRIVATE", "Caddy admin API must bind to loopback/private control plane")
-    return base_url.rstrip("/")
+    try:
+        endpoint = caddy_admin_endpoint.parse(base_url)
+    except AdminEndpointError as exc:
+        raise RuntimeReadbackError(exc.code, str(exc)) from exc
+    return endpoint.base_url if endpoint.socket_path else base_url.rstrip("/")
 
 
 def validate_configuration(config: dict[str, Any]) -> None:
@@ -64,9 +63,12 @@ def default_transport(method: str, url: str, body: bytes | None, content_type: s
         headers["Content-Type"] = content_type
     request = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
-            raw = response.read(MAX_RESPONSE_BYTES + 1)
-            status = int(response.status)
+        if url.startswith(caddy_admin_endpoint.UNIX_SCHEME + "://"):
+            status, raw = caddy_admin_endpoint.request(method, url, body, content_type, limit=MAX_RESPONSE_BYTES)
+        else:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                raw = response.read(MAX_RESPONSE_BYTES + 1)
+                status = int(response.status)
     except urllib.error.HTTPError as exc:
         raw = exc.read(MAX_RESPONSE_BYTES + 1)
         status = int(exc.code)
@@ -117,7 +119,7 @@ def extract_runtime_inventory(config: dict[str, Any]) -> dict[str, Any]:
 
 
 class CaddyRuntime:
-    def __init__(self, base_url: str = "http://127.0.0.1:2019", *, transport: Transport = default_transport) -> None:
+    def __init__(self, base_url: str = ADMIN_ADDRESS, *, transport: Transport = default_transport) -> None:
         self.base_url = _validate_admin_base(base_url)
         self.transport = transport
 

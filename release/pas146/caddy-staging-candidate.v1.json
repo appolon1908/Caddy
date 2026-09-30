@@ -16,7 +16,7 @@
   },
   "configuration": {
     "digest_algorithm": "sha256",
-    "configuration_sha256": "8d489c96aae720c41918286da7517d7346f6d8f7426b9edd713a7fd0e0537af3",
+    "configuration_sha256": "afe699615fada293d4078f9302ac5ff5fcec66d471e21b665a39e3e6b2c87e44",
     "digest_command": "python scripts/config_digest.py",
     "caddyfile": "Caddyfile",
     "format_required": true,

@@ -1,5 +1,6 @@
 {
-	admin 127.0.0.1:2019
+	# Only local processes with access to the socket file can reconfigure Caddy.
+	admin unix//run/caddy/admin.sock
 	email admin@codestra.agency
 	# Public sites listen only on the reviewed public address and loopback;
 	# private listeners bind their own private addresses explicitly.

@@ -28,6 +28,9 @@
 		request_header -X-Consumer-Custom-ID
 		request_header -X-Credential-Identifier
 		request_header -X-Anonymous-Consumer
+		request_header -X-Codestra-Contract-Operation
+		request_header -X-Codestra-Expected-Azp
+		request_header -X-Codestra-Required-Scope
 		request_header -Forwarded
 		request_header -X-Auth-Request-User
 		request_header -X-Auth-Request-Email

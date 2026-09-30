@@ -266,7 +266,7 @@ for env_name in (
 if "CADDY_N8N_EDITOR_MAX_REQUEST_BODY=16777216" not in RUNTIME:
     raise SystemExit("CADDY_AUTHORITY_ERROR=n8n_editor_body_limit_example_drift")
 
-if "admin 127.0.0.1:2019" not in CADDYFILE:
+if "admin unix//run/caddy/admin.sock" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=admin_api_not_private")
 if "import snippets/*.caddy" not in CADDYFILE or "import sites/*.caddy" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=canonical_imports_missing")

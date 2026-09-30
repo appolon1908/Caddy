@@ -15,7 +15,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from caddy_route_compiler import route_regex, proxy_lines, route_block, compile_caddy
+from caddy_route_compiler import FORBIDDEN_IDENTITY_HEADERS, compile_caddy
 
 ROOT = Path(__file__).resolve().parents[1]
 VENDORED = ROOT / "config/middleware-public-api-route-contract.v1.json"
@@ -36,31 +36,7 @@ PRESERVED_HEADERS = [
     "traceparent",
     "tracestate",
 ]
-DELETED_IDENTITY_HEADERS = [
-    "X-User-ID",
-    "X-Username",
-    "X-Email",
-    "X-Roles",
-    "X-Scopes",
-    "X-Authenticated-UserID",
-    "X-Authenticated-User",
-    "X-Authenticated-Client",
-    "X-Authenticated-Subject",
-    "X-Authenticated-Tenant",
-    "X-Authenticated-Campaign",
-    "X-Authenticated-Role",
-    "X-Authenticated-Email",
-    "X-Codestra-Tenant",
-    "X-Codestra-Scopes",
-    "X-Codestra-Gateway-Secret",
-    "X-Internal-Service",
-    "X-Admin",
-    "X-Consumer-ID",
-    "X-Consumer-Username",
-    "X-Consumer-Custom-ID",
-    "X-Credential-Identifier",
-    "X-Anonymous-Consumer",
-]
+DELETED_IDENTITY_HEADERS = list(FORBIDDEN_IDENTITY_HEADERS)
 
 
 def canonical_sha256(document: dict) -> str:
@@ -191,8 +167,9 @@ def render() -> tuple[str, str]:
 
 def main() -> None:
     edge, site = render()
-    EDGE.write_text(edge, encoding="utf-8")
-    SITE.write_text(site, encoding="utf-8")
+    # LF on every platform keeps the committed outputs byte-identical to CI.
+    EDGE.write_text(edge, encoding="utf-8", newline="\n")
+    SITE.write_text(site, encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

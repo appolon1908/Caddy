@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Durable fail-closed Caddy apply/readback/rollback runtime."""
 from __future__ import annotations
-import urllib.parse
 import fcntl, hashlib, json, os, shutil, subprocess, tempfile, time, urllib.request, uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
+
+import caddy_admin_endpoint
+from caddy_admin_endpoint import ADMIN_ADDRESS, AdminEndpointError
 
 class RuntimeApplyError(RuntimeError): pass
 
@@ -30,18 +32,22 @@ def _health(url:str,timeout:float)->bool:
     except Exception: return False
 
 def _runtime_get(url:str,timeout:float)->bytes:
+    if url.startswith(caddy_admin_endpoint.UNIX_SCHEME+"://"):
+        status,raw=caddy_admin_endpoint.request("GET",url,timeout=timeout)
+        if status!=200: raise RuntimeApplyError(f"runtime_readback_http_{status}")
+        return raw
     with urllib.request.urlopen(url,timeout=timeout) as r: return r.read()
 
 class CaddyRuntime:
-    def __init__(self,paths:RuntimePaths,*,caddy_bin="caddy",admin_url="127.0.0.1:2019",
+    def __init__(self,paths:RuntimePaths,*,caddy_bin="caddy",admin_url=ADMIN_ADDRESS,
                  health_urls:tuple[str,...]=(),runner:Callable[[Sequence[str]],CommandResult]=_runner,
                  health_check:Callable[[str,float],bool]=_health,
                  runtime_get:Callable[[str,float],bytes]=_runtime_get, mutation_enabled:bool=False)->None:
-        parsed = urllib.parse.urlsplit(admin_url if "://" in admin_url else "http://" + admin_url)
-        if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"127.0.0.1", "::1", "localhost"} or parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
-            raise RuntimeApplyError("admin_url_must_be_loopback")
-        self.paths=paths; self.caddy_bin=caddy_bin; self.admin_url=parsed.netloc
-        self.admin_base=parsed.scheme + "://" + parsed.netloc
+        is_url = "://" in admin_url or admin_url.startswith("unix/")
+        try: endpoint=caddy_admin_endpoint.parse(admin_url if is_url else "http://" + admin_url)
+        except AdminEndpointError as exc: raise RuntimeApplyError("admin_url_must_be_loopback") from exc
+        self.paths=paths; self.caddy_bin=caddy_bin; self.admin_url=endpoint.caddy_address
+        self.admin_base=endpoint.base_url
         self.mutation_enabled=mutation_enabled is True
         self.health_urls=health_urls; self.runner=runner; self.health_check=health_check; self.runtime_get=runtime_get
 
