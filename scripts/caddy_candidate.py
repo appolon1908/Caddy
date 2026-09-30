@@ -52,7 +52,6 @@ class CandidateBuilder:
                     "--adapter",
                     "caddyfile",
                     "--pretty",
-                    "--validate",
                 ],
                 text=True,
                 capture_output=True,
