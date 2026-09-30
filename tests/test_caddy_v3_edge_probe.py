@@ -62,6 +62,13 @@ CI_ENVIRONMENT = {
 }
 
 
+def adapted_ci_environment():
+    spec = importlib.util.spec_from_file_location("test_caddy_adapted_routes", ROOT / "tests" / "test_caddy_adapted_routes.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ci_environment()
+
+
 def load_module():
     spec = importlib.util.spec_from_file_location("caddy_v3_edge_probe", MODULE_PATH)
     module = importlib.util.module_from_spec(spec)
@@ -311,7 +318,7 @@ class RepositoryConfigTests(unittest.TestCase):
             [os.environ["CADDY_BIN"], "adapt", "--config", str(ROOT / "Caddyfile"), "--adapter", "caddyfile", "--validate"],
             capture_output=True,
             text=True,
-            env={**os.environ, **CI_ENVIRONMENT},
+            env={**adapted_ci_environment(), **CI_ENVIRONMENT},
             cwd=ROOT,
             check=True,
         )

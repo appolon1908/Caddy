@@ -43,7 +43,7 @@ def validate(contract, site, runtime):
 def main():
     try:
         validate(json.loads((ROOT / 'config/kyyow-ingress.v1.json').read_text()),
-                 (ROOT / 'sites/kyyow.com.caddy').read_text(),
+                 (ROOT / 'sites-pending/kyyow.com.caddy').read_text(),
                  (ROOT / 'config/runtime-values.example').read_text())
     except (KeyError, ValueError, OSError) as error:
         raise SystemExit(f'KYYOW_INGRESS_CONTRACT=FAIL: {error}') from error

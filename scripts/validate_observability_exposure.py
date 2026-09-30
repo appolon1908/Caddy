@@ -46,6 +46,43 @@ KYYOW_PUBLIC = {
     "auth.kyyow.com",
     "status.kyyow.com",
 }
+# Hosts carried forward from the production lineage (caddy-production-2489bf0)
+# by owner decision on 2026-09-30. Kyyow hosts stay in sites-pending/ and are
+# not imported until their DNS and upstreams exist.
+PRODUCTION_LINEAGE_PUBLIC = {
+    "api.breero.com",
+    "api.codestra.agency",
+    "auth.codestra.co",
+    "crm.codestra.agency",
+    "dialer.codestra.agency",
+    "phone.codestra.agency",
+    "monitoring.codestra.co",
+    "n8n.codestra.agency",
+    "n8n-staging.codestra.agency",
+    "auth-staging.codestra.co",
+    "bridge-staging.codestra.agency",
+}
+STAGING_INTERNAL = {
+    "api.staging.internal.codestra.agency",
+    "n8n.staging.internal.codestra.agency",
+    "auth.staging.internal.codestra.agency",
+    "odoo.staging.internal.codestra.agency",
+}
+PRIVATE_INGRESS = {
+    "middleware.internal.codestra.agency",
+    "middleware-staging.internal.codestra.agency",
+    "middleware-email-events.internal.codestra.agency:18080",
+}
+LEGACY_PRIVATE_EDITORS = ("n8n.codestra.agency", "n8n-staging.codestra.agency")
+PRIVATE_METRICS_ADDRESS = ":2020"
+PRIVATE_METRICS_BLOCK = (
+    ":2020 {\n"
+    "\tbind {$CADDY_PRIVATE_METRICS_BIND}\n"
+    "\tmetrics /metrics\n"
+    '\trespond /healthz "ok" 200\n'
+    "\trespond 404\n"
+    "}"
+)
 
 
 class ExposureError(ValueError):
@@ -146,6 +183,9 @@ def extract_static_site_addresses(all_sites: str) -> tuple[str, ...]:
                                 "wildcard, catch-all, or dynamic public site address "
                                 f"prohibited: {candidate}"
                             )
+                        addresses.append(candidate)
+                        continue
+                    if candidate == PRIVATE_METRICS_ADDRESS:
                         addresses.append(candidate)
                         continue
                     lowered = candidate.lower()
@@ -265,7 +305,10 @@ def validate(contract: dict[str, Any], site: str, all_sites: str, runtime: str, 
         "automation.codestra.co",
         "{$CADDY_N8N_EDITOR_HOST}",
         *PUBLIC,
-        *KYYOW_PUBLIC,
+        *PRODUCTION_LINEAGE_PUBLIC,
+        *STAGING_INTERNAL,
+        *PRIVATE_INGRESS,
+        PRIVATE_METRICS_ADDRESS,
     }
     if top_level_addresses != reviewed_addresses:
         unexpected = sorted(top_level_addresses - reviewed_addresses)
@@ -325,6 +368,39 @@ def validate(contract: dict[str, Any], site: str, all_sites: str, runtime: str, 
                 raise ExposureError(f"{host}: spoofable identity header not stripped: {header}")
         if re.search(r"(?m)^\s*(?:request_header|header_up)\s+-?Authorization\b", block):
             raise ExposureError(f"{host}: Authorization forwarding must remain unmodified")
+
+    root_source = ROOT_CADDYFILE_PATH.read_text(encoding="utf-8")
+    if (
+        PRIVATE_METRICS_BLOCK not in root_source
+        or PRIVATE_METRICS_BLOCK not in all_sites
+        or all_sites.count(PRIVATE_METRICS_ADDRESS + " {") != 1
+    ):
+        raise ExposureError("private metrics listener must be the single reviewed root block")
+    for address in PRIVATE_INGRESS:
+        block = site_block(all_sites, ("https://" if address.endswith(":18080") else "") + address)
+        for token in (
+            "bind {$CADDY_PRIVATE_INGRESS_BIND}",
+            "mode require_and_verify",
+            "trust_pool file ",
+            "remote_ip {$",
+            "method POST",
+            "import security_headers",
+        ):
+            if token not in block:
+                raise ExposureError(f"{address}: private ingress control missing: {token}")
+        if not re.search(r'handle \{\s*respond (?:"Forbidden" )?403\s*\}\s*\}', block):
+            raise ExposureError(f"{address}: private ingress must end in a 403 denial")
+    for host in PRODUCTION_LINEAGE_PUBLIC | STAGING_INTERNAL:
+        block = site_block(all_sites, host)
+        if "import public_boundary" not in block or "bind " in block:
+            raise ExposureError(f"{host}: public boundary missing or unreviewed bind")
+    for host in LEGACY_PRIVATE_EDITORS:
+        block = site_block(all_sites, host)
+        if "@staff_private remote_ip private_ranges" not in block or 'respond "Staff identity network required" 403' not in block:
+            raise ExposureError(f"{host}: legacy editor must stay private-network only")
+    for host in STAGING_INTERNAL:
+        if "tls internal" not in site_block(all_sites, host):
+            raise ExposureError(f"{host}: internal staging name must not request a public certificate")
 
     bao = site_block(site, "bao.codestra.media")
     if "@openbao_allowed remote_ip {$CADDY_OPENBAO_ALLOWED_CIDRS}" not in bao:

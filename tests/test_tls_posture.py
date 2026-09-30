@@ -9,6 +9,7 @@ do not evaluate. Runtime issuance, renewal and handshakes stay out of scope.
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,8 +26,12 @@ FORBIDDEN_ANYWHERE = {
     "insecure_secrets_log": "TLS session keys must never be written to disk",
     "must_staple": "Let's Encrypt ended OCSP in 2025; must-staple certificates break",
     "local_certs": "public hosts must not be served from the internal CA",
-    "skip_install_trust": "public hosts must not be served from the internal CA",
 }
+# Reviewed certificate exceptions, shared with the address allowlist: internal
+# staging names use Caddy's internal CA, private ingress listeners use their own
+# server certificate and require a verified client certificate.
+sys.path.insert(0, str(ROOT / "scripts"))
+from validate_observability_exposure import PRIVATE_INGRESS, STAGING_INTERNAL  # noqa: E402
 def directive_lines(path: Path) -> list[tuple[int, str]]:
     lines=[]
     for number,raw in enumerate(path.read_text(encoding="utf-8").splitlines(),1):
@@ -66,9 +71,17 @@ def test_sites_keep_default_certificate_policy():
     violations=[]
     for path in SITES:
         for address,body in site_blocks(path).items():
+            host=address.removeprefix("https://")
+            directives=[line for _,_,line in body]
             for number,depth,line in body:
-                if depth==1 and line.split()[0]=="tls": violations.append(f"{path.name}:{number}: {address}: {line}")
+                if depth!=1 or line.split()[0]!="tls": continue
+                if host in STAGING_INTERNAL and line=="tls internal": continue
+                if host in PRIVATE_INGRESS and line.endswith("{") and "mode require_and_verify" in directives: continue
+                violations.append(f"{path.name}:{number}: {address}: {line}")
     assert not violations,"\n".join(violations)
+def test_internal_ca_trust_is_never_installed_into_the_host():
+    globals_block=CADDYFILE.read_text(encoding="utf-8").split("\n}\n",1)[0]
+    assert "skip_install_trust" in globals_block
 def test_committed_source_never_targets_a_staging_ca():
     for path in SOURCES: assert "acme-staging" not in path.read_text(encoding="utf-8"),path.name
 def test_shared_policy_strips_untrusted_forwarded_headers():

@@ -32,7 +32,7 @@ class PerHostIdentityTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         contract = json.loads((ROOT / 'config/kyyow-ingress.v1.json').read_text())
-        site = (ROOT / 'sites/kyyow.com.caddy').read_text()
+        site = (ROOT / 'sites-pending/kyyow.com.caddy').read_text()
         runtime = (ROOT / 'config/runtime-values.example').read_text()
         for host in module.PUBLIC_HOSTS:
             for header in module.IDENTITY_HEADERS:

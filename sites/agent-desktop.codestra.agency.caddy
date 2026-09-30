@@ -1,0 +1,293 @@
+# Agent desktop and dialer. oauth2-proxy (the agent gateway) owns the session;
+# Caddy only forwards its decision. public_boundary strips client-supplied
+# gateway identity headers before forward_auth copies authenticated values.
+phone.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	# The webphone needs the microphone and same-origin framing and ships its
+	# own CSP, so these override the shared response defaults.
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		X-Frame-Options SAMEORIGIN
+		Permissions-Policy "camera=(), geolocation=(), microphone=(self)"
+		Content-Security-Policy "default-src 'self'; connect-src 'self' wss://wss.codestra.agency:8089 wss://api.codestra.agency; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; frame-ancestors 'none'"
+	}
+
+	# An explicit route keeps this order after public_boundary's identity
+	# stripping, so forward_auth's copied values reach the upstream intact.
+	route {
+		# Only forward_auth may supply the access token; never trust a client copy.
+		request_header -X-Auth-Request-Access-Token
+
+		@oauth path /oauth2/*
+		handle @oauth {
+			vars edge_route_id edge.agent_desktop.oauth
+			reverse_proxy {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@webphone path /webphone-api/* /ws/agent
+		handle @webphone {
+			vars edge_route_id edge.agent_desktop.webphone
+			request_body {
+				max_size 16KB
+			}
+			reverse_proxy {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		handle_path /realtime-api/* {
+			vars edge_route_id edge.agent_desktop.realtime
+			request_body {
+				max_size 16KB
+			}
+			route {
+				forward_auth {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+					uri /oauth2/auth
+					header_up X-Real-IP {remote_host}
+					copy_headers X-Auth-Request-Access-Token
+				}
+				request_header Authorization "Bearer {http.request.header.X-Auth-Request-Access-Token}"
+				reverse_proxy {$CADDY_REALTIME_UPSTREAM} {
+					header_up Host {host}
+					header_up X-Real-IP {remote_host}
+					header_up X-Forwarded-Host {host}
+					header_up X-Forwarded-Proto {scheme}
+					transport http {
+						dial_timeout 5s
+						response_header_timeout 30s
+					}
+				}
+			}
+		}
+
+		handle {
+			vars edge_route_id edge.agent_desktop.ui
+			reverse_proxy {$CADDY_AGENT_UI_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_down -Content-Security-Policy
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/phone-codestra-agency-access.log {
+			roll_size 20MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+dialer.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	# The webphone needs the microphone and same-origin framing and ships its
+	# own CSP, so these override the shared response defaults.
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		X-Frame-Options SAMEORIGIN
+		Permissions-Policy "camera=(), geolocation=(), microphone=(self)"
+		Content-Security-Policy "default-src 'self'; connect-src 'self' wss://wss.codestra.agency:8089 wss://api.codestra.agency; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; frame-ancestors 'none'"
+	}
+
+	# An explicit route keeps this order after public_boundary's identity
+	# stripping, so forward_auth's copied values reach the upstream intact.
+	route {
+		# Only forward_auth may supply the access token; never trust a client copy.
+		request_header -X-Auth-Request-Access-Token
+
+		@oauth path /oauth2/*
+		handle @oauth {
+			vars edge_route_id edge.agent_desktop.oauth
+			reverse_proxy {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@dialer_protected not path /oauth2/*
+		forward_auth @dialer_protected {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+			uri /oauth2/auth
+			header_up X-Real-IP {remote_host}
+			copy_headers X-Auth-Request-User
+			@unauthenticated status 401
+			handle_response @unauthenticated {
+				redir * /oauth2/sign_in?rd={scheme}://{host}{uri} 302
+			}
+		}
+
+		@webphone path /webphone-api/* /ws/agent
+		handle @webphone {
+			vars edge_route_id edge.agent_desktop.webphone
+			request_body {
+				max_size 16KB
+			}
+			reverse_proxy {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		handle_path /realtime-api/* {
+			vars edge_route_id edge.agent_desktop.realtime
+			request_body {
+				max_size 16KB
+			}
+			route {
+				forward_auth {$CADDY_AGENT_GATEWAY_UPSTREAM} {
+					uri /oauth2/auth
+					header_up X-Real-IP {remote_host}
+					copy_headers X-Auth-Request-Access-Token
+				}
+				request_header Authorization "Bearer {http.request.header.X-Auth-Request-Access-Token}"
+				reverse_proxy {$CADDY_REALTIME_UPSTREAM} {
+					header_up Host {host}
+					header_up X-Real-IP {remote_host}
+					header_up X-Forwarded-Host {host}
+					header_up X-Forwarded-Proto {scheme}
+					transport http {
+						dial_timeout 5s
+						response_header_timeout 30s
+					}
+				}
+			}
+		}
+
+		handle {
+			vars edge_route_id edge.agent_desktop.ui
+			reverse_proxy {$CADDY_AGENT_UI_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_down -Content-Security-Policy
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/dialer-codestra-agency-access.log {
+			roll_size 20MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}

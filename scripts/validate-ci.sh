@@ -16,6 +16,9 @@ docker_root_parent="${HOME}/.cache"
 mkdir -p "$docker_root_parent"
 docker_root="$(mktemp -d "$docker_root_parent/caddy-validator.XXXXXX")"
 tar --exclude=.git -cf - . | tar -C "$docker_root" -xf -
+# Disposable certificates for the private mTLS listeners: provisioning
+# validation loads every configured certificate and trust pool.
+python3 scripts/synthetic_private_pki.py "$docker_root/pki" >/dev/null
 
 common_args=(
   --rm
@@ -38,6 +41,28 @@ common_args=(
   -e CADDY_KYYOW_DOCS_UPSTREAM=127.0.0.1:18303
   -e CADDY_KYYOW_AUTH_UPSTREAM=127.0.0.1:18304
   -e CADDY_KYYOW_STATUS_UPSTREAM=127.0.0.1:18305
+  -e CADDY_PUBLIC_BIND=127.0.0.1
+  -e CADDY_PRIVATE_METRICS_BIND=127.0.0.3
+  -e CADDY_PRIVATE_INGRESS_BIND=127.0.0.2
+  -e CADDY_KLYROW_SOURCE_CIDRS=192.0.2.4/32
+  -e CADDY_VICIDIAL_SOURCE_CIDRS=192.0.2.2/32
+  -e CADDY_STAGING_EVENT_SOURCE_CIDRS=198.51.100.7/32
+  -e CADDY_KEYCLOAK_UPSTREAM=127.0.0.1:18103
+  -e CADDY_CRM_RESELLER_UPSTREAM=127.0.0.1:18104
+  -e CADDY_CRM_UPSTREAM=127.0.0.1:18105
+  -e CADDY_N8N_UPSTREAM=127.0.0.1:18106
+  -e CADDY_N8N_STAGING_UPSTREAM=127.0.0.1:18107
+  -e CADDY_STAGING_API_UPSTREAM=127.0.0.1:18108
+  -e CADDY_STAGING_PORTAL_UPSTREAM=127.0.0.1:18109
+  -e CADDY_STAGING_KEYCLOAK_UPSTREAM=127.0.0.1:18110
+  -e CADDY_STAGING_ODOO_UPSTREAM=127.0.0.1:18111
+  -e CADDY_MIDDLEWARE_CALLBACK_UPSTREAM=127.0.0.1:18112
+  -e CADDY_AGENT_GATEWAY_UPSTREAM=127.0.0.1:18113
+  -e CADDY_AGENT_UI_UPSTREAM=127.0.0.1:18114
+  -e CADDY_MONITORING_UPSTREAM=127.0.0.1:18115
+  -e CADDY_KLYROW_EVENTS_UPSTREAM=127.0.0.1:18180
+  -e CADDY_MIDDLEWARE_PKI_DIR=/srv/pki/middleware
+  -e CADDY_KLYROW_PKI_DIR=/srv/pki/klyrow
   -v "$docker_root:/srv:ro"
 )
 
@@ -73,6 +98,8 @@ docker cp "$validator_container:/usr/bin/caddy" "$docker_root/caddy"
 docker rm "$validator_container" >/dev/null
 export CADDY_BIN="$docker_root/caddy"
 export CADDY_ADAPTED_JSON="$adapted_file"
+export CADDY_MIDDLEWARE_PKI_DIR="$docker_root/pki/middleware"
+export CADDY_KLYROW_PKI_DIR="$docker_root/pki/klyrow"
 export CADDY_LOG_DIR="$docker_root/logs"
 export XDG_DATA_HOME="$docker_root/data"
 export XDG_CONFIG_HOME="$docker_root/config"

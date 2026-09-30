@@ -1,0 +1,147 @@
+# Legacy hostname compatibility is path-bounded and cannot bypass Kong.
+# Every prefix is a subset of the canonical api.codestra.co Kong prefixes and
+# the canonical pending-contract denials apply here too, so the legacy
+# hostname never widens exposure. Kong sees the canonical host.
+api.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+	header X-Codestra-Canonical-Host "api.codestra.co"
+
+	request_body {
+		max_size 10MB
+	}
+
+	route {
+		@pending_contract path /api/v1/events/telnexa /api/v1/n8n/acknowledgements /v1/observability/incidents /v1/observability/kpis /webhooks/sms/inbound/* /webhooks/vicidial/call-result/*
+		handle @pending_contract {
+			respond 404
+		}
+
+		@kong path /api/v1/control/messages* /api/v1/control/campaigns* /api/v1/control/agents* /api/v1/control/memberships* /api/v1/control/adapters* /api/v1/messages* /api/v1/events* /api/v1/results* /api/v1/reconciliation* /api/v1/health* /v1/integrations/n8n* /v1/admin/system* /v1/crm* /v1/email* /v1/sms* /v1/webhooks* /v1/intake*
+		handle @kong {
+			vars edge_route_id edge.legacy_agency.kong
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@realtime path /ws/agent /api/v1/realtime/sessions /healthz /readyz /version
+		handle @realtime {
+			vars edge_route_id edge.legacy_agency.realtime
+			reverse_proxy {$CADDY_REALTIME_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		handle {
+			respond "Not Found" 404
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-codestra-agency-access.log {
+			roll_size 20MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}

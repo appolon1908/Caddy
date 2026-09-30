@@ -41,6 +41,17 @@ Each system keeps its own source authority:
 - `config/community-n8n-credentials.v1.json` — metadata-only ownership and rotation contract.
 - `config/observability-exposure.v1.json` — repository-only public/private observability URL contract.
 - `sites/codestra.media.observability.caddy` — the only permitted observability UI/restricted-management routes.
+- Production-lineage hosts carried forward from `caddy-production-2489bf0` (owner decision, 2026-09-30):
+  `sites/api.breero.com.caddy`, `sites/api.codestra.agency.caddy`, `sites/auth.codestra.co.caddy`,
+  `sites/crm.codestra.agency.caddy`, `sites/agent-desktop.codestra.agency.caddy`,
+  `sites/monitoring.codestra.co.caddy`, `sites/n8n-legacy.codestra.agency.caddy`,
+  `sites/staging-internal.caddy`, and the private listeners in `sites/middleware-private.caddy`
+  and `sites/klyrow-events.private.caddy`. `tests/test_production_lineage_hosts.py` fails if any
+  production address is dropped or a gate is weakened.
+- `sites-pending/kyyow.com.caddy` — Kyyow hosts, kept in source but not imported until their DNS and
+  upstreams exist, so no certificate is requested for them.
+- The root `Caddyfile` keeps the private `:2020` metrics listener that Prometheus scrapes as
+  `caddy:2020`; it binds `CADDY_PRIVATE_METRICS_BIND` only.
 
 Grafana and Superset are the only public observability UI routes. OpenBao has a
 separate source-network gate in addition to native OIDC and policy enforcement.
@@ -67,8 +78,13 @@ current source authority. Neither supersedes the other.
 `automation.codestra.co` additionally applies a `CADDY_EDITOR_ADMIN_CIDRS`
 source-range gate ahead of the browser flow. Caddy authenticates nobody on
 either host: it terminates TLS, strips spoofable identity headers, and hands off
-to the gate that owns identity for that host. Adding a third editor edge, or
-pointing either host directly at n8n on `:5678`, is prohibited.
+to the gate that owns identity for that host. Pointing either host directly at
+n8n on `:5678` is prohibited.
+
+`n8n.codestra.agency` (and its staging twin) is the one reviewed exception: a
+legacy staff editor reachable only from private source addresses, with a 403
+for everyone else. It is not a third public editor, and adding any other editor
+edge is prohibited.
 
 ## Runtime values that must be supplied before deployment
 
@@ -94,6 +110,11 @@ The reviewed Kong repository exposes host-bound `api.codestra.co` route contract
 The historical `codestra-production-platform` Caddy source used loopback listeners `18101` and `18102`. They are retained only as explicit environment-controlled migration fallbacks for paths that do not yet have proven Kong parity. They are **not** principal source authority and must be removed after the equivalent Kong routes pass staging acceptance.
 
 No new shared API route should be added as a direct Caddy -> Middleware or Caddy -> provider path. The owning repository must add the service contract, Kong must own the gateway route/security policy, and Caddy then owns the outer edge handoff.
+
+The private callback ingress (`middleware.internal.codestra.agency`, its staging twin, and the Klyrow
+event listener on `:18080`) is the one reviewed exception to Caddy -> Middleware. Each binds only the
+private interface, requires a verified client certificate, accepts one method+path from one source
+range and answers 403 to everything else. It never carries public API traffic.
 
 ## Branch model
 

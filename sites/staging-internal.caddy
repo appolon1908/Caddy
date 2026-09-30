@@ -1,0 +1,437 @@
+# Staging hosts. *.staging.internal names use Caddy's internal CA and are never
+# public ACME targets; the two public staging names use ACME. None of them
+# carries production traffic.
+api.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.api
+		reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-staging-internal-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+n8n.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode gzip
+
+	@live path /health/live
+	handle @live {
+		vars edge_route_id edge.staging.n8n
+		rewrite * /healthz
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@ready path /health/ready
+	handle @ready {
+		vars edge_route_id edge.staging.n8n
+		rewrite * /healthz/readiness
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@metadata path /.well-known/codestra-service
+	handle @metadata {
+		header Content-Type application/json
+		respond `{"service":"codestra-n8n","environment":"staging","contract_version":"1.0","live_path":"/health/live","ready_path":"/health/ready"}` 200
+	}
+
+	handle {
+		vars edge_route_id edge.staging.portal
+		reverse_proxy {$CADDY_STAGING_PORTAL_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/n8n-staging-internal-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+auth.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.keycloak
+		reverse_proxy {$CADDY_STAGING_KEYCLOAK_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-staging-internal-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+auth-staging.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	handle {
+		vars edge_route_id edge.staging.keycloak
+		reverse_proxy {$CADDY_STAGING_KEYCLOAK_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-staging-codestra-co-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+odoo.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.odoo
+		reverse_proxy {$CADDY_STAGING_ODOO_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/odoo-staging-internal-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+bridge-staging.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	@private_callback path /api/v1/events/vicidial
+	handle @private_callback {
+		respond 404
+	}
+
+	handle {
+		vars edge_route_id edge.staging.bridge
+		reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/bridge-staging-access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}

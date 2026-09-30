@@ -1,0 +1,168 @@
+# Private Middleware callback ingress. Owner-approved exception (2026-09-30) to
+# "Caddy never calls Middleware directly": private bind only, no public DNS,
+# mutual TLS, a pinned source CIDR and exactly one method+path. Everything
+# else answers 403. It never carries public API traffic.
+middleware.internal.codestra.agency {
+	bind {$CADDY_PRIVATE_INGRESS_BIND}
+	tls {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/server.crt {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/server.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/client-ca.crt
+		}
+	}
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	route {
+		@authorized_callback {
+			remote_ip {$CADDY_VICIDIAL_SOURCE_CIDRS}
+			method POST
+			path /api/v1/events/vicidial
+		}
+		handle @authorized_callback {
+			vars edge_route_id edge.middleware_private
+			reverse_proxy {$CADDY_MIDDLEWARE_CALLBACK_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+		handle {
+			respond 403
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/middleware-private-access.log {
+			roll_size 20MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}
+
+middleware-staging.internal.codestra.agency {
+	bind {$CADDY_PRIVATE_INGRESS_BIND}
+	tls {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/staging-server.crt {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/staging-server.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/client-ca.crt
+		}
+	}
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	route {
+		@authorized_callback {
+			remote_ip {$CADDY_STAGING_EVENT_SOURCE_CIDRS}
+			method POST
+			path /api/v1/staging/events/vicidial
+		}
+		handle @authorized_callback {
+			vars edge_route_id edge.middleware_private
+			rewrite * /api/v1/events/vicidial
+			reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+		handle {
+			respond 403
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/middleware-staging-private-access.log {
+			roll_size 20MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>X-Auth-Request-Access-Token delete
+			request>headers>X-Access-Token delete
+			request>headers>X-Id-Token delete
+			request>headers>X-Refresh-Token delete
+			request>headers>X-Vault-Token delete
+			request>headers>X-Bao-Token delete
+			request>uri query {
+				delete access_token
+				delete api-key
+				delete api_key
+				delete apikey
+				delete client_secret
+				delete code
+				delete id_token
+				delete oauth_token
+				delete password
+				delete rd
+				delete refresh_token
+				delete secret
+				delete session_state
+				delete state
+				delete token
+			}
+			resp_headers>Authorization delete
+			resp_headers>Proxy-Authorization delete
+			resp_headers>Set-Cookie delete
+			resp_headers>X-Access-Token delete
+			resp_headers>X-Auth-Request-Access-Token delete
+			resp_headers>X-Id-Token delete
+			resp_headers>X-Refresh-Token delete
+		}
+	}
+}

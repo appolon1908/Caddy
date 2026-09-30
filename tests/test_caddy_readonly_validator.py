@@ -79,10 +79,13 @@ class ReadonlyValidatorTests(unittest.TestCase):
             "CADDY_SUPERSET_UPSTREAM",
             "CADDY_OPENBAO_UPSTREAM",
             "CADDY_OPENBAO_ALLOWED_CIDRS",
-            "CADDY_KYYOW_APP_UPSTREAM",
-            "CADDY_KYYOW_STATUS_UPSTREAM",
+            "CADDY_KEYCLOAK_UPSTREAM",
+            "CADDY_VICIDIAL_SOURCE_CIDRS",
+            "CADDY_PRIVATE_INGRESS_BIND",
         ):
             self.assertIn(name, required)
+        # Kyyow stays in sites-pending/ until DNS exists, so it is not deployed.
+        self.assertNotIn("CADDY_KYYOW_APP_UPSTREAM", required)
         # The CI gate adapts with exactly this set; it must cover the source.
         ci = (ROOT / "scripts" / "validate-ci.sh").read_text(encoding="utf-8")
         for name in required:
