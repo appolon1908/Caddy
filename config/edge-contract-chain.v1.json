@@ -9,7 +9,7 @@
     "middleware_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
     "repository": "appolon1908/Kong",
     "required_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "source_sha": "9deac9a5a1419c5d6e637d639e2d6555b908c9f3",
+    "source_sha": "82bb82611a694783506ddfccf3910de9c9f1555a",
     "status": "PASS"
   },
   "middleware": {

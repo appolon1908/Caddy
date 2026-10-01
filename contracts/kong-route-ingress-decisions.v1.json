@@ -2,7 +2,7 @@
   "schema": "codestra.caddy.kong-route-ingress-decisions.v1",
   "kongRepository": "appolon1908/Kong",
   "kongRepositoryId": 1347790742,
-  "kongSourceSha": "9deac9a5a1419c5d6e637d639e2d6555b908c9f3",
+  "kongSourceSha": "82bb82611a694783506ddfccf3910de9c9f1555a",
   "kongInventories": [
     "config/kong-production-route-inventory.v2.json",
     "config/kong-mcr-routes.v1.json"
