@@ -28,16 +28,33 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-COMPOSE = ROOT / "deploy" / "compose.runtime.yaml"
-CONTAINER = "codestra-caddy"
-IMAGE_REPOSITORY = "ghcr.io/appolon1908-hue/codestra-caddy"
 LABELS = {
     "source": "io.codestra.caddy.source.sha",
     "config": "io.codestra.caddy.config.sha256",
     "release": "io.codestra.caddy.release.id",
 }
-PRIVATE_MOUNTS = ("/etc/caddy/private/klyrow-events", "/etc/codestra/pki/middleware-private-ingress")
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+
+
+@dataclass(frozen=True)
+class Runtime:
+    """Where a release runs. An empty image repository addresses local images by ID (rehearsals only)."""
+
+    compose: Path = ROOT / "deploy" / "compose.runtime.yaml"
+    container: str = "codestra-caddy"
+    image_repository: str = "ghcr.io/appolon1908-hue/codestra-caddy"
+    private_mounts: tuple[str, ...] = ("/etc/caddy/private/klyrow-events", "/etc/codestra/pki/middleware-private-ingress")
+
+    def image(self, digest: str) -> str:
+        return f"{self.image_repository}@{digest}" if self.image_repository else digest
+
+    def digest_of(self, image: str) -> str | None:
+        prefix = f"{self.image_repository}@" if self.image_repository else ""
+        digest = image[len(prefix):] if image.startswith(prefix) else ""
+        return digest if DIGEST.fullmatch(digest) else None
+
+
+CANONICAL = Runtime()
 
 
 class ReleaseError(RuntimeError):
@@ -50,10 +67,6 @@ class Release:
     source_sha: str
     config_sha256: str
     release_id: str
-
-    @property
-    def image(self) -> str:
-        return f"{IMAGE_REPOSITORY}@{self.digest}"
 
     def compose_environment(self) -> dict[str, str]:
         return {
@@ -73,9 +86,10 @@ def _run(argv: Sequence[str], env: dict[str, str] | None = None) -> subprocess.C
 
 
 class ContainerRelease:
-    def __init__(self, *, env_file: Path, docker: str = "docker", runner: Runner = _run,
+    def __init__(self, *, env_file: Path, runtime: Runtime = CANONICAL, docker: str = "docker", runner: Runner = _run,
                  sleep: Callable[[float], None] = time.sleep, health_timeout: float = 120.0) -> None:
         self.env_file = env_file
+        self.runtime = runtime
         self.docker = docker
         self.runner = runner
         self.sleep = sleep
@@ -88,13 +102,13 @@ class ContainerRelease:
         return result.stdout
 
     def current(self) -> Release:
-        inspected = json.loads(self._call([self.docker, "inspect", CONTAINER]))[0]
+        inspected = json.loads(self._call([self.docker, "inspect", self.runtime.container]))[0]
         config = inspected.get("Config") or {}
-        image = config.get("Image") or ""
-        if not image.startswith(IMAGE_REPOSITORY + "@") or not DIGEST.fullmatch(image.split("@", 1)[1]):
+        digest = self.runtime.digest_of(config.get("Image") or "")
+        if not digest:
             raise ReleaseError("running container is not an immutable canonical release")
         labels = config.get("Labels") or {}
-        return Release(image.split("@", 1)[1], labels.get(LABELS["source"], ""),
+        return Release(digest, labels.get(LABELS["source"], ""),
                        labels.get(LABELS["config"], ""), labels.get(LABELS["release"], ""))
 
     def validate_offline(self, candidate: Release) -> None:
@@ -102,25 +116,26 @@ class ContainerRelease:
                 "--env-file", str(self.env_file), "--env", "XDG_DATA_HOME=/data", "--env", "XDG_CONFIG_HOME=/config"]
         for path in ("/data", "/config", "/run/caddy", "/var/log/caddy", "/tmp"):
             argv += ["--tmpfs", f"{path}:uid=65532,gid=65532,mode=0700"]
-        for path in PRIVATE_MOUNTS:
+        for path in self.runtime.private_mounts:
             argv += ["--mount", f"type=bind,src={path},dst={path},readonly"]
-        argv += ["--entrypoint", "/usr/bin/caddy", candidate.image, "validate", "--config", "/etc/caddy/Caddyfile",
+        argv += ["--entrypoint", "/usr/bin/caddy", self.runtime.image(candidate.digest), "validate", "--config", "/etc/caddy/Caddyfile",
                  "--adapter", "caddyfile"]
         self._call(argv)
 
     def switch(self, release: Release) -> None:
-        self._call([self.docker, "compose", "-f", str(COMPOSE), "--env-file", str(self.env_file), "up", "-d",
+        self._call([self.docker, "compose", "-f", str(self.runtime.compose), "--env-file", str(self.env_file), "up", "-d",
                     "--no-build", "--pull", "never", "caddy"], release.compose_environment())
 
     def await_healthy(self, release: Release) -> None:
         deadline = self.health_timeout
         while deadline > 0:
-            inspected = json.loads(self._call([self.docker, "inspect", CONTAINER]))[0]
+            inspected = json.loads(self._call([self.docker, "inspect", self.runtime.container]))[0]
             state = inspected.get("State") or {}
             image = (inspected.get("Config") or {}).get("Image")
-            if image == release.image and (state.get("Health") or {}).get("Status") == "healthy":
+            expected = self.runtime.image(release.digest)
+            if image == expected and (state.get("Health") or {}).get("Status") == "healthy":
                 return
-            if image == release.image and state.get("Running") is False:
+            if image == expected and state.get("Running") is False:
                 break
             self.sleep(5)
             deadline -= 5

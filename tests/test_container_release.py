@@ -8,7 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from caddy_container_release import CONTAINER, ContainerRelease, Release, ReleaseError, main  # noqa: E402
+from caddy_container_release import CANONICAL, ContainerRelease, Release, ReleaseError, main  # noqa: E402
 
 OLD = Release("sha256:" + "1" * 64, "a" * 40, "b" * 64, "release-old")
 NEW = Release("sha256:" + "2" * 64, "c" * 40, "d" * 64, "release-new")
@@ -32,7 +32,7 @@ class FakeDocker:
                       "io.codestra.caddy.release.id": self.running.release_id}
             healthy = self.running.digest in self.healthy
             state = {"Running": healthy, "Health": {"Status": "healthy" if healthy else "unhealthy"}}
-            payload = [{"Config": {"Image": self.running.image, "Labels": labels}, "State": state}]
+            payload = [{"Config": {"Image": CANONICAL.image(self.running.digest), "Labels": labels}, "State": state}]
             return subprocess.CompletedProcess(argv, 0, json.dumps(payload), "")
         if verb == "run":
             digest = next(arg for arg in argv if "@sha256:" in arg).split("@", 1)[1]
@@ -105,4 +105,4 @@ def test_cli_rejects_mutable_or_malformed_identity(capsys):
     assert main(["--env-file", "x", "--candidate-digest", "latest", "--source-sha", "a" * 40,
                  "--config-sha256", "b" * 64, "--release-id", "r"]) == 2
     assert "invalid_identity" in capsys.readouterr().err
-    assert CONTAINER == "codestra-caddy"
+    assert CANONICAL.container == "codestra-caddy"
