@@ -1,7 +1,7 @@
 {
   "schema": "codestra.caddy-kong-edge.v1",
   "principalRepository": "ingtrader21-spec/Caddy",
-  "gatewayRepository": "ingtrader21-spec/Kong",
+  "gatewayRepository": "appolon1908/Kong",
   "identityRepository": "ingtrader21-spec/Keycloak",
   "writeBoundaryRepository": "ingtrader21-spec/Middleware-",
   "referenceRepository": "appolon1908-hue/codestra-production-platform",
@@ -76,7 +76,7 @@
     "authorizationHeaderForwarded": true,
     "trustedIdentityHeadersCreatedByCaddy": false,
     "publicInternalAndMetricsForbidden": true,
-    "kongRouteContract": "ingtrader21-spec/Kong:config/kong-mcr-routes.v1.json",
+    "kongRouteContract": "appolon1908/Kong:config/kong-mcr-routes.v1.json",
     "coveredByKongManagedPrefix": "/platform/v1",
     "managedPaths": [
       "/platform/v1/campaign-engine",
@@ -1043,5 +1043,6 @@
     "/v1/observability/kpis",
     "/webhooks/sms/inbound/*",
     "/webhooks/vicidial/call-result/*"
-  ]
+  ],
+  "gatewayRepositoryId": 1347790742
 }

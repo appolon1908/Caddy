@@ -8,7 +8,7 @@
         "staging",
         "production-gated"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware where required",
       "id": "webhook.odoo-events",
       "identity_gate_owner": "Kong/Middleware",
@@ -33,7 +33,7 @@
         "staging",
         "production-gated"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "not-applicable/service-jwt",
       "id": "webhook.n8n-results",
       "identity_gate_owner": "Kong/Middleware",
@@ -58,7 +58,7 @@
       "enabled_environments": [
         "staging"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware",
       "id": "webhook.telnexa",
       "identity_gate_owner": "Kong/Middleware",
@@ -83,7 +83,7 @@
       "enabled_environments": [
         "staging"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware/contract-defined",
       "id": "webhook.vicidial-call-result",
       "identity_gate_owner": "Kong/Middleware",

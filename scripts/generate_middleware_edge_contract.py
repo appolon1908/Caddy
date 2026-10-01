@@ -24,6 +24,9 @@ EDGE = ROOT / "config/caddy-kong-contract.v1.json"
 SITE = ROOT / "sites/api.codestra.co.caddy"
 
 MIDDLEWARE_SOURCE_SHA = "2862af0aa97367b18cb360af69212abe4243a1ac"
+# Kong was transferred to appolon1908; the numeric ID is the stable identity.
+KONG_REPOSITORY = "appolon1908/Kong"
+KONG_REPOSITORY_ID = 1347790742
 START = "\t\t# BEGIN GENERATED MIDDLEWARE CONTRACT ROUTES"
 END = "\t\t# END GENERATED MIDDLEWARE CONTRACT ROUTES"
 INSERT_MARKER = "\t\t# Paths already represented by reviewed Kong source"
@@ -64,7 +67,8 @@ def render() -> tuple[str, str]:
     edge.update(
         {
             "principalRepository": "ingtrader21-spec/Caddy",
-            "gatewayRepository": "ingtrader21-spec/Kong",
+            "gatewayRepository": KONG_REPOSITORY,
+            "gatewayRepositoryId": KONG_REPOSITORY_ID,
             "identityRepository": "ingtrader21-spec/Keycloak",
             "writeBoundaryRepository": "ingtrader21-spec/Middleware-",
             "referenceRepository": "appolon1908-hue/codestra-production-platform",

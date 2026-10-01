@@ -21,7 +21,7 @@ Caddy does not authenticate application users/services, does not issue identity,
 Each system keeps its own source authority:
 
 - `ingtrader21-spec/Caddy` — shared Caddy TLS/reverse-proxy edge source and policy.
-- `ingtrader21-spec/Kong` — Kong gateway services, routes, plugins, OIDC/scope policy and gateway reconciliation.
+- `appolon1908/Kong` — Kong gateway services, routes, plugins, OIDC/scope policy and gateway reconciliation.
 - `ingtrader21-spec/Keycloak` — identity, clients, scopes and token issuance.
 - `ingtrader21-spec/Middleware-` — cross-system command/event control plane and privileged provider orchestration.
 - product/provider repositories — their own application and runtime source.

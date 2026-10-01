@@ -4,7 +4,7 @@
     {
       "caddy_upstream": "CADDY_KONG_UPSTREAM",
       "classification": "CANONICAL",
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "host": "api.codestra.co",
       "id": "edge.platform-v1",
       "identity_gate_owner": "Kong/Keycloak",
@@ -23,7 +23,7 @@
     {
       "caddy_upstream": "CADDY_KONG_UPSTREAM",
       "classification": "CANONICAL",
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "host": "api.codestra.co",
       "id": "edge.automation-v2",
       "identity_gate_owner": "Kong/Keycloak",
@@ -42,7 +42,7 @@
     {
       "caddy_upstream": "CADDY_KONG_UPSTREAM",
       "classification": "CANONICAL",
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "host": "api.codestra.co",
       "id": "edge.odoo-event",
       "identity_gate_owner": "Kong/Middleware",
@@ -61,7 +61,7 @@
     {
       "caddy_upstream": "CADDY_KONG_UPSTREAM",
       "classification": "CANONICAL",
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "host": "api.codestra.co",
       "id": "edge.n8n-results",
       "identity_gate_owner": "Kong/Middleware",

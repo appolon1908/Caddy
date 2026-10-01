@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_PATH = ROOT / "config" / "public-edge-registry.v1.json"
 WEBHOOK_PATH = ROOT / "config" / "webhook-edge-registry.v1.json"
 CHAIN_PATH = ROOT / "config" / "edge-contract-chain.v1.json"
+KONG_GATEWAY = json.loads((ROOT / "config" / "caddy-kong-contract.v1.json").read_text(encoding="utf-8"))["gatewayRepository"]
 COLLECTION_PATH = ROOT / "postman" / "Caddy-V3-Edge-Certification.postman_collection.json"
 ENV_PATH = ROOT / "postman" / "Caddy-V3-Edge-Certification.postman_environment.json"
 
@@ -102,7 +103,7 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
             raise CertificationError(f"{edge_id} path drift")
         if row.get("classification") != "CANONICAL":
             raise CertificationError(f"{edge_id} is not canonical")
-        if row.get("gateway") != "ingtrader21-spec/Kong":
+        if row.get("gateway") != KONG_GATEWAY:
             raise CertificationError(f"{edge_id} does not route through Kong")
         if row.get("caddy_upstream") != "CADDY_KONG_UPSTREAM":
             raise CertificationError(f"{edge_id} has non-Kong Caddy upstream")
@@ -144,7 +145,7 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
     for row in webhook_rows:
         if row.get("methods") != ["POST"]:
             raise CertificationError(f"webhook method drift: {row.get('id')}")
-        if row.get("gateway") != "ingtrader21-spec/Kong":
+        if row.get("gateway") != KONG_GATEWAY:
             raise CertificationError(f"webhook bypasses Kong: {row.get('id')}")
         if row.get("downstream_owner") != "ingtrader21-spec/Middleware-":
             raise CertificationError(f"webhook downstream owner drift: {row.get('id')}")

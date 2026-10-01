@@ -74,7 +74,7 @@ RUNTIME = RUNTIME_EXAMPLE.read_text(encoding="utf-8")
 
 required_repositories = (
     "ingtrader21-spec/Caddy",
-    "ingtrader21-spec/Kong",
+    "appolon1908/Kong",
     "ingtrader21-spec/Keycloak",
     "ingtrader21-spec/Middleware-",
     "appolon1908-hue/codestra-production-platform",
@@ -87,7 +87,7 @@ if CONTRACT.get("schema") != "codestra.caddy-kong-edge.v1":
     raise SystemExit("CADDY_AUTHORITY_ERROR=unsupported_contract_schema")
 if CONTRACT.get("principalRepository") != "ingtrader21-spec/Caddy":
     raise SystemExit("CADDY_AUTHORITY_ERROR=caddy_not_principal")
-if CONTRACT.get("gatewayRepository") != "ingtrader21-spec/Kong":
+if CONTRACT.get("gatewayRepository") != "appolon1908/Kong" or CONTRACT.get("gatewayRepositoryId") != 1347790742:
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_gateway_principal")
 if CONTRACT.get("referenceRepository") != "appolon1908-hue/codestra-production-platform":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_reference_repository")
@@ -403,7 +403,7 @@ print("CADDY_REPOSITORY_AUTHORITY=PASS")
 print("CADDY_PRINCIPAL=ingtrader21-spec/Caddy")
 print("CADDY_TO_KONG_CONTRACT=PASS")
 print("KONG_ROUTE_CONTRACT_BIDIRECTIONAL=PASS")
-print("KONG_PRINCIPAL=ingtrader21-spec/Kong")
+print("KONG_PRINCIPAL=appolon1908/Kong")
 print("N8N_COMMUNITY_EDITOR_EDGE=PREPARED_NOT_APPLIED")
 print("N8N_DIRECT_PUBLIC_UPSTREAM=DENIED")
 print("N8N_EDITOR_BODY_LIMIT=RUNTIME_ALIGNED")

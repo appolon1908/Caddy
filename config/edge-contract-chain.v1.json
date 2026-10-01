@@ -7,9 +7,9 @@
   },
   "kong": {
     "middleware_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "repository": "ingtrader21-spec/Kong",
+    "repository": "appolon1908/Kong",
     "required_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "source_sha": "3e68cb2a4955bd71ddb3e839f4d9e3770465fc08",
+    "source_sha": "131a9336d14d9aad292bbb884fe4387182d48f02",
     "status": "PASS"
   },
   "middleware": {

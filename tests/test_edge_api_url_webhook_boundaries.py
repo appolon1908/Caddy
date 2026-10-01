@@ -14,7 +14,7 @@ def test_canonical_namespaces_go_to_kong_without_legacy_fallback():
     for key in ("edge.platform-v1", "edge.automation-v2"):
         entry = by_id[key]
         assert entry["classification"] == "CANONICAL"
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
+        assert entry["gateway"] == "appolon1908/Kong"
         assert entry["caddy_upstream"] == "CADDY_KONG_UPSTREAM"
         assert entry["legacy_fallback"] is False
 
@@ -58,7 +58,7 @@ def test_webhooks_have_exact_methods_and_explicit_owners():
     assert WEBHOOKS["entries"]
     for entry in WEBHOOKS["entries"]:
         assert entry["methods"] == ["POST"]
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
+        assert entry["gateway"] == "appolon1908/Kong"
         assert entry["downstream_owner"] == "ingtrader21-spec/Middleware-"
         assert entry["identity_gate_owner"]
         assert entry["replay_protection_owner"]
@@ -75,9 +75,10 @@ def test_digest_chain_pins_current_middleware_and_repinned_kong():
     expected = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
     assert CHAIN["middleware"]["source_sha"] == "2862af0aa97367b18cb360af69212abe4243a1ac"
     assert CHAIN["middleware"]["public_contract_sha256"] == expected
-    # Kong protected main repinned the final Middleware contract; the chain must
-    # record that head and carry the same digest on both sides of the handoff.
-    assert CHAIN["kong"]["source_sha"] == "3e68cb2a4955bd71ddb3e839f4d9e3770465fc08"
+    # The chain records the Kong commit certified as this edge's pair and the
+    # same Middleware digest on both sides of the handoff.
+    assert CHAIN["kong"]["repository"] == "appolon1908/Kong"
+    assert CHAIN["kong"]["source_sha"] == "131a9336d14d9aad292bbb884fe4387182d48f02"
     assert CHAIN["kong"]["required_sha256"] == expected
     assert CHAIN["kong"]["middleware_contract_sha256"] == expected
     assert CHAIN["kong"]["status"] == "PASS"

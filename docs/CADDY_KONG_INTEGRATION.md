@@ -4,7 +4,7 @@
 
 `ingtrader21-spec/Caddy` is the principal Git source for the shared Caddy edge. It owns TLS termination, public host selection, reverse-proxy handoff, shared edge headers, access-log redaction, Caddy validation, and Caddy release evidence.
 
-`ingtrader21-spec/Kong` remains principal for Kong services, routes, plugins, Keycloak OIDC/JWT validation, scopes, rate limits, request-size policy, and the gateway-to-Middleware handoff.
+`appolon1908/Kong` remains principal for Kong services, routes, plugins, Keycloak OIDC/JWT validation, scopes, rate limits, request-size policy, and the gateway-to-Middleware handoff.
 
 `ingtrader21-spec/Keycloak` is the identity/token issuer. `ingtrader21-spec/Middleware-` is the cross-system write/command boundary. `appolon1908-hue/codestra-production-platform` is historical runtime/deployment/reconciliation/rollback evidence only.
 
