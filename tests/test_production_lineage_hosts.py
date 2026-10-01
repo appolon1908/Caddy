@@ -5,7 +5,6 @@ runs the pinned Caddy binary on loopback against a synthetic upstream and a
 synthetic oauth2-proxy stand-in. No real certificate, identity or provider is used.
 """
 import http.client
-import json
 import os
 import re
 import shutil

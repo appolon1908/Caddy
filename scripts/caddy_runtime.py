@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Durable fail-closed Caddy apply/readback/rollback runtime."""
 from __future__ import annotations
-import fcntl, hashlib, json, os, shutil, subprocess, tempfile, time, urllib.request, uuid
+import fcntl, hashlib, json, os, shutil, subprocess, tempfile, urllib.request, uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
