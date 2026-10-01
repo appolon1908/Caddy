@@ -78,7 +78,7 @@ def test_digest_chain_pins_current_middleware_and_repinned_kong():
     # The chain records the Kong commit certified as this edge's pair and the
     # same Middleware digest on both sides of the handoff.
     assert CHAIN["kong"]["repository"] == "appolon1908/Kong"
-    assert CHAIN["kong"]["source_sha"] == "131a9336d14d9aad292bbb884fe4387182d48f02"
+    assert CHAIN["kong"]["source_sha"] == "9deac9a5a1419c5d6e637d639e2d6555b908c9f3"
     assert CHAIN["kong"]["required_sha256"] == expected
     assert CHAIN["kong"]["middleware_contract_sha256"] == expected
     assert CHAIN["kong"]["status"] == "PASS"
