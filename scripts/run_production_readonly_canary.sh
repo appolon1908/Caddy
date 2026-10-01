@@ -52,8 +52,16 @@ esac
 [[ "$IMAGE" =~ ^ghcr\.io/appolon1908-hue/codestra-caddy@sha256:[0-9a-f]{64}$ ]] || fail invalid_image
 [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || fail invalid_source_sha
 [[ "$CONFIG_SHA256" =~ ^[0-9a-f]{64}$ ]] || fail invalid_config_sha256
-for path in "$DOCKER" "$PYTHON" "$CURL" "$OPENSSL" "$VALIDATOR" "$STAGE_CONFIG" "$HASH_CONFIG" "$WEBSOCKET_PROBE"; do
-  [[ -e "$path" && ! -L "$path" ]] || fail "trusted_path:${path##*/}"
+# System binaries may be distribution symlinks (Ubuntu's python3 -> python3.12);
+# what runs must resolve to a root-owned file nobody else can write.
+for path in "$DOCKER" "$PYTHON" "$CURL" "$OPENSSL"; do
+  resolved="$(readlink -f -- "$path")" || fail "trusted_binary:${path##*/}"
+  [[ -f "$resolved" ]] || fail "trusted_binary:${path##*/}"
+  read -r owner mode < <(stat -c '%u %a' -- "$resolved")
+  [[ "$owner" == 0 && $(( 8#$mode & 8#022 )) -eq 0 ]] || fail "trusted_binary:${path##*/}"
+done
+for path in "$VALIDATOR" "$STAGE_CONFIG" "$HASH_CONFIG" "$WEBSOCKET_PROBE"; do
+  [[ -f "$path" && ! -L "$path" ]] || fail "trusted_path:${path##*/}"
 done
 for path in "$ENV_FILE" "$MTLS_CLIENT_CERT" "$MTLS_CLIENT_KEY" "$MTLS_CA_CERT"; do
   [[ "$path" = /* && "$path" != *..* && "$path" != *//* ]] || fail "unsafe_path:${path##*/}"

@@ -151,6 +151,8 @@ if "--write-out" in args:
     def run(**flags):
         for flag in flags:
             (state / flag).write_text("1")
+        if "writable_curl" in flags:
+            (bin_dir / "curl").chmod(0o777)
         work = tmp_path / "out"
         work.mkdir(exist_ok=True)
         return subprocess.run([bash, str(root / "scripts" / "run_production_readonly_canary.sh")], cwd=work, env=env,
@@ -176,6 +178,7 @@ def test_canary_passes_and_records_read_only_evidence(harness):
     ("offline_invalid", "candidate_offline_validation"),
     ("expose_private", "live_private_or_unknown:/metrics;x"),
     ("change_after_first", "live_runtime_changed"),
+    ("writable_curl", "trusted_binary:curl"),
 ])
 def test_canary_fails_closed(harness, flag, reason):
     result, work, _ = harness(**{flag: True})
