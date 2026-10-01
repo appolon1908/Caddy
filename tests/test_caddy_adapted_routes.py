@@ -144,8 +144,8 @@ def adapted_fixture() -> dict:
                                             {
                                                 "handle": [
                                                     {
-                                                        "handler": "reverse_proxy",
-                                                        "upstreams": [{"dial": "legacy:18101"}],
+                                                        "handler": "static_response",
+                                                        "status_code": 404,
                                                     }
                                                 ]
                                             },
@@ -183,10 +183,11 @@ def test_resolves_nested_adapted_routes_in_declared_order():
     assert noncanonical.upstream == "kong:8000"
     assert noncanonical.method_constrained is False
 
-    legacy = resolver.resolve_request(document, "GET", "/api/v2/unrelated")
-    assert legacy.upstream == "legacy:18101"
-    assert legacy.method_constrained is False
-    assert legacy.path_matcher is None
+    unknown = resolver.resolve_request(document, "GET", "/api/v2/unrelated")
+    assert unknown.upstream is None
+    assert unknown.response_status == 404
+    assert unknown.method_constrained is False
+    assert unknown.path_matcher is None
 
 
 def test_fixture_distinguishes_exact_prefix_and_regexp_matchers():
@@ -236,7 +237,7 @@ def test_real_adapted_config_resolves_the_complete_edge_matrix():
     result = resolver.validate_edge_matrix(document, "127.0.0.1:8000", "127.0.0.1:18101")
     assert result.canonical_routes == len(resolver.CANONICAL_PROBES)
     assert result.fail_closed_routes == len(resolver.FAIL_CLOSED_PROBES)
-    assert result.legacy_probes == 1
+    assert result.unknown_route_probes == 1
 
 
 def test_adapted_matrix_rejects_wrong_method_reaching_legacy():

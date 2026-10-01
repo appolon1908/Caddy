@@ -19,7 +19,8 @@ defaults:
 jobs:
   validate-source:
     name: validate-source
-    runs-on: ubuntu-22.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     timeout-minutes: 20
     env:
       EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -39,15 +40,22 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: '3.13'
+      - name: Pin validation Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.14.0'
       - name: Install pinned validation dependencies
-        run: python -m pip install --disable-pip-version-check --no-input pytest==8.4.2
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pytest==8.4.2
+          npm install --prefix "$RUNNER_TEMP/caddy-newman" --no-audit --no-fund newman@6.2.2
+          echo "$RUNNER_TEMP/caddy-newman/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Validate exact source and immutable Caddy configuration
         run: bash scripts/validate-ci.sh
 
   validate-merge-result:
     name: validate-merge-result
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     timeout-minutes: 20
     env:
       EXPECTED_SHA: ${{ github.sha }}
@@ -67,8 +75,15 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: '3.13'
+      - name: Pin validation Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22.14.0'
       - name: Install pinned validation dependencies
-        run: python -m pip install --disable-pip-version-check --no-input pytest==8.4.2
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pytest==8.4.2
+          npm install --prefix "$RUNNER_TEMP/caddy-newman" --no-audit --no-fund newman@6.2.2
+          echo "$RUNNER_TEMP/caddy-newman/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Validate exact merge result and immutable Caddy configuration
         run: bash scripts/validate-ci.sh
 
@@ -76,7 +91,7 @@ jobs:
     name: validate
     if: always()
     needs: [validate-source, validate-merge-result]
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, Linux, X64, codestra-ci]
     timeout-minutes: 2
     steps:
       - name: Preserve the protected legacy aggregate context

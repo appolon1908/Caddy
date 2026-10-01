@@ -1,0 +1,77 @@
+{
+  "schema": "codestra.mcr-k.evidence.v1",
+  "status": "BLOCKED",
+  "environment": "offline",
+  "source_sha": "0feae8a493f54e5f32dfd1f63ba5c967aa5fbf90",
+  "captured_at": "2026-09-25T00:03:52Z",
+  "candidate_sha256": null,
+  "previous_sha256": null,
+  "readback_sha256": null,
+  "rollback_readback_sha256": null,
+  "gates": {
+    "candidate_validation": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "denials": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "headers": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "kong_only": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "pas141": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "post_health": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "pre_health": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "readback": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "redaction": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "reload": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "rollback": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "rollback_health": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "rollback_readback": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    },
+    "route_inventory": {
+      "status": "BLOCKED",
+      "artifact_sha256": null
+    }
+  },
+  "blockers": [
+    "BARE_INTERNAL_UNPROVEN",
+    "FORWARDED_STRIPPING_UNPROVEN",
+    "MCR_ROUTE_INVENTORY_UNPINNED",
+    "PAS141_PENDING",
+    "REDACTION_UNPROVEN",
+    "RUNTIME_NOT_EXECUTED"
+  ]
+}

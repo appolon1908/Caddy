@@ -6,10 +6,11 @@ The Caddy edge must propagate a traceable operation identity without allowing a 
 
 ## Repository implementation status
 
-The current repository does not configure Caddy request-ID generation or
-distributed tracing directives. This contract therefore defines the boundary
-for a future runtime integration and does not claim that the source currently
-generates or propagates these values.
+The shared edge_observability snippet records Caddy request UUIDs, normalizes
+correlation IDs to a bounded safe character set, and generates a UUID when an
+incoming correlation value is absent or malformed. Authorization, traceparent,
+tracestate and Idempotency-Key continue to pass to Kong, which owns trust and
+authorization decisions. No external tracing exporter is required for routing.
 
 ## Required identifiers when enabled
 

@@ -29,13 +29,13 @@ permissions:
 
 jobs:
   deploy-readiness:
-    uses: ingtrader21-spec/Infustruction-repo/.github/workflows/reusable-codestra-deploy-readiness.yml@9d32d421c8272ef33b7a442ac81617bea6d16897
+    uses: ./.github/workflows/reusable-codestra-deploy-readiness.yml
     with:
       repository_class: edge-proxy
       run_stack_tests: false
       artifact_strategy: source-bundle
       runtime_deployable: true
-      health_paths: "/health"
+      health_paths: "/api/v1/health"
       operation: ${{ github.event_name == 'workflow_dispatch' && inputs.operation || 'verify' }}
       confirmation: ${{ github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
       canary_percent: ${{ github.event_name == 'workflow_dispatch' && inputs.canary_percent || '1' }}

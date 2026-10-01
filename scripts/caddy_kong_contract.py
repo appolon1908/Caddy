@@ -64,13 +64,29 @@ def header_up_directives(site_source: str) -> tuple[tuple[str, str], ...]:
     return tuple(("delete" if minus else "set", name) for minus, name, _value in HEADER_UP_RE.findall(site_source))
 
 
+REVERSE_PROXY_OPEN_RE = re.compile(r"^reverse_proxy[ \t]+\S+[ \t]*\{$")
+
+
 def kong_handoff_blocks(site_source: str) -> tuple[str, ...]:
     """Return every reverse_proxy block that hands public API traffic to Kong."""
+    target = "reverse_proxy {$CADDY_KONG_UPSTREAM} {"
+    return _proxy_blocks(site_source, lambda opener: opener == target)
+
+
+def reverse_proxy_blocks(site_source: str) -> tuple[str, ...]:
+    """Return every reverse_proxy block in the site, whatever its upstream."""
+    lines = [line.strip() for line in site_source.splitlines()]
+    if any(line.startswith("reverse_proxy") and not REVERSE_PROXY_OPEN_RE.match(line) for line in lines):
+        # A one-line reverse_proxy has no header_up block, so it cannot strip.
+        raise ValueError("reverse_proxy_without_header_block")
+    return _proxy_blocks(site_source, lambda opener: bool(REVERSE_PROXY_OPEN_RE.match(opener)))
+
+
+def _proxy_blocks(site_source: str, selects) -> tuple[str, ...]:
     lines = site_source.splitlines()
     blocks: list[str] = []
-    target = "reverse_proxy {$CADDY_KONG_UPSTREAM} {"
     for index, line in enumerate(lines):
-        if line.strip() != target:
+        if not selects(line.strip()):
             continue
         indent = line[: len(line) - len(line.lstrip())]
         body: list[str] = []
@@ -92,11 +108,29 @@ def validate_identity_header_boundary(site_source: str, deleted_before_kong: Ite
     identity headers while leaving Authorization, correlation, idempotency and
     trace headers untouched.
     """
-    required_deletes = set(deleted_before_kong)
     blocks = kong_handoff_blocks(site_source)
     if not blocks:
         raise ValueError("kong_handoff_block_count:0")
+    _validate_proxy_identity_blocks(site_source, blocks, deleted_before_kong)
 
+
+def validate_upstream_identity_header_boundary(site_source: str, deleted_before_kong: Iterable[str]) -> None:
+    """Apply the Kong handoff identity rule to every reverse_proxy in the site.
+
+    Transitional upstreams (realtime, legacy fallback) are not behind Kong, so
+    nothing downstream would overwrite a client-asserted identity header. Each
+    one must delete the same contracted list the Kong handoff deletes.
+    """
+    blocks = reverse_proxy_blocks(site_source)
+    if not blocks:
+        raise ValueError("reverse_proxy_block_count:0")
+    _validate_proxy_identity_blocks(site_source, blocks, deleted_before_kong)
+
+
+def _validate_proxy_identity_blocks(
+    site_source: str, blocks: tuple[str, ...], deleted_before_kong: Iterable[str]
+) -> None:
+    required_deletes = set(deleted_before_kong)
     for block in blocks:
         directives = header_up_directives(block)
         for action, name in directives:

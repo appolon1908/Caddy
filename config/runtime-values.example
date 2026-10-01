@@ -4,10 +4,6 @@
 # Kong data-plane listener. Kong repository source exercises the proxy data plane on 127.0.0.1:8000.
 CADDY_KONG_UPSTREAM=127.0.0.1:8000
 
-# Transitional historical API listener from the production-platform reference.
-# Remove after full Kong route parity is proven.
-CADDY_LEGACY_API_UPSTREAM=127.0.0.1:18101
-
 # Transitional realtime/health listener from the historical reference.
 # Remove or move behind Kong only after an accepted Kong realtime contract exists.
 CADDY_REALTIME_UPSTREAM=127.0.0.1:18102

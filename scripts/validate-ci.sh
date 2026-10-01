@@ -5,11 +5,17 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly CADDY_VALIDATOR_IMAGE='docker.io/library/caddy@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c'
 
 cd "$ROOT_DIR"
+python3 scripts/caddy_route_compiler.py --check
 python3 scripts/test_caddy_kong_contract.py
 python3 scripts/validate_repository.py
 python3 scripts/validate_community_n8n.py
 python3 scripts/test_observability_exposure.py
 python3 scripts/validate_observability_exposure.py --check
+
+docker_root_parent="${HOME}/.cache"
+mkdir -p "$docker_root_parent"
+docker_root="$(mktemp -d "$docker_root_parent/caddy-validator.XXXXXX")"
+tar --exclude=.git -cf - . | tar -C "$docker_root" -xf -
 
 common_args=(
   --rm
@@ -32,11 +38,11 @@ common_args=(
   -e CADDY_KYYOW_DOCS_UPSTREAM=127.0.0.1:18303
   -e CADDY_KYYOW_AUTH_UPSTREAM=127.0.0.1:18304
   -e CADDY_KYYOW_STATUS_UPSTREAM=127.0.0.1:18305
-  -v "$ROOT_DIR:/srv:ro"
+  -v "$docker_root:/srv:ro"
 )
 
 formatted_file="$(mktemp)"
-trap 'rm -f -- "$formatted_file"' EXIT
+trap 'rm -f -- "$formatted_file"; rm -rf -- "$docker_root"' EXIT
 docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
   caddy fmt /srv/sites/codestra.media.observability.caddy >"$formatted_file"
 cmp -s sites/codestra.media.observability.caddy "$formatted_file" || {
@@ -49,7 +55,7 @@ python3 scripts/validate_kyyow_ingress.py
 python3 -m unittest discover -s tests -p 'test_kyyow_ingress.py' -v
 
 adapted_file="$(mktemp)"
-trap 'rm -f -- "$formatted_file" "$adapted_file"' EXIT
+trap 'rm -f -- "$formatted_file" "$adapted_file"; rm -rf -- "$docker_root"' EXIT
 docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
   caddy adapt --config /srv/Caddyfile --adapter caddyfile --validate --pretty >"$adapted_file"
 docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
@@ -61,6 +67,17 @@ docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
 python3 scripts/caddy_adapted_routes.py "$adapted_file" \
   --kong-upstream 127.0.0.1:8000 \
   --legacy-upstream 127.0.0.1:18101
+# Certify native HTTP, admin readback and Postman against this exact image binary.
+validator_container="$(docker create "$CADDY_VALIDATOR_IMAGE")"
+docker cp "$validator_container:/usr/bin/caddy" "$docker_root/caddy"
+docker rm "$validator_container" >/dev/null
+export CADDY_BIN="$docker_root/caddy"
+export CADDY_ADAPTED_JSON="$adapted_file"
+export CADDY_LOG_DIR="$docker_root/logs"
+export XDG_DATA_HOME="$docker_root/data"
+export XDG_CONFIG_HOME="$docker_root/config"
+export PATH="$docker_root:$PATH"
+mkdir -p "$CADDY_LOG_DIR"
 python3 -m pytest -q
 
 git diff --check

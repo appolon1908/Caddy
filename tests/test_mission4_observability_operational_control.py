@@ -47,16 +47,16 @@ def test_authorization_and_secret_material_are_not_persisted() -> None:
 
 def test_correlation_contract_does_not_claim_unimplemented_runtime_features() -> None:
     contract = read("docs/correlation-contract-v1.md")
-    assert "repository does not configure Caddy request-ID generation" in contract
+    assert "records Caddy request UUIDs" in contract
     assert "traceparent" in contract
     assert "tracestate" in contract
-    assert "does not claim that the source currently" in contract
-    assert "generates or propagates these values" in contract
+    assert "Kong, which owns trust" in contract
+    assert "No external tracing exporter is required" in contract
 
 
 def test_metrics_contract_rejects_high_cardinality_designs_by_policy() -> None:
     contract = read("docs/metrics-contract-v1.md")
-    assert "does not configure a Caddy metrics endpoint" in contract
+    assert "loopback Admin API" in contract
     assert "user ID" in contract
     assert "correlation ID" in contract
     assert "unbounded query values" in contract

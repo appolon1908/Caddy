@@ -8,7 +8,6 @@
   "canonicalHost": "api.codestra.co",
   "kongUpstreamEnvironmentVariable": "CADDY_KONG_UPSTREAM",
   "kongReferenceListener": "127.0.0.1:8000",
-  "legacyApiUpstreamEnvironmentVariable": "CADDY_LEGACY_API_UPSTREAM",
   "realtimeUpstreamEnvironmentVariable": "CADDY_REALTIME_UPSTREAM",
   "identityBoundary": {
     "caddyAuthenticatesUsersOrServices": false,
@@ -50,11 +49,12 @@
   "privateOnlyPaths": [
     "/metrics",
     "/metrics/*",
+    "/internal",
     "/internal/*"
   ],
-  "privateOnlyRule": "Private Middleware surfaces are answered 404 at the Caddy public edge before Kong or any legacy fallback: /metrics and /metrics/* are private monitoring only and /internal/* is service-to-service only.",
+  "privateOnlyRule": "Private Middleware surfaces are answered 404 at the Caddy public edge before Kong or any legacy fallback: /metrics and /metrics/* are private monitoring only and /internal plus /internal/* are service-to-service only.",
   "migration": {
-    "legacyFallbackTemporarilyAllowed": true,
+    "legacyFallbackTemporarilyAllowed": false,
     "fullKongRouteParityRequiredBeforeRemovingFallback": true,
     "runtimeInventoryRequiredBeforeCutover": true,
     "rollbackRehearsalRequiredBeforeCutover": true,
@@ -68,6 +68,23 @@
     "caddyAuthenticatesEditorSessions": false,
     "directUpstreamToN8nAllowed": false,
     "nativeN8nAuthRequiredBehindGateway": true
+  },
+  "mcrBoundary": {
+    "mission": "MCR-K",
+    "productionCutoverAuthorizedBySource": false,
+    "kongOnly": true,
+    "authorizationHeaderForwarded": true,
+    "trustedIdentityHeadersCreatedByCaddy": false,
+    "publicInternalAndMetricsForbidden": true,
+    "kongRouteContract": "ingtrader21-spec/Kong:config/kong-mcr-routes.v1.json",
+    "coveredByKongManagedPrefix": "/platform/v1",
+    "managedPaths": [
+      "/platform/v1/campaign-engine",
+      "/platform/v1/leads",
+      "/platform/v1/campaigns",
+      "/platform/v1/delivery-events",
+      "/platform/v1/suppressions"
+    ]
   },
   "middlewareEdgeContract": {
     "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
@@ -996,5 +1013,32 @@
       8095
     ],
     "rule": "Caddy never calls Middleware directly; Kong owns the only public-to-Middleware service handoff."
-  }
+  },
+  "unknownRoutePolicy": {
+    "classification": "DENIED_UNKNOWN_ROUTE",
+    "fallbackUpstream": null,
+    "status": 404,
+    "rule": "unmatched public paths fail closed at Caddy and never reach Kong, Middleware, Odoo, n8n, or a provider"
+  },
+  "approvedCompatibilityRoutes": [
+    {
+      "paths": [
+        "/ws/agent",
+        "/api/v1/realtime/sessions",
+        "/healthz",
+        "/readyz",
+        "/version"
+      ],
+      "upstream": "CADDY_REALTIME_UPSTREAM",
+      "classification": "TRANSITIONAL_EXPLICIT"
+    }
+  ],
+  "pendingContractPaths": [
+    "/api/v1/events/telnexa",
+    "/api/v1/n8n/acknowledgements",
+    "/v1/observability/incidents",
+    "/v1/observability/kpis",
+    "/webhooks/sms/inbound/*",
+    "/webhooks/vicidial/call-result/*"
+  ]
 }

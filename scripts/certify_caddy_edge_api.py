@@ -44,7 +44,10 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git stores these certification artifacts with LF line endings. Normalize
+    # CRLF checkouts so Windows/Appolon and Linux CI hash the same committed text.
+    material = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(material).hexdigest()
 
 
 def flatten_items(items: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
@@ -155,10 +158,12 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
                 raise CertificationError(f"webhook {row.get('id')} missing {field}")
 
     unknown = by_id.get("edge.unknown-fallback")
-    if not unknown or unknown.get("classification") != "TRANSITIONAL":
-        raise CertificationError("legacy unknown fallback must remain explicitly transitional")
-    if unknown.get("legacy_fallback") is not True:
-        raise CertificationError("unknown fallback state changed unexpectedly")
+    if not unknown or unknown.get("classification") != "DENIED_UNKNOWN_ROUTE":
+        raise CertificationError("unknown routes must be classified fail-closed")
+    if unknown.get("legacy_fallback") is not False or unknown.get("expected_public_status") != 404:
+        raise CertificationError("unknown-route fallback must be retired with edge 404")
+    if unknown.get("caddy_upstream") != "NONE":
+        raise CertificationError("unknown route must not have upstream")
 
     return {
         "canonical": len(required_canonical),
@@ -214,13 +219,19 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
         key = (str(request.get("method", "")).upper(), request_path(request))
         by_request.setdefault(key, []).append(item)
 
+    # Kong answers canonical API probes: a Caddy edge 404 or a failed Kong hop
+    # (5xx) must never satisfy them. That the probe reached Kong at all is proven
+    # by the adapted-route matrix, not by the status code.
     required_api = {
-        ("GET", "/platform/v1/kernel/describe"),
-        ("POST", "/v2/automation/commands"),
+        ("GET", "/platform/v1/kernel/describe"): {200, 401, 403},
+        ("POST", "/v2/automation/commands"): {401, 403},
     }
-    missing_api = sorted(required_api - set(by_request))
+    missing_api = sorted(set(required_api) - set(by_request))
     if missing_api:
         raise CertificationError(f"Postman API probes missing: {missing_api}")
+    for key, statuses in required_api.items():
+        if not any(has_status_assertion(item, statuses) for item in by_request[key]):
+            raise CertificationError(f"Postman API status assertion missing: {key}")
 
     private_required = {
         ("GET", "/metrics"),
@@ -244,6 +255,9 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
         raise CertificationError(
             f"Postman webhook wrong-method probes missing: {missing_webhook_wrong_methods}"
         )
+    for key in webhook_wrong_methods:
+        if not any(has_status_assertion(item, {404, 405}) for item in by_request[key]):
+            raise CertificationError(f"Postman webhook wrong-method assertion missing: {key}")
 
     pending_required = {
         ("POST", "/api/v1/events/telnexa"),
@@ -256,8 +270,9 @@ def validate_postman(collection: dict[str, Any], environment: dict[str, Any]) ->
             raise CertificationError(f"Postman pending-contract 404 assertion missing: {key}")
 
     unknown_probe = ("GET", "/__caddy_unclassified_probe__")
-    if unknown_probe not in by_request:
-        raise CertificationError("Postman transitional unknown-route evidence probe missing")
+    candidates = by_request.get(unknown_probe)
+    if not candidates or not any(has_status_assertion(item, {404}) for item in candidates):
+        raise CertificationError("Postman fail-closed unknown-route 404 assertion missing")
 
     return {
         "api": "PASS",
@@ -322,7 +337,7 @@ def certify(
         "adapted": adapted,
         "postman": postman,
         "chain": chain_report,
-        "unknown_route_fallback": "TRANSITIONAL",
+        "unknown_route_fallback": "ZERO_FAIL_CLOSED",
         "runtime_reload_authorized": False,
     }
 
@@ -378,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
             "POSTMAN_DIGEST_CHAIN="
             + ("PASS" if report["chain"]["postman_match"] else "PENDING_PAS_162")
         )
-        print("UNKNOWN_ROUTE_FALLBACK=TRANSITIONAL")
+        print("UNKNOWN_ROUTE_FALLBACK_ZERO=YES")
         print("CADDY_LIVE_RELOAD_AUTHORIZED=NO")
     return 0
 
