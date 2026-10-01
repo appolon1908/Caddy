@@ -172,12 +172,17 @@ done
 "$PYTHON" -c 'import json,sys; assert json.load(open(sys.argv[1]))["issuer"] == "https://auth.codestra.co/realms/codestra"' \
   "$work/keycloak.json" || fail live_keycloak_issuer
 
-"$OPENSSL" s_client -connect "${public_bind}:443" -servername api.codestra.co -alpn h2 </dev/null 2>/dev/null \
-  | grep -q 'ALPN protocol: h2' || fail live_http2
-"$OPENSSL" s_client -connect "${public_bind}:443" -servername api.codestra.co </dev/null 2>/dev/null \
-  | "$OPENSSL" x509 -noout -checkend 604800 >/dev/null || fail live_certificate_expiry
+# Capture each probe before checking it: an early-exiting reader would send the
+# writer SIGPIPE and, under pipefail, fail a healthy edge at random.
+"$OPENSSL" s_client -connect "${public_bind}:443" -servername api.codestra.co -alpn h2 </dev/null \
+  >"$work/alpn.txt" 2>/dev/null || true
+grep -q 'ALPN protocol: h2' "$work/alpn.txt" || fail live_http2
+"$OPENSSL" s_client -connect "${public_bind}:443" -servername api.codestra.co </dev/null \
+  >"$work/tls.txt" 2>/dev/null || true
+"$OPENSSL" x509 -in "$work/tls.txt" -noout -checkend 604800 >/dev/null || fail live_certificate_expiry
 docker_cmd exec codestra-caddy /usr/bin/codestra-http3-probe api.codestra.co "$public_bind" /version \
-  | grep -q 'CADDY_HTTP3_CANARY=PASS' || fail live_http3
+  >"$work/http3.txt" || fail live_http3
+grep -q 'CADDY_HTTP3_CANARY=PASS' "$work/http3.txt" || fail live_http3
 "$PYTHON" "$WEBSOCKET_PROBE" api.codestra.co "$public_bind" /ws/agent >/dev/null || fail live_websocket
 
 # A loopback alias outside every allowlist proves the source gates deny.
