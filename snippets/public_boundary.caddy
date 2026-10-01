@@ -1,7 +1,9 @@
 # Public boundary runs before site-specific routes and upstreams.
 (public_boundary) {
 	route {
-		@public_private_paths path /metrics /metrics/* /internal /internal/*
+		# Path parameters (/metrics;x) are denied too: servlet-style upstreams strip
+		# them and would otherwise serve the private path behind the edge.
+		@public_private_paths path /metrics /metrics/* /metrics;* /internal /internal/* /internal;*
 		respond @public_private_paths 404
 
 		# Gateways derive identity; client assertions never cross this boundary.
