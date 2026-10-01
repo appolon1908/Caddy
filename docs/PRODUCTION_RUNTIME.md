@@ -45,11 +45,21 @@ listener ownership.
 The admin-API activation in `scripts/caddy_control_api.py` stays disabled by
 default; it does not replace image releases.
 
+## Production canary
+
+`scripts/run_production_readonly_canary.sh` is the bounded, zero-public-traffic
+canary that `.github/workflows/production-readonly-canary-v2.yml` runs on the
+production read-only runner. It never starts, stops or reconfigures the live
+container and sends only GET/HEAD requests and TLS handshakes. It snapshots the
+live container with the read-only validator, proves the expected signed image's
+identity and embedded configuration digest, validates that configuration
+offline, probes the live edge (Kong handoff, redirect and HSTS, realtime,
+unknown and private paths, Keycloak discovery, HTTP/2, HTTP/3, certificate
+lifetime, WebSocket, editor and OpenBao denial, mTLS private ingress, Grafana),
+and fails unless the second snapshot is byte-identical. The workflow binds the
+checkout to the shipped configuration with `scripts/stage_image_config.py --digest`.
+
 ## Open items
 
-- `.github/workflows/production-readonly-canary-v2.yml` still calls
-  `scripts/run_production_readonly_canary.sh`, which exists on neither lineage.
-  Its zero-public-traffic loopback canary must be restored before that workflow
-  can pass.
 - Image namespace: signed images live under `appolon1908-hue`; moving them is a
   separate decision from the source repository transfer.

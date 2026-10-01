@@ -169,7 +169,8 @@ def test_validation_workflow_serializes_validation_runs() -> None:
 
 def test_exact_release_identity_is_required() -> None:
     workflow = (ROOT / ".github" / "workflows" / "production-readonly-canary-v2.yml").read_text(encoding="utf-8")
-    assert "scripts/config_digest.py" in workflow
+    # The canary binds the checkout to the configuration identity the image ships.
+    assert "scripts/stage_image_config.py --digest" in workflow
     assert "CADDY_CANARY_SOURCE_SHA" in workflow
     assert "CADDY_CANARY_CONFIG_SHA256" in workflow
     assert "CONFIG_SHA256" in workflow

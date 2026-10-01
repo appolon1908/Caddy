@@ -10,7 +10,10 @@ from __future__ import annotations
 
 import shutil
 import sys
+import tempfile
 from pathlib import Path
+
+from hash_config_tree import config_tree_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 PATTERNS = ("Caddyfile", "snippets/*.caddy", "sites/*.caddy")
@@ -34,11 +37,22 @@ def stage(destination: Path, root: Path = ROOT) -> list[str]:
     return staged
 
 
+def digest(root: Path = ROOT) -> str:
+    """The configuration identity the image ships for this source tree."""
+    with tempfile.TemporaryDirectory(prefix="caddy-image-config-") as directory:
+        tree = Path(directory) / "etc-caddy"
+        stage(tree, root)
+        return config_tree_hash(tree)
+
+
 def main() -> int:
     if len(sys.argv) != 2:
-        print("usage: stage_image_config.py DESTINATION", file=sys.stderr)
+        print("usage: stage_image_config.py DESTINATION | --digest", file=sys.stderr)
         return 2
     try:
+        if sys.argv[1] == "--digest":
+            print(digest())
+            return 0
         staged = stage(Path(sys.argv[1]))
     except (OSError, ValueError) as exc:
         print(f"CADDY_IMAGE_CONFIG=FAIL:{exc}", file=sys.stderr)
