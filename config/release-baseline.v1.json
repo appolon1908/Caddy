@@ -1,0 +1,7 @@
+{
+  "schema": "codestra.caddy-release-baseline.v1",
+  "source_sha": "c5f9555082aadbb0a762234394ef08f1908e484c",
+  "image": "ghcr.io/appolon1908-hue/codestra-caddy@sha256:0ab7e8ffb47420d055fae4976d0b96ff579d26381c777c3d4fde6170f7359f5e",
+  "purpose": "immutable rollback baseline for the first reconciled release",
+  "mutable": false
+}

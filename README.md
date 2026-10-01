@@ -48,6 +48,7 @@ Each system keeps its own source authority:
   `sites/staging-internal.caddy`, and the private listeners in `sites/middleware-private.caddy`
   and `sites/klyrow-events.private.caddy`. `tests/test_production_lineage_hosts.py` fails if any
   production address is dropped or a gate is weakened.
+- `docs/PRODUCTION_RUNTIME.md`, `Dockerfile`, `deploy/compose.runtime.yaml` — the canonical production runtime: one immutable, signed, non-root container with controlled release and rollback.
 - `sites-pending/kyyow.com.caddy` — Kyyow hosts, kept in source but not imported until their DNS and
   upstreams exist, so no certificate is requested for them.
 - The root `Caddyfile` keeps the private `:2020` metrics listener that Prometheus scrapes as

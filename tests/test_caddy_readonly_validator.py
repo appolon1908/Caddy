@@ -264,7 +264,93 @@ def test_transport_policy_rejects_public_admin_and_disabled_tls():
             validator.require_transport_security(broken)
 
 
-def test_main_does_not_report_success_when_served_configuration_drifts(monkeypatch, capsys):
+DIGEST = "sha256:" + "d" * 64
+IMAGE = validator.EXPECTED_IMAGE_REPOSITORY + "@" + DIGEST
+SOURCE = "a" * 40
+
+
+def container_fixture(config_sha="c" * 64, **overrides):
+    labels = {
+        validator.SOURCE_LABEL: SOURCE,
+        validator.DIGEST_LABEL: DIGEST,
+        validator.CONFIG_LABEL: config_sha,
+        validator.RELEASE_LABEL: "release-1",
+    }
+    container = {
+        "State": {"Running": True, "Health": {"Status": "healthy"}},
+        "Config": {"Image": IMAGE, "Labels": labels, "Env": [
+            "CADDY_PUBLIC_BIND=203.0.113.10", "CADDY_PRIVATE_METRICS_BIND=10.40.0.1",
+            "CADDY_PRIVATE_INGRESS_BIND=10.40.0.1", "CADDY_KONG_UPSTREAM=127.0.0.1:8000",
+            "CADDY_EDITOR_ADMIN_CIDRS=192.0.2.0/24", "CADDY_N8N_EDITOR_MAX_REQUEST_BODY=16777216",
+            "CADDY_REALTIME_UPSTREAM=127.0.0.1:18102", "CADDY_N8N_EDITOR_HOST=n8n-editor.invalid",
+            "CADDY_N8N_OAUTH2_PROXY_UPSTREAM=127.0.0.1:4180"]},
+    }
+    image = {
+        "RepoDigests": [IMAGE],
+        "Config": {"User": validator.RUNTIME_USER, "Labels": {
+            "org.opencontainers.image.source": "https://github.com/appolon1908/Caddy",
+            "org.opencontainers.image.revision": SOURCE,
+            validator.CONFIG_LABEL: config_sha,
+        }},
+    }
+    for path, value in overrides.items():
+        target, *keys = path.split(".")
+        node = container if target == "container" else image
+        for key in keys[:-1]:
+            node = node[key]
+        node[keys[-1]] = value
+    return container, image
+
+
+def test_container_identity_requires_the_signed_non_root_release():
+    import pytest
+    container, image = container_fixture()
+    assert validator.require_container_identity(container, image)["image_digest"] == DIGEST
+    for override in (
+        {"container.State.Health": {"Status": "unhealthy"}},
+        {"container.Config.Image": validator.EXPECTED_IMAGE_REPOSITORY + ":latest"},
+        {"container.Config.Image": "ghcr.io/other/codestra-caddy@" + DIGEST},
+        {"container.Config.Labels": {validator.SOURCE_LABEL: SOURCE}},
+        {"image.Config.User": "0:0"},
+        {"image.Config.Labels": {"org.opencontainers.image.source": "https://github.com/evil/Caddy",
+                                 "org.opencontainers.image.revision": SOURCE, validator.CONFIG_LABEL: "c" * 64}},
+        {"image.RepoDigests": []},
+    ):
+        broken = container_fixture(**override)
+        with pytest.raises(validator.ValidationError):
+            validator.require_container_identity(*broken)
+
+
+def test_runtime_environment_validates_without_echoing_values():
+    import pytest
+    container, _ = container_fixture()
+    entries = container["Config"]["Env"]
+    required = {"CADDY_PUBLIC_BIND", "CADDY_PRIVATE_METRICS_BIND", "CADDY_KONG_UPSTREAM", "CADDY_EDITOR_ADMIN_CIDRS"}
+    assert set(validator.runtime_environment(entries, required)) == required
+    for bad in ("CADDY_KONG_UPSTREAM=kong", "CADDY_PUBLIC_BIND=not-an-ip", "CADDY_EDITOR_ADMIN_CIDRS=999.0.0.0/8",
+                "CADDY_PRIVATE_METRICS_BIND=8.8.8.8"):
+        name = bad.split("=", 1)[0]
+        mutated = [entry for entry in entries if not entry.startswith(name + "=")] + [bad]
+        with pytest.raises(validator.ValidationError) as caught:
+            validator.runtime_environment(mutated, required)
+        assert bad.split("=", 1)[1] not in str(caught.value)
+    with pytest.raises(validator.ValidationError):
+        validator.runtime_environment(entries, required | {"CADDY_MISSING_UPSTREAM"})
+
+
+def test_listener_must_belong_to_the_single_caddy_process():
+    import pytest
+    table = "PID PPID COMMAND ARGS\n4242 4200 caddy /usr/bin/caddy run --config /etc/caddy/Caddyfile\n"
+    pid = validator.caddy_host_pid(table)
+    sockets = 'tcp LISTEN 0 4096 203.0.113.10:443 0.0.0.0:* users:(("caddy",pid=4242,fd=7))'
+    assert validator.require_listener(sockets, "tcp", "203.0.113.10", 443, pid) == "tcp/203.0.113.10:443"
+    with pytest.raises(validator.ValidationError):
+        validator.require_listener(sockets.replace("pid=4242", "pid=999"), "tcp", "203.0.113.10", 443, pid)
+    with pytest.raises(validator.ValidationError):
+        validator.caddy_host_pid(table + "4243 4200 caddy /usr/bin/caddy run\n")
+
+
+def test_main_does_not_report_success_when_served_configuration_drifts(monkeypatch, capsys, tmp_path):
     import pytest
     fields = {name: {'filter': 'delete'} for name in (
         'request>headers>Authorization', 'request>headers>Apikey', 'request>headers>X-Api-Key',
@@ -281,17 +367,38 @@ def test_main_does_not_report_success_when_served_configuration_drifts(monkeypat
             'routes': [{'match': [{'host': ['api.codestra.co']}], 'handle': [
                 {'handler': 'reverse_proxy', 'upstreams': [{'dial': 'kong:8000'}]}]}]
         }}}}}
-    monkeypatch.setattr(validator.sys, 'argv', ['validator'])
-    monkeypatch.setattr(validator, 'canonical_source', lambda: ('\n'.join(validator.REQUIRED_REDACTIONS), 'source-digest'))
-    monkeypatch.setattr(validator, 'runtime_environment', lambda required: {})
+    container, image = container_fixture(config_sha="e" * 64)
+    source = '\n'.join(validator.REQUIRED_REDACTIONS)
+    sockets = '\n'.join(
+        f'{proto} LISTEN 0 4096 {address}:{port} 0.0.0.0:* users:(("caddy",pid=4242,fd=7))'
+        for proto, address, port in (("tcp", "203.0.113.10", 80), ("tcp", "203.0.113.10", 443),
+                                     ("udp", "203.0.113.10", 443), ("tcp", "10.40.0.1", 2020),
+                                     ("tcp", "10.40.0.1", 18080)))
+    calls = []
+
     def run(command, environment=None):
-        if command[1] == 'adapt':
+        calls.append(command)
+        tail = command[1:3]
+        if tail == ["inspect", validator.CONTAINER]:
+            return json.dumps([container])
+        if tail[0] == "image":
+            return json.dumps([image])
+        if tail[0] == "top":
+            return "PID PPID COMMAND ARGS\n4242 4200 caddy /usr/bin/caddy run --config /etc/caddy/Caddyfile\n"
+        if command[0] == validator.SS:
+            return sockets
+        if command[0] == validator.CURL:
+            return "ok"
+        if "adapt" in command:
             return json.dumps(desired)
-        if command[1] == 'is-active':
-            return 'active'
-        assert command[1] == 'validate'
-        return ''
+        if "list-modules" in command:
+            return "\n".join(sorted(validator.REQUIRED_MODULES))
+        assert "validate" in command
+        return ""
+
+    monkeypatch.setattr(validator.sys, 'argv', ['validator'])
     monkeypatch.setattr(validator, 'run_fixed', run)
+    monkeypatch.setattr(validator, 'container_config', lambda copied: (source, "e" * 64))
     monkeypatch.setattr(validator, 'active_configuration', lambda: {'old': 'secret-runtime-value'})
     with pytest.raises(validator.ValidationError, match='served configuration differs'):
         validator.main()
@@ -299,5 +406,29 @@ def test_main_does_not_report_success_when_served_configuration_drifts(monkeypat
     monkeypatch.setattr(validator, 'active_configuration', lambda: desired)
     assert validator.main() == 0
     evidence = json.loads(capsys.readouterr().out)
-    assert evidence['served_config_matches_disk'] is True
-    assert evidence['config_validation'] == 'PASS'
+    assert evidence['served_config_matches_image'] is True
+    assert evidence['config_identity'] == 'PASS' and evidence['image_digest'] == DIGEST
+    assert len(evidence['listeners']) == 5
+    assert all(command[0] in {validator.DOCKER, validator.SS, validator.CURL} for command in calls)
+    assert not any(verb in command for command in calls for verb in ("rm", "stop", "restart", "kill", "load"))
+
+    monkeypatch.setattr(validator, 'container_config', lambda copied: (source, "f" * 64))
+    with pytest.raises(validator.ValidationError, match='does not match the signed image'):
+        validator.main()
+
+
+def test_config_tree_hash_matches_the_release_hash_tool(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("hash_config_tree", ROOT / "scripts" / "hash_config_tree.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    stage = importlib.util.spec_from_file_location("stage_image_config", ROOT / "scripts" / "stage_image_config.py")
+    staging = importlib.util.module_from_spec(stage)
+    stage.loader.exec_module(staging)
+    tree = tmp_path / "etc-caddy"
+    staged = staging.stage(tree)
+    assert "Caddyfile" in staged and not any(path.startswith("sites-pending") for path in staged)
+    (tree / "private" / "klyrow-events").mkdir(parents=True)
+    (tree / "private" / "klyrow-events" / ".mountpoint").write_text("")
+    assert validator.config_tree_hash(tree) == module.config_tree_hash(tree)
+    assert validator.canonical_source(tree)[1] == module.config_tree_hash(tree)
