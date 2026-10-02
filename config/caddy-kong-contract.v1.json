@@ -1,10 +1,10 @@
 {
   "schema": "codestra.caddy-kong-edge.v1",
-  "principalRepository": "ingtrader21-spec/Caddy",
-  "gatewayRepository": "ingtrader21-spec/Kong",
-  "identityRepository": "ingtrader21-spec/Keycloak",
-  "writeBoundaryRepository": "ingtrader21-spec/Middleware-",
-  "referenceRepository": "appolon1908-hue/codestra-production-platform",
+  "principalRepository": "appolon1908/Caddy",
+  "gatewayRepository": "appolon1908/Kong",
+  "identityRepository": "appolon1908/Keycloak",
+  "writeBoundaryRepository": "appolon1908/Middleware-",
+  "referenceRepository": "appolon1908/codestra-production-platform",
   "canonicalHost": "api.codestra.co",
   "kongUpstreamEnvironmentVariable": "CADDY_KONG_UPSTREAM",
   "kongReferenceListener": "127.0.0.1:8000",
@@ -76,7 +76,7 @@
     "authorizationHeaderForwarded": true,
     "trustedIdentityHeadersCreatedByCaddy": false,
     "publicInternalAndMetricsForbidden": true,
-    "kongRouteContract": "ingtrader21-spec/Kong:config/kong-mcr-routes.v1.json",
+    "kongRouteContract": "appolon1908/Kong:config/kong-mcr-routes.v1.json",
     "coveredByKongManagedPrefix": "/platform/v1",
     "managedPaths": [
       "/platform/v1/campaign-engine",
@@ -87,7 +87,7 @@
     ]
   },
   "middlewareEdgeContract": {
-    "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
+    "source": "appolon1908/Middleware-:deploy/public-api-route-contract.json",
     "sourceSha": "2862af0aa97367b18cb360af69212abe4243a1ac",
     "kongVendoredCopy": "Kong:config/middleware-public-api-route-contract.v1.json",
     "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
@@ -139,7 +139,7 @@
     "rule": "api.codestra.co reaches Middleware, Odoo and N8N only through Kong"
   },
   "serviceJwtRouteContract": {
-    "sourceRepository": "ingtrader21-spec/Middleware-",
+    "sourceRepository": "appolon1908/Middleware-",
     "sourcePath": "deploy/public-api-route-contract.json",
     "sourceSha": "2862af0aa97367b18cb360af69212abe4243a1ac",
     "sourceSchema": "codestra.middleware.public-api-route-contract.v2",

@@ -14,7 +14,7 @@ def test_canonical_namespaces_go_to_kong_without_legacy_fallback():
     for key in ("edge.platform-v1", "edge.automation-v2"):
         entry = by_id[key]
         assert entry["classification"] == "CANONICAL"
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
+        assert entry["gateway"] == "appolon1908/Kong"
         assert entry["caddy_upstream"] == "CADDY_KONG_UPSTREAM"
         assert entry["legacy_fallback"] is False
 
@@ -58,8 +58,8 @@ def test_webhooks_have_exact_methods_and_explicit_owners():
     assert WEBHOOKS["entries"]
     for entry in WEBHOOKS["entries"]:
         assert entry["methods"] == ["POST"]
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
-        assert entry["downstream_owner"] == "ingtrader21-spec/Middleware-"
+        assert entry["gateway"] == "appolon1908/Kong"
+        assert entry["downstream_owner"] == "appolon1908/Middleware-"
         assert entry["identity_gate_owner"]
         assert entry["replay_protection_owner"]
         assert entry["log_redaction"]

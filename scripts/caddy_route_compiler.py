@@ -423,7 +423,7 @@ def edge_inventory(authority: dict[str, Any], generated: str) -> dict[str, Any]:
                      'host': authority['canonicalHost'], 'path': path, 'methods': methods,
                      'visibility': visibility, 'upstream_ref': upstream,
                      'upstream_service': 'kong' if upstream == 'CADDY_KONG_UPSTREAM' else ('none' if upstream == 'NONE' else 'realtime'),
-                     'owner': 'ingtrader21-spec/Caddy'})
+                     'owner': 'appolon1908/Caddy'})
     for row in authority['serviceJwtRouteContract']['routes']:
         add(row['path'], [row['method']], 'public', 'CADDY_KONG_UPSTREAM', 'edge.canonical.' + row['method'].lower())
     for path in authority['kongManagedPathPrefixes']:

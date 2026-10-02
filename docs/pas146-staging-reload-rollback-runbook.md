@@ -22,7 +22,7 @@ Runtime execution is blocked until **all ten** current gates are true at the sam
 4. PR #179 has an independent approval recorded.
 5. PR #179 is merged to Caddy `main`.
 6. The exact merged Caddy main SHA is recorded.
-7. Shared deploy-readiness repair `ingtrader21-spec/Infustruction-repo#126` is accepted and merged.
+7. Shared deploy-readiness repair `appolon1908/Infustruction-repo#126` is accepted and merged.
 8. Caddy protected-main deploy-readiness is rerun green using the accepted reusable workflow.
 9. PR #181 source-hygiene drift repair is merged from a reviewed/green exact head.
 10. PAS-178 proves protected-main/review enforcement is active before runtime mutation.

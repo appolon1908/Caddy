@@ -87,11 +87,11 @@ def render() -> tuple[str, str]:
     edge = json.loads(EDGE.read_text(encoding="utf-8"))
     edge.update(
         {
-            "principalRepository": "ingtrader21-spec/Caddy",
-            "gatewayRepository": "ingtrader21-spec/Kong",
-            "identityRepository": "ingtrader21-spec/Keycloak",
-            "writeBoundaryRepository": "ingtrader21-spec/Middleware-",
-            "referenceRepository": "appolon1908-hue/codestra-production-platform",
+            "principalRepository": "appolon1908/Caddy",
+            "gatewayRepository": "appolon1908/Kong",
+            "identityRepository": "appolon1908/Keycloak",
+            "writeBoundaryRepository": "appolon1908/Middleware-",
+            "referenceRepository": "appolon1908/codestra-production-platform",
         }
     )
 
@@ -106,7 +106,7 @@ def render() -> tuple[str, str]:
     )
 
     edge["middlewareEdgeContract"] = {
-        "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
+        "source": "appolon1908/Middleware-:deploy/public-api-route-contract.json",
         "sourceSha": MIDDLEWARE_SOURCE_SHA,
         "kongVendoredCopy": "Kong:config/middleware-public-api-route-contract.v1.json",
         "sha256": digest,
@@ -121,7 +121,7 @@ def render() -> tuple[str, str]:
     }
 
     edge["serviceJwtRouteContract"] = {
-        "sourceRepository": "ingtrader21-spec/Middleware-",
+        "sourceRepository": "appolon1908/Middleware-",
         "sourcePath": "deploy/public-api-route-contract.json",
         "sourceSha": MIDDLEWARE_SOURCE_SHA,
         "sourceSchema": contract["schema"],

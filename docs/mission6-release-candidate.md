@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Remote | `https://github.com/ingtrader21-spec/Caddy.git` |
+| Remote | `https://github.com/appolon1908/Caddy.git` |
 | Branch | `feature/caddy-integration-route-hardening` |
 | Git SHA | `1f72905471645d490e7bd4ddf20a11d846df1446` |
 | Working tree | DIRTY, all entries classified below |

@@ -87,7 +87,7 @@ def validate_candidate(candidate: dict[str, Any]) -> None:
     require(candidate.get("status") == "PREPARED_BLOCKED", "candidate must stay blocked")
 
     prepared = candidate.get("prepared_from", {})
-    require(prepared.get("repository") == "ingtrader21-spec/Caddy", "repository drift")
+    require(prepared.get("repository") == "appolon1908/Caddy", "repository drift")
     require(prepared.get("pull_request") == EXPECTED_PREPARATION_PR, "PR source drift")
     require(prepared.get("pr_head_sha") == EXPECTED_PR_HEAD, "prepared PR head drift")
     require(SHA40.fullmatch(prepared["pr_head_sha"]) is not None, "PR head must be full SHA")

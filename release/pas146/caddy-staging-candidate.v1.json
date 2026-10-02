@@ -3,7 +3,7 @@
   "kind": "caddy-staging-candidate-preparation",
   "status": "PREPARED_BLOCKED",
   "prepared_from": {
-    "repository": "ingtrader21-spec/Caddy",
+    "repository": "appolon1908/Caddy",
     "pull_request": 179,
     "pr_head_sha": "8a0ff7f45e5b50750a603a9e653ff2687e25361a",
     "merged_main_sha": "22c6d51ed2f5340139177131fb810e787f0f7550"

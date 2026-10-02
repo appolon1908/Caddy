@@ -2,9 +2,9 @@
 
 ## Permanent ownership
 
-`ingtrader21-spec/Caddy` is the principal Git source for the shared Caddy edge. It owns TLS termination, public host selection, reverse-proxy handoff, shared edge headers, access-log redaction, Caddy validation, and Caddy release evidence.
+`appolon1908/Caddy` is the principal Git source for the shared Caddy edge. It owns TLS termination, public host selection, reverse-proxy handoff, shared edge headers, access-log redaction, Caddy validation, and Caddy release evidence.
 
-`ingtrader21-spec/Kong` remains principal for Kong services, routes, plugins, Keycloak OIDC/JWT validation, scopes, rate limits, request-size policy, and the gateway-to-Middleware handoff.
+`appolon1908/Kong` remains principal for Kong services, routes, plugins, Keycloak OIDC/JWT validation, scopes, rate limits, request-size policy, and the gateway-to-Middleware handoff.
 
 `ingtrader21-spec/Keycloak` is the identity/token issuer. `ingtrader21-spec/Middleware-` is the cross-system write/command boundary. `appolon1908-hue/codestra-production-platform` is historical runtime/deployment/reconciliation/rollback evidence only.
 
@@ -41,7 +41,7 @@ The Caddy reverse proxy explicitly preserves `Host: api.codestra.co` because Kon
 ## Service-JWT integration routes
 
 Four integration routes are exposed method-exactly rather than by prefix. They
-mirror `deploy/public-api-route-contract.json` in `ingtrader21-spec/Middleware-`,
+mirror `deploy/public-api-route-contract.json` in `appolon1908/Middleware-`,
 whose canonical SHA-256 is pinned under `serviceJwtRouteContract.sha256` in
 `config/caddy-kong-contract.v1.json`. Middleware, Kong, Caddy and Keycloak must
 carry the identical digest; a change to the Middleware contract is a
@@ -81,7 +81,7 @@ These fallbacks are migration compatibility, not a competing authority. They may
 
 Caddy CI must fail when any of these become true:
 
-- the principal repository is no longer `ingtrader21-spec/Caddy`;
+- the principal repository is no longer `appolon1908/Caddy`;
 - `codestra-production-platform` becomes principal again;
 - a Kong-managed path is removed from the Caddy -> Kong contract without an explicit contract-version change;
 - Caddy creates trusted application identity headers;
@@ -97,7 +97,7 @@ A green source PR does not authorize a live Caddy reload, DNS/TLS change, Kong r
 n8n Community Edition has no enterprise SSO, so the editor cannot authenticate
 against Keycloak by itself. The reviewed community-compatible strategy is
 `verified-gateway-oidc-and-native-auth`, recorded in
-`ingtrader21-spec/N8N` at `config/n8n-policy.json`:
+`appolon1908/N8N` at `config/n8n-policy.json`:
 
 1. Caddy terminates TLS for `automation.codestra.co` and refuses any source
    outside `CADDY_EDITOR_ADMIN_CIDRS` before anything else runs.

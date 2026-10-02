@@ -102,7 +102,7 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
             raise CertificationError(f"{edge_id} path drift")
         if row.get("classification") != "CANONICAL":
             raise CertificationError(f"{edge_id} is not canonical")
-        if row.get("gateway") != "ingtrader21-spec/Kong":
+        if row.get("gateway") != "appolon1908/Kong":
             raise CertificationError(f"{edge_id} does not route through Kong")
         if row.get("caddy_upstream") != "CADDY_KONG_UPSTREAM":
             raise CertificationError(f"{edge_id} has non-Kong Caddy upstream")
@@ -144,9 +144,9 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
     for row in webhook_rows:
         if row.get("methods") != ["POST"]:
             raise CertificationError(f"webhook method drift: {row.get('id')}")
-        if row.get("gateway") != "ingtrader21-spec/Kong":
+        if row.get("gateway") != "appolon1908/Kong":
             raise CertificationError(f"webhook bypasses Kong: {row.get('id')}")
-        if row.get("downstream_owner") != "ingtrader21-spec/Middleware-":
+        if row.get("downstream_owner") != "appolon1908/Middleware-":
             raise CertificationError(f"webhook downstream owner drift: {row.get('id')}")
         for field in (
             "identity_gate_owner",

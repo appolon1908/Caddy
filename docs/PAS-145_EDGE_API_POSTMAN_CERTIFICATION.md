@@ -2,7 +2,7 @@
 
 ## Source and ownership
 
-- Repository: `ingtrader21-spec/Caddy`
+- Repository: `appolon1908/Caddy`
 - Canonical successor PR: #175
 - PAS-162 accepted technical head: `e29247990a05c6ed1d8c88bfd48a2816dfa90770`
 - Agent-2 branch: `mission/caddy-pas145-edge-certification-20260920`
