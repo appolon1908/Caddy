@@ -59,7 +59,7 @@
       "sse": false,
       "security_header_profile": "default",
       "timeout_profile": "api-default",
-      "owner": "ingtrader21-spec/Middleware-",
+      "owner": "appolon1908/Middleware-",
       "environment": "shared"
     },
     {
@@ -77,7 +77,7 @@
       "sse": false,
       "security_header_profile": "default",
       "timeout_profile": "api-default",
-      "owner": "ingtrader21-spec/Middleware-",
+      "owner": "appolon1908/Middleware-",
       "environment": "shared"
     },
     {
@@ -95,7 +95,7 @@
       "sse": false,
       "security_header_profile": "default",
       "timeout_profile": "webhook-standard",
-      "owner": "ingtrader21-spec/Middleware-",
+      "owner": "appolon1908/Middleware-",
       "environment": "shared"
     },
     {
@@ -113,7 +113,7 @@
       "sse": false,
       "security_header_profile": "default",
       "timeout_profile": "webhook-standard",
-      "owner": "ingtrader21-spec/Middleware-",
+      "owner": "appolon1908/Middleware-",
       "environment": "shared"
     },
     {

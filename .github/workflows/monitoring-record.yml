@@ -34,7 +34,7 @@ jobs:
           assert r["repository_inventory_count"] == 63
           assert r["activation_enabled"] is False
           assert r["runtime_coverage"] == "unverified"
-          assert re.fullmatch(r"https://raw\.githubusercontent\.com/ingtrader21-spec/Middleware-/[a-f0-9]{40}/contracts/observability/integrated-monitoring\.openapi\.json", r["api_contract_url"])
+          assert re.fullmatch(r"https://raw\.githubusercontent\.com/appolon1908/Middleware-/[a-f0-9]{40}/contracts/observability/integrated-monitoring\.openapi\.json", r["api_contract_url"])
           assert len(r["service_ids"]) == len(set(r["service_ids"]))
           if r["monitoring_profile"] == "release-and-dependency":
               assert not r["service_ids"]
@@ -42,7 +42,7 @@ jobs:
               assert "fresh_telemetry" not in r["completion_evidence_required"]
               assert r["runtime_onboarding_allowed"] is False
           if r.get("repository_lifecycle") == "archival":
-              assert r["canonical_runtime_repository"] == "appolon1908-hue/kyqra-crawler"
+              assert r["canonical_runtime_repository"] == "appolon1908/kyqra-crawler"
               assert r["runtime_onboarding_allowed"] is False
           assert set(r["signal_owners"]) == {"metrics", "logs", "traces", "alerts", "catalog", "errors", "security"}
           print("MONITORING_ONBOARDING_RECORD=PASS")

@@ -1,14 +1,14 @@
 {
-  "authority": "ingtrader21-spec/Caddy",
+  "authority": "appolon1908/Caddy",
   "entries": [
     {
       "classification": "CANONICAL",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging",
         "production-gated"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware where required",
       "id": "webhook.odoo-events",
       "identity_gate_owner": "Kong/Middleware",
@@ -28,12 +28,12 @@
     },
     {
       "classification": "CANONICAL",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging",
         "production-gated"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "not-applicable/service-jwt",
       "id": "webhook.n8n-results",
       "identity_gate_owner": "Kong/Middleware",
@@ -54,11 +54,11 @@
     {
       "blocker": "Middleware issue #264 / route not present in current public-edge contract",
       "classification": "TRANSITIONAL_PENDING_CONTRACT",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware",
       "id": "webhook.telnexa",
       "identity_gate_owner": "Kong/Middleware",
@@ -79,11 +79,11 @@
     {
       "blocker": "Kernel convergence / route not present in current public-edge contract",
       "classification": "TRANSITIONAL_PENDING_CONTRACT",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging"
       ],
-      "gateway": "ingtrader21-spec/Kong",
+      "gateway": "appolon1908/Kong",
       "hmac_verification_owner": "Middleware/contract-defined",
       "id": "webhook.vicidial-call-result",
       "identity_gate_owner": "Kong/Middleware",

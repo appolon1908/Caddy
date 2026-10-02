@@ -4,10 +4,10 @@
 
 | Hostname | Owner | Environment | Purpose | Traffic class | Upstream | TLS mode |
 | --- | --- | --- | --- | --- | --- | --- |
-| `api.codestra.co` | ingtrader21-spec/Caddy | shared public API edge | public API ingress | API | `CADDY_KONG_UPSTREAM` | HTTPS termination |
-| `automation.codestra.co` | ingtrader21-spec/Caddy | admin browser edge | operational/editor access | ADMIN | `CADDY_KONG_UPSTREAM` | HTTPS termination with admin CIDR gate |
-| `n8n-editor.community` / `{$CADDY_N8N_EDITOR_HOST}` | ingtrader21-spec/Caddy | community editor edge | oauth2-proxy + n8n boundary | WEB | `CADDY_N8N_OAUTH2_PROXY_UPSTREAM` | HTTPS termination |
-| observability host(s) | ingtrader21-spec/Caddy | repository-controlled policy boundary | monitoring UI exposure | OBSERVABILITY | validated internal-only upstreams | HTTPS-only, no public unapproved listener |
+| `api.codestra.co` | appolon1908/Caddy | shared public API edge | public API ingress | API | `CADDY_KONG_UPSTREAM` | HTTPS termination |
+| `automation.codestra.co` | appolon1908/Caddy | admin browser edge | operational/editor access | ADMIN | `CADDY_KONG_UPSTREAM` | HTTPS termination with admin CIDR gate |
+| `n8n-editor.community` / `{$CADDY_N8N_EDITOR_HOST}` | appolon1908/Caddy | community editor edge | oauth2-proxy + n8n boundary | WEB | `CADDY_N8N_OAUTH2_PROXY_UPSTREAM` | HTTPS termination |
+| observability host(s) | appolon1908/Caddy | repository-controlled policy boundary | monitoring UI exposure | OBSERVABILITY | validated internal-only upstreams | HTTPS-only, no public unapproved listener |
 
 ## Required metadata
 

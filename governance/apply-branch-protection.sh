@@ -29,7 +29,7 @@
 # branch it is required for.
 set -Eeuo pipefail
 
-repository="${1:-ingtrader21-spec/Caddy}"
+repository="${1:-appolon1908/Caddy}"
 owner="${repository%%/*}"
 repo="${repository#*/}"
 

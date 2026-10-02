@@ -2,19 +2,19 @@
   "caddy": {
     "config_sha256": "GENERATED_AT_CERTIFICATION",
     "edge_contract_sha256": "GENERATED_AT_CERTIFICATION",
-    "repository": "ingtrader21-spec/Caddy",
+    "repository": "appolon1908/Caddy",
     "source_sha": "GENERATED_AT_CERTIFICATION"
   },
   "kong": {
     "middleware_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "repository": "ingtrader21-spec/Kong",
+    "repository": "appolon1908/Kong",
     "required_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
     "source_sha": "3e68cb2a4955bd71ddb3e839f4d9e3770465fc08",
     "status": "PASS"
   },
   "middleware": {
     "public_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "repository": "ingtrader21-spec/Middleware-",
+    "repository": "appolon1908/Middleware-",
     "source_sha": "2862af0aa97367b18cb360af69212abe4243a1ac"
   },
   "postman": {

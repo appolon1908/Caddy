@@ -73,11 +73,11 @@ N8N_CONTRACT = json.loads(N8N_CONTRACT_PATH.read_text(encoding="utf-8"))
 RUNTIME = RUNTIME_EXAMPLE.read_text(encoding="utf-8")
 
 required_repositories = (
-    "ingtrader21-spec/Caddy",
-    "ingtrader21-spec/Kong",
-    "ingtrader21-spec/Keycloak",
-    "ingtrader21-spec/Middleware-",
-    "appolon1908-hue/codestra-production-platform",
+    "appolon1908/Caddy",
+    "appolon1908/Kong",
+    "appolon1908/Keycloak",
+    "appolon1908/Middleware-",
+    "appolon1908/codestra-production-platform",
 )
 for value in required_repositories:
     if value not in README:
@@ -85,11 +85,11 @@ for value in required_repositories:
 
 if CONTRACT.get("schema") != "codestra.caddy-kong-edge.v1":
     raise SystemExit("CADDY_AUTHORITY_ERROR=unsupported_contract_schema")
-if CONTRACT.get("principalRepository") != "ingtrader21-spec/Caddy":
+if CONTRACT.get("principalRepository") != "appolon1908/Caddy":
     raise SystemExit("CADDY_AUTHORITY_ERROR=caddy_not_principal")
-if CONTRACT.get("gatewayRepository") != "ingtrader21-spec/Kong":
+if CONTRACT.get("gatewayRepository") != "appolon1908/Kong":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_gateway_principal")
-if CONTRACT.get("referenceRepository") != "appolon1908-hue/codestra-production-platform":
+if CONTRACT.get("referenceRepository") != "appolon1908/codestra-production-platform":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_reference_repository")
 if CONTRACT.get("canonicalHost") != "api.codestra.co":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_canonical_host")
@@ -203,9 +203,9 @@ if N8N_CONTRACT.get("contract_id") != "codestra.n8n-community-editor-edge":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_n8n_editor_contract")
 expected_n8n_contract = {
     "status": "PREPARED_NOT_APPLIED",
-    "principal_repository": "ingtrader21-spec/Caddy",
-    "runtime_repository": "ingtrader21-spec/N8N",
-    "identity_repository": "ingtrader21-spec/Keycloak",
+    "principal_repository": "appolon1908/Caddy",
+    "runtime_repository": "appolon1908/N8N",
+    "identity_repository": "appolon1908/Keycloak",
     "identity_provider": "Keycloak",
     "authentication_gateway": "oauth2-proxy",
     "issuer": "https://auth.codestra.co/realms/codestra",
@@ -400,10 +400,10 @@ for path in ROOT.rglob("*"):
             raise SystemExit(f"CADDY_AUTHORITY_ERROR=possible_secret:{path.relative_to(ROOT)}")
 
 print("CADDY_REPOSITORY_AUTHORITY=PASS")
-print("CADDY_PRINCIPAL=ingtrader21-spec/Caddy")
+print("CADDY_PRINCIPAL=appolon1908/Caddy")
 print("CADDY_TO_KONG_CONTRACT=PASS")
 print("KONG_ROUTE_CONTRACT_BIDIRECTIONAL=PASS")
-print("KONG_PRINCIPAL=ingtrader21-spec/Kong")
+print("KONG_PRINCIPAL=appolon1908/Kong")
 print("N8N_COMMUNITY_EDITOR_EDGE=PREPARED_NOT_APPLIED")
 print("N8N_DIRECT_PUBLIC_UPSTREAM=DENIED")
 print("N8N_EDITOR_BODY_LIMIT=RUNTIME_ALIGNED")

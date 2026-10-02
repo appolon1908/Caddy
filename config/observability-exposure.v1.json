@@ -1,6 +1,6 @@
 {
   "schema": "codestra.observability-exposure.v1",
-  "principalRepository": "ingtrader21-spec/Caddy",
+  "principalRepository": "appolon1908/Caddy",
   "publicRoutes": [
     {
       "host": "graf.codestra.media",
