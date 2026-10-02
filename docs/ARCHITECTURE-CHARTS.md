@@ -1,7 +1,7 @@
 # Caddy — Architecture Charts
 
-> Repository: `appolon1908/Caddy`  
-> Baseline branch: `main`  
+> Repository: `appolon1908/Caddy`
+> Baseline branch: `main`
 > Repository-local visual architecture. Keep these diagrams aligned with code, contracts and deployment.
 
 ## 1. System context
