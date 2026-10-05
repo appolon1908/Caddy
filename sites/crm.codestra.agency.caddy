@@ -2,6 +2,10 @@ crm.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 25MB
+	}
 	encode gzip
 
 	@reseller path /reseller /reseller/*

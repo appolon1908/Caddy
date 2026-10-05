@@ -1,0 +1,404 @@
+{
+  "schema": "codestra.caddy-edge-host-registry.v1",
+  "rule": "Every site address Caddy serves is registered here and nothing else is served. Unknown hosts fail closed: no certificate for an unknown SNI, 404 on port 80.",
+  "unknown_host": {
+    "https": "TLS handshake refused (no certificate)",
+    "http": 404
+  },
+  "hosts": [
+    {
+      "host": "api.codestra.co",
+      "site_file": "sites/api.codestra.co.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "kong-api",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_KONG_UPSTREAM",
+        "CADDY_REALTIME_UPSTREAM"
+      ],
+      "auth_boundary": "kong-jwt",
+      "security_header_profile": "api",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "api.codestra.agency",
+      "site_file": "sites/api.codestra.agency.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "kong-api-legacy-host",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_KONG_UPSTREAM",
+        "CADDY_REALTIME_UPSTREAM"
+      ],
+      "auth_boundary": "kong-jwt",
+      "security_header_profile": "api",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true,
+      "note": "legacy hostname; generated Kong routes are a subset of api.codestra.co"
+    },
+    {
+      "host": "api.breero.com",
+      "site_file": "sites/api.breero.com.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "kong-api",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_KONG_UPSTREAM"
+      ],
+      "auth_boundary": "kong-jwt",
+      "security_header_profile": "api",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "auth.codestra.co",
+      "site_file": "sites/auth.codestra.co.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Keycloak",
+      "route_class": "identity",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_KEYCLOAK_UPSTREAM"
+      ],
+      "auth_boundary": "keycloak",
+      "security_header_profile": "auth_ui",
+      "request_size_profile": "auth",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "automation.codestra.co",
+      "site_file": "sites/automation.codestra.co.caddy",
+      "environment": "production",
+      "owner": "appolon1908/N8N",
+      "route_class": "editor-admin",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_KONG_UPSTREAM"
+      ],
+      "auth_boundary": "kong-jwt+source-cidr",
+      "security_header_profile": "web_app",
+      "request_size_profile": "editor",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "phone.codestra.agency",
+      "site_file": "sites/agent-desktop.codestra.agency.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "agent-desktop",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_AGENT_GATEWAY_UPSTREAM",
+        "CADDY_AGENT_UI_UPSTREAM",
+        "CADDY_REALTIME_UPSTREAM"
+      ],
+      "auth_boundary": "forward-auth",
+      "security_header_profile": "web_app",
+      "request_size_profile": "webphone",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "dialer.codestra.agency",
+      "site_file": "sites/agent-desktop.codestra.agency.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "agent-desktop",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_AGENT_GATEWAY_UPSTREAM",
+        "CADDY_AGENT_UI_UPSTREAM",
+        "CADDY_REALTIME_UPSTREAM"
+      ],
+      "auth_boundary": "forward-auth",
+      "security_header_profile": "web_app",
+      "request_size_profile": "webphone",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "crm.codestra.agency",
+      "site_file": "sites/crm.codestra.agency.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "web-app",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_CRM_RESELLER_UPSTREAM",
+        "CADDY_CRM_UPSTREAM"
+      ],
+      "auth_boundary": "application",
+      "security_header_profile": "web_app",
+      "request_size_profile": "approved-upload",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "monitoring.codestra.co",
+      "site_file": "sites/monitoring.codestra.co.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "monitoring-receiver",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_MONITORING_UPSTREAM"
+      ],
+      "auth_boundary": "application",
+      "security_header_profile": "api",
+      "request_size_profile": "api-small",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "graf.codestra.media",
+      "site_file": "sites/codestra.media.observability.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "observability-ui",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_GRAFANA_UPSTREAM"
+      ],
+      "auth_boundary": "application",
+      "security_header_profile": "observability_ui",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "supe.codestra.media",
+      "site_file": "sites/codestra.media.observability.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Caddy",
+      "route_class": "observability-ui",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_SUPERSET_UPSTREAM"
+      ],
+      "auth_boundary": "application",
+      "security_header_profile": "observability_ui",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "bao.codestra.media",
+      "site_file": "sites/codestra.media.observability.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Codestra-OpenBao",
+      "route_class": "secret-ui",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_OPENBAO_UPSTREAM"
+      ],
+      "auth_boundary": "source-cidr",
+      "security_header_profile": "observability_ui",
+      "request_size_profile": "vault",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "{$CADDY_N8N_EDITOR_HOST}",
+      "site_file": "sites/n8n-editor.community.caddy",
+      "environment": "production",
+      "owner": "appolon1908/N8N",
+      "route_class": "editor-admin",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_N8N_OAUTH2_PROXY_UPSTREAM"
+      ],
+      "auth_boundary": "oauth2-proxy",
+      "security_header_profile": "web_app",
+      "request_size_profile": "editor",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "n8n.codestra.agency",
+      "site_file": "sites/n8n-legacy.codestra.agency.caddy",
+      "environment": "production",
+      "owner": "appolon1908/N8N",
+      "route_class": "editor-legacy",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_N8N_UPSTREAM"
+      ],
+      "auth_boundary": "source-cidr",
+      "security_header_profile": "web_app",
+      "request_size_profile": "editor",
+      "logging_profile": "json-redacted",
+      "public": true,
+      "note": "private-network-only legacy staff editor"
+    },
+    {
+      "host": "n8n-staging.codestra.agency",
+      "site_file": "sites/n8n-legacy.codestra.agency.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/N8N",
+      "route_class": "editor-legacy",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_N8N_STAGING_UPSTREAM"
+      ],
+      "auth_boundary": "source-cidr",
+      "security_header_profile": "web_app",
+      "request_size_profile": "editor",
+      "logging_profile": "json-redacted",
+      "public": true,
+      "note": "private-network-only legacy staff editor"
+    },
+    {
+      "host": "middleware.internal.codestra.agency",
+      "site_file": "sites/middleware-private.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Middleware-",
+      "route_class": "private-ingress",
+      "tls_profile": "private-mtls",
+      "upstreams": [
+        "CADDY_MIDDLEWARE_CALLBACK_UPSTREAM"
+      ],
+      "auth_boundary": "mtls",
+      "security_header_profile": "private",
+      "request_size_profile": "api-small",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "middleware-staging.internal.codestra.agency",
+      "site_file": "sites/middleware-private.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Middleware-",
+      "route_class": "private-ingress",
+      "tls_profile": "private-mtls",
+      "upstreams": [
+        "CADDY_STAGING_API_UPSTREAM"
+      ],
+      "auth_boundary": "mtls",
+      "security_header_profile": "private",
+      "request_size_profile": "api-small",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "https://middleware-email-events.internal.codestra.agency:18080",
+      "site_file": "sites/klyrow-events.private.caddy",
+      "environment": "production",
+      "owner": "appolon1908/Middleware-",
+      "route_class": "private-ingress",
+      "tls_profile": "private-mtls",
+      "upstreams": [
+        "CADDY_KLYROW_EVENTS_UPSTREAM"
+      ],
+      "auth_boundary": "mtls",
+      "security_header_profile": "private",
+      "request_size_profile": "api-small",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "api.staging.internal.codestra.agency",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Caddy",
+      "route_class": "staging-internal",
+      "tls_profile": "internal-ca",
+      "upstreams": [
+        "CADDY_STAGING_API_UPSTREAM"
+      ],
+      "auth_boundary": "internal-dns",
+      "security_header_profile": "private",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "n8n.staging.internal.codestra.agency",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Caddy",
+      "route_class": "staging-internal",
+      "tls_profile": "internal-ca",
+      "upstreams": [
+        "CADDY_STAGING_PORTAL_UPSTREAM"
+      ],
+      "auth_boundary": "internal-dns",
+      "security_header_profile": "private",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "auth.staging.internal.codestra.agency",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Caddy",
+      "route_class": "staging-internal",
+      "tls_profile": "internal-ca",
+      "upstreams": [
+        "CADDY_STAGING_KEYCLOAK_UPSTREAM"
+      ],
+      "auth_boundary": "internal-dns",
+      "security_header_profile": "private",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "odoo.staging.internal.codestra.agency",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Caddy",
+      "route_class": "staging-internal",
+      "tls_profile": "internal-ca",
+      "upstreams": [
+        "CADDY_STAGING_ODOO_UPSTREAM"
+      ],
+      "auth_boundary": "internal-dns",
+      "security_header_profile": "private",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": false
+    },
+    {
+      "host": "auth-staging.codestra.co",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Keycloak",
+      "route_class": "identity",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_STAGING_KEYCLOAK_UPSTREAM"
+      ],
+      "auth_boundary": "keycloak",
+      "security_header_profile": "auth_ui",
+      "request_size_profile": "auth",
+      "logging_profile": "json-redacted",
+      "public": true
+    },
+    {
+      "host": "bridge-staging.codestra.agency",
+      "site_file": "sites/staging-internal.caddy",
+      "environment": "staging",
+      "owner": "appolon1908/Caddy",
+      "route_class": "staging-bridge",
+      "tls_profile": "public-acme",
+      "upstreams": [
+        "CADDY_STAGING_API_UPSTREAM"
+      ],
+      "auth_boundary": "application",
+      "security_header_profile": "api",
+      "request_size_profile": "api-standard",
+      "logging_profile": "json-redacted",
+      "public": true
+    }
+  ]
+}

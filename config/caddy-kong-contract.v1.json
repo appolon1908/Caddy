@@ -1259,7 +1259,7 @@
   "gatewayRepositoryId": 1347790742,
   "kongOwnedRoutesSource": {
     "repository": "appolon1908/Kong",
-    "sourceSha": "82bb82611a694783506ddfccf3910de9c9f1555a",
+    "sourceSha": "d2aa66104c53353bd935573198d6afa9e308deed",
     "path": "config/kong-owned-edge-routes.v1.json"
   },
   "kongOwnedRoutes": [
@@ -1328,72 +1328,87 @@
       "path": "/platform/v1/suppressions"
     },
     {
-      "kongRoute": "codestra-communication-canonical-read",
+      "kongRoute": "codestra-intake-leads",
       "legacyAgencyHost": true,
       "match": "exact",
+      "methods": [
+        "POST"
+      ],
+      "path": "/v1/intake/leads"
+    },
+    {
+      "kongRoute": "codestra-intake-survey-responses",
+      "legacyAgencyHost": true,
+      "match": "exact",
+      "methods": [
+        "POST"
+      ],
+      "path": "/v1/intake/surveys/responses"
+    },
+    {
+      "kongRoute": "control-plane-control",
+      "legacyAgencyHost": true,
+      "match": "prefix",
+      "methods": [
+        "POST",
+        "PATCH"
+      ],
+      "path": "/api/v1/control"
+    },
+    {
+      "kongRoute": "communication-message-read",
+      "legacyAgencyHost": true,
+      "match": "prefix",
       "methods": [
         "GET"
       ],
       "path": "/api/v1/messages"
     },
     {
-      "kongRoute": "codestra-communication-canonical-write",
-      "legacyAgencyHost": true,
-      "match": "exact",
-      "methods": [
-        "POST"
-      ],
-      "path": "/api/v1/control/messages"
-    },
-    {
-      "kongRoute": "codestra-communication-canonical-write",
-      "legacyAgencyHost": true,
-      "match": "exact",
-      "methods": [
-        "POST"
-      ],
-      "path": "/api/v1/results/messages"
-    },
-    {
-      "kongRoute": "crm-route",
+      "kongRoute": "control-plane-events",
       "legacyAgencyHost": true,
       "match": "prefix",
       "methods": [
-        "GET",
-        "POST",
-        "PATCH",
-        "OPTIONS"
+        "POST"
       ],
-      "path": "/v1/crm"
+      "path": "/api/v1/events"
     },
     {
-      "kongRoute": "email-route",
+      "kongRoute": "control-plane-results",
+      "legacyAgencyHost": true,
+      "match": "prefix",
+      "methods": [
+        "POST"
+      ],
+      "path": "/api/v1/results"
+    },
+    {
+      "kongRoute": "control-plane-reconciliation",
       "legacyAgencyHost": true,
       "match": "prefix",
       "methods": [
         "GET",
         "POST"
       ],
-      "path": "/v1/email"
+      "path": "/api/v1/reconciliation"
     },
     {
-      "kongRoute": "sms-route",
+      "kongRoute": "control-plane-health",
       "legacyAgencyHost": true,
       "match": "prefix",
       "methods": [
-        "GET",
-        "POST"
+        "GET"
       ],
-      "path": "/v1/sms"
+      "path": "/api/v1/health"
     },
     {
-      "kongRoute": "webhooks-route",
+      "kongRoute": "control-plane-system-admin",
       "legacyAgencyHost": true,
       "match": "prefix",
       "methods": [
-        "POST"
+        "GET"
       ],
-      "path": "/v1/webhooks"
+      "path": "/v1/admin/system"
     }
   ],
   "middlewareDeniedRoutes": [

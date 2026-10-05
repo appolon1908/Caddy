@@ -1,10 +1,10 @@
 {
   "schema": "codestra.caddy-kong-owned-edge-routes.v1",
   "kongRepository": "appolon1908/Kong",
-  "kongSourceSha": "82bb82611a694783506ddfccf3910de9c9f1555a",
-  "kongInventories": ["config/kong-production-route-inventory.v2.json", "config/kong-mcr-routes.v1.json"],
+  "kongSourceSha": "d2aa66104c53353bd935573198d6afa9e308deed",
+  "kongInventories": ["deploy/kong/control-plane.yml", "config/kong-intake-routes.json", "config/kong-mcr-routes.v1.json"],
   "host": "api.codestra.co",
-  "rule": "Kong routes on api.codestra.co that the Middleware public contract does not own. Exact routes match one method and path; prefix routes mirror a Kong prefix route and its methods. Nothing else on the host reaches Kong. Routes marked legacyAgencyHost are also served on api.codestra.agency, with the canonical Host.",
+  "rule": "Kong CANONICAL routes on api.codestra.co that the Middleware public contract does not own. Exact routes match one method and path; prefix routes mirror a Kong prefix route and its methods. Kong LEGACY, DEPRECATE, PREPARED_DISABLED, DESIGN_ONLY and RETIRE routes are not forwarded. Routes marked legacyAgencyHost are also served on api.codestra.agency, with the canonical Host.",
   "routes": [
     {"kongRoute": "mcr-plan", "match": "exact", "methods": ["POST"], "path": "/platform/v1/campaign-engine/plan"},
     {"kongRoute": "mcr-execute", "match": "exact", "methods": ["POST"], "path": "/platform/v1/campaign-engine/execute"},
@@ -14,12 +14,14 @@
     {"kongRoute": "mcr-eligible-leads", "match": "exact", "methods": ["GET"], "path": "/platform/v1/campaigns/{campaign_id}/eligible-leads"},
     {"kongRoute": "mcr-delivery-events", "match": "exact", "methods": ["POST"], "path": "/platform/v1/delivery-events"},
     {"kongRoute": "mcr-suppressions", "match": "exact", "methods": ["POST"], "path": "/platform/v1/suppressions"},
-    {"kongRoute": "codestra-communication-canonical-read", "legacyAgencyHost": true, "match": "exact", "methods": ["GET"], "path": "/api/v1/messages"},
-    {"kongRoute": "codestra-communication-canonical-write", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/api/v1/control/messages"},
-    {"kongRoute": "codestra-communication-canonical-write", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/api/v1/results/messages"},
-    {"kongRoute": "crm-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST", "PATCH", "OPTIONS"], "path": "/v1/crm"},
-    {"kongRoute": "email-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST"], "path": "/v1/email"},
-    {"kongRoute": "sms-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST"], "path": "/v1/sms"},
-    {"kongRoute": "webhooks-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["POST"], "path": "/v1/webhooks"}
+    {"kongRoute": "codestra-intake-leads", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/v1/intake/leads"},
+    {"kongRoute": "codestra-intake-survey-responses", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/v1/intake/surveys/responses"},
+    {"kongRoute": "control-plane-control", "legacyAgencyHost": true, "match": "prefix", "methods": ["POST", "PATCH"], "path": "/api/v1/control"},
+    {"kongRoute": "communication-message-read", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET"], "path": "/api/v1/messages"},
+    {"kongRoute": "control-plane-events", "legacyAgencyHost": true, "match": "prefix", "methods": ["POST"], "path": "/api/v1/events"},
+    {"kongRoute": "control-plane-results", "legacyAgencyHost": true, "match": "prefix", "methods": ["POST"], "path": "/api/v1/results"},
+    {"kongRoute": "control-plane-reconciliation", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST"], "path": "/api/v1/reconciliation"},
+    {"kongRoute": "control-plane-health", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET"], "path": "/api/v1/health"},
+    {"kongRoute": "control-plane-system-admin", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET"], "path": "/v1/admin/system"}
   ]
 }

@@ -161,7 +161,7 @@ redirect_status="$(status_of --resolve "api.codestra.co:80:${public_bind}" http:
 [[ "$redirect_status" =~ ^30(1|7|8)$ ]] || fail "live_redirect:${redirect_status}"
 version_status="$(https_get api.codestra.co /version)"
 [[ "$version_status" == 200 ]] || fail "live_realtime_status:${version_status}"
-for path in /not-a-contracted-route /api/v1/health /metrics '/metrics;x' /internal/v1/database/health; do
+for path in /not-a-contracted-route /v1/crm /metrics '/metrics;x' /internal/v1/database/health; do
   denied="$(https_get api.codestra.co "$path")"
   [[ "$denied" == 404 ]] || fail "live_private_or_unknown:${path}:${denied}"
 done

@@ -29,7 +29,7 @@ class CaddyKongContractTests(unittest.TestCase):
         validate_exact_kong_routes(self.site, self.contract)
 
     def test_uncontracted_caddy_route_is_rejected(self) -> None:
-        modified = self.site.replace("path_regexp ^/v1/crm(/.*)?$", "path_regexp ^/v1/(/.*)?$")
+        modified = self.site.replace("path_regexp ^/api/v1/health(/.*)?$", "path_regexp ^/api/v1/(/.*)?$")
         self.assertNotEqual(modified, self.site)
         with self.assertRaisesRegex(ValueError, "kong_route_not_contracted:kong_owned_"):
             validate_exact_kong_routes(modified, self.contract)
@@ -141,7 +141,7 @@ class PrivateOnlyPathTests(unittest.TestCase):
             validate_private_only_paths(moved, self.private)
 
     def test_private_path_also_routed_to_kong_is_rejected(self) -> None:
-        mutated = self.site.replace("path_regexp ^/v1/crm(/.*)?$", "path_regexp ^(/v1/crm(/.*)?|/metrics)$")
+        mutated = self.site.replace("path_regexp ^/api/v1/health(/.*)?$", "path_regexp ^(/api/v1/health(/.*)?|/metrics)$")
         self.assertNotEqual(mutated, self.site)
         with self.assertRaisesRegex(ValueError, "private_only_path_routed_to_kong:/metrics"):
             validate_private_only_paths(mutated, self.private)

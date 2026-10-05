@@ -6,11 +6,12 @@
     "source_sha": "GENERATED_AT_CERTIFICATION"
   },
   "kong": {
-    "middleware_contract_sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+    "middleware_contract_sha256": "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21",
+    "publication": "LOCAL_UNPUBLISHED_NOT_FROZEN",
     "repository": "appolon1908/Kong",
     "required_sha256": "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21",
-    "source_sha": "82bb82611a694783506ddfccf3910de9c9f1555a",
-    "status": "PENDING_KONG_ADOPTION"
+    "source_sha": "d2aa66104c53353bd935573198d6afa9e308deed",
+    "status": "PASS"
   },
   "middleware": {
     "public_contract_sha256": "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21",

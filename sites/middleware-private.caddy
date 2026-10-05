@@ -14,6 +14,10 @@ middleware.internal.codestra.agency {
 	import edge_observability
 	import public_boundary
 
+	request_body {
+		max_size 256KB
+	}
+
 	route {
 		@authorized_callback {
 			remote_ip {$CADDY_VICIDIAL_SOURCE_CIDRS}
@@ -95,6 +99,10 @@ middleware-staging.internal.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 256KB
+	}
 
 	route {
 		@authorized_callback {

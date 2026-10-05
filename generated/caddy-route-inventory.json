@@ -1,8 +1,8 @@
 {
-  "generated_sha256": "b3a526a47d8da57953c879e5ef7ab172adf15f16f2782318ad767a4e433aceb8",
+  "generated_sha256": "e200f802bfe6a32c3079367952b440e2b19de3db93acdeb5e86000db1def771f",
   "private_count": 23,
-  "public_count": 148,
-  "route_count": 176,
+  "public_count": 150,
+  "route_count": 178,
   "routes": [
     {
       "handler_id": "edge.unknown",
@@ -44,6 +44,20 @@
       "visibility": "public"
     },
     {
+      "handler_id": "edge.kong.control-plane-control",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST",
+        "PATCH"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/control/*",
+      "route_id": "edge.190230d72680bd0f6437",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
       "handler_id": "edge.canonical.post",
       "host": "api.codestra.co",
       "methods": [
@@ -57,14 +71,14 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong.codestra-communication-canonical-write",
+      "handler_id": "edge.kong.control-plane-events",
       "host": "api.codestra.co",
       "methods": [
         "POST"
       ],
       "owner": "appolon1908/Caddy",
-      "path": "/api/v1/control/messages",
-      "route_id": "edge.2b67007cc38cd14372c7",
+      "path": "/api/v1/events/*",
+      "route_id": "edge.954148f8c90bd9b67082",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -81,6 +95,19 @@
       "upstream_ref": "NONE",
       "upstream_service": "none",
       "visibility": "private"
+    },
+    {
+      "handler_id": "edge.kong.control-plane-health",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/health/*",
+      "route_id": "edge.07e67927bd11f2f0d53c",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
     },
     {
       "handler_id": "edge.contract.private_only",
@@ -213,14 +240,14 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong.codestra-communication-canonical-read",
+      "handler_id": "edge.kong.communication-message-read",
       "host": "api.codestra.co",
       "methods": [
         "GET"
       ],
       "owner": "appolon1908/Caddy",
-      "path": "/api/v1/messages",
-      "route_id": "edge.d08d0ebc0c12908f5f60",
+      "path": "/api/v1/messages/*",
+      "route_id": "edge.4b2fe03ba086993eab08",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -278,14 +305,28 @@
       "visibility": "compatibility"
     },
     {
-      "handler_id": "edge.kong.codestra-communication-canonical-write",
+      "handler_id": "edge.kong.control-plane-reconciliation",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/reconciliation/*",
+      "route_id": "edge.fca1d72b25e389f4beaf",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.control-plane-results",
       "host": "api.codestra.co",
       "methods": [
         "POST"
       ],
       "owner": "appolon1908/Caddy",
-      "path": "/api/v1/results/messages",
-      "route_id": "edge.3c5c9fb6c778bd8b8d2a",
+      "path": "/api/v1/results/*",
+      "route_id": "edge.d323fd212296169a5e95",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -1929,31 +1970,40 @@
       "visibility": "compatibility"
     },
     {
-      "handler_id": "edge.kong.crm-route",
+      "handler_id": "edge.kong.control-plane-system-admin",
       "host": "api.codestra.co",
       "methods": [
-        "GET",
-        "POST",
-        "PATCH",
-        "OPTIONS"
+        "GET"
       ],
       "owner": "appolon1908/Caddy",
-      "path": "/v1/crm/*",
-      "route_id": "edge.e709d66774f3459bae75",
+      "path": "/v1/admin/system/*",
+      "route_id": "edge.a97d4f0557baae9201b4",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong.email-route",
+      "handler_id": "edge.kong.codestra-intake-leads",
       "host": "api.codestra.co",
       "methods": [
-        "GET",
         "POST"
       ],
       "owner": "appolon1908/Caddy",
-      "path": "/v1/email/*",
-      "route_id": "edge.8d61479efd92803c645d",
+      "path": "/v1/intake/leads",
+      "route_id": "edge.01da7fedf3bf23b2e1f8",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.codestra-intake-survey-responses",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/intake/surveys/responses",
+      "route_id": "edge.c9b87db78e87dc46179e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -2048,33 +2098,6 @@
       "upstream_ref": "NONE",
       "upstream_service": "none",
       "visibility": "private"
-    },
-    {
-      "handler_id": "edge.kong.sms-route",
-      "host": "api.codestra.co",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "owner": "appolon1908/Caddy",
-      "path": "/v1/sms/*",
-      "route_id": "edge.ea4c83a1edc59ea5094b",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
-      "handler_id": "edge.kong.webhooks-route",
-      "host": "api.codestra.co",
-      "methods": [
-        "POST"
-      ],
-      "owner": "appolon1908/Caddy",
-      "path": "/v1/webhooks/*",
-      "route_id": "edge.027c99b33c81b0475619",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
     },
     {
       "handler_id": "edge.canonical.post",
@@ -2299,5 +2322,5 @@
     }
   ],
   "schema": "codestra.caddy.route-inventory.v1",
-  "source_sha256": "bd498c5b6aedaa7c3670cc0b2798ffdcb06c3550a06886678fee63861054adc7"
+  "source_sha256": "92940930d6f056027c211ce4f2f6ef295a63524814186c87d68d0ca25a9c96e6"
 }

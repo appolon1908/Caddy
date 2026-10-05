@@ -6,6 +6,10 @@ api.staging.internal.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
 	encode gzip
 
 	handle {
@@ -72,6 +76,10 @@ n8n.staging.internal.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
 	encode gzip
 
 	@live path /health/live
@@ -176,6 +184,10 @@ auth.staging.internal.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
 	encode gzip
 
 	handle {
@@ -242,6 +254,10 @@ auth-staging.codestra.co {
 	import edge_observability
 	import public_boundary
 
+	request_body {
+		max_size 5MB
+	}
+
 	handle {
 		vars edge_route_id edge.staging.keycloak
 		reverse_proxy {$CADDY_STAGING_KEYCLOAK_UPSTREAM} {
@@ -306,6 +322,10 @@ odoo.staging.internal.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
 	encode gzip
 
 	handle {
@@ -371,6 +391,10 @@ bridge-staging.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
 
 	@private_callback path /api/v1/events/vicidial
 	handle @private_callback {

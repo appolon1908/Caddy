@@ -411,7 +411,8 @@ def validate_route_ownership(authority: dict[str, Any]) -> None:
         if row['path'].startswith(private):
             raise RouteAuthorityError('private_only_routed_publicly')
         pattern = re.compile(_kong_owned_regex(row))
-        for method, path in shared:
+        # A Kong prefix route may cover contract routes (both reach Kong); an exact one may not repeat them.
+        for method, path in shared if row['match'] == 'exact' else ():
             if method in row['methods'] and pattern.match(_probe(path)):
                 raise RouteAuthorityError(f'duplicate_operation_ownership:{method}:{path}')
         for method, path in closed:

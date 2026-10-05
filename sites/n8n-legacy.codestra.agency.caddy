@@ -6,6 +6,10 @@ n8n.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size {$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}
+	}
 	encode gzip
 
 	@health path /healthz /healthz/readiness
@@ -92,6 +96,10 @@ n8n-staging.codestra.agency {
 	import security_headers
 	import edge_observability
 	import public_boundary
+
+	request_body {
+		max_size {$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}
+	}
 	encode gzip
 
 	@health path /healthz /healthz/readiness

@@ -249,11 +249,11 @@ def test_kong_bound_hosts_strip_identity_and_fail_closed(edge):
     assert "server" not in edge.request("api.breero.com", "/api/v1/orders")[1]
     for path in ("/other", "/metrics", "/internal/v1/database/health"):
         assert edge.request("api.breero.com", path)[0] == 404
-    assert edge.request("api.codestra.agency", "/v1/crm/contacts", "POST")[0] == 200
+    assert edge.request("api.codestra.agency", "/api/v1/events/delivery", "POST")[0] == 200
     assert edge.last()["headers"]["host"] == "api.codestra.co"
     assert edge.last()["headers"]["x-forwarded-host"] == "api.codestra.agency"
     for path in ("/api/v1/events/telnexa", "/api/v1/events/delivery", "/api/v1/control/unlisted",
-                 "/platform/v1/kernel/describe", "/v1/integrations/n8n/commands", "/v1/intake/x"):
+                 "/platform/v1/kernel/describe", "/v1/integrations/n8n/commands", "/v1/crm/contacts"):
         assert edge.request("api.codestra.agency", path)[0] == 404
 
 
@@ -352,7 +352,7 @@ PRESERVED = {"Authorization": "Bearer TEST_SYN_CLIENT_TOKEN", "Idempotency-Key":
              "X-Causation-ID": "TEST-SYN-cause-1", "X-Codestra-Event-ID": "TEST-SYN-event-1",
              "X-Codestra-Timestamp": "1791000000", "X-Codestra-Signature": "v1=TEST_SYN_SIGNATURE"}
 KONG_HANDOFFS = [("api.codestra.co", "/platform/v1/kernel/describe"), ("api.breero.com", "/api/v1/orders"),
-                 ("api.codestra.agency", "/v1/crm/contacts")]
+                 ("api.codestra.agency", "/api/v1/messages")]
 
 
 def _concrete(path):

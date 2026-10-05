@@ -6,6 +6,10 @@ auth.codestra.co {
 	import edge_observability
 	import public_boundary
 
+	request_body {
+		max_size 5MB
+	}
+
 	handle {
 		vars edge_route_id edge.keycloak
 		reverse_proxy {$CADDY_KEYCLOAK_UPSTREAM} {

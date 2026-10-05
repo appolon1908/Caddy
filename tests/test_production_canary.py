@@ -123,7 +123,7 @@ elif "automation.codestra.co" in url:
     code = "404"
 elif "bao.codestra.media" in url:
     code = "403"
-elif path in ("/metrics", "/metrics;x", "/internal/v1/database/health", "/not-a-contracted-route", "/api/v1/health"):
+elif path in ("/metrics", "/metrics;x", "/internal/v1/database/health", "/not-a-contracted-route", "/v1/crm"):
     code = "200" if (state / "expose_private").exists() and path == "/metrics;x" else "404"
 elif path == "/platform/v1/kernel/describe":
     code = "401"

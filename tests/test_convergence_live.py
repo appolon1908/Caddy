@@ -73,7 +73,7 @@ def test_native_edge_http_streaming_headers_metrics_reload_rollback_and_postman(
     api = (ROOT / 'sites/api.codestra.co.caddy').read_text().replace('api.codestra.co {', f'http://127.0.0.1:{edge_port} {{')
     (tmp_path / 'api.caddy').write_text(api)
     caddyfile = tmp_path / 'Caddyfile'
-    caddyfile.write_text(f'{{\n admin 127.0.0.1:{admin_port}\n auto_https off\n persist_config off\n metrics\n order route before handle\n}}\nimport snippets/*.caddy\nimport api.caddy\n')
+    caddyfile.write_text(f'{{\n admin 127.0.0.1:{admin_port}\n auto_https off\n persist_config off\n metrics\n order route before handle\n servers {{\n  idle_timeout 2s\n }}\n}}\nimport snippets/*.caddy\nimport api.caddy\n')
     candidate = tmp_path / 'candidate.json'
     builder = CandidateBuilder(caddyfile=caddyfile, output=candidate, source_sha_provider=lambda: 'a' * 40)
     original_cwd = Path.cwd()
@@ -131,7 +131,7 @@ def test_native_edge_http_streaming_headers_metrics_reload_rollback_and_postman(
         newman = shutil.which('newman')
         assert newman, 'Newman is required for full local certification'
         report = tmp_path / 'newman.json'
-        run = subprocess.run([newman, 'run', str(ROOT / 'postman/Caddy-V3-Edge-Certification.postman_collection.json'), '--env-var', f'base_url=http://127.0.0.1:{edge_port}', '--env-var', f'caddy_control_url=http://127.0.0.1:{control.server_port}', '--reporters', 'cli,json', '--reporter-json-export', str(report)], capture_output=True, text=True, timeout=90)
+        run = subprocess.run([newman, 'run', str(ROOT / 'postman/Caddy-V3-Edge-Certification.postman_collection.json'), '--env-var', f'base_url=http://127.0.0.1:{edge_port}', '--env-var', f'caddy_control_url=http://127.0.0.1:{control.server_port}', '--timeout-request', '10000', '--reporters', 'cli,json', '--reporter-json-export', str(report)], stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=90)
         assert run.returncode == 0, run.stdout + run.stderr
         # Exercise apply/rollback only on this disposable native instance.
         before = service.runtime.config()
