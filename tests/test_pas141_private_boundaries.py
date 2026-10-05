@@ -10,7 +10,7 @@ def test_generator_preserves_private_root_and_subtree_denials():
     spec = importlib.util.spec_from_file_location('edge_generator', ROOT / 'scripts/generate_middleware_edge_contract.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    rendered, _ = module.render()
+    rendered, _, _ = module.render()
     assert set(json.loads(rendered)['privateOnlyPaths']) == {
         '/metrics', '/metrics/*', '/internal', '/internal/*'
     }

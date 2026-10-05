@@ -20,12 +20,12 @@ Caddy does not authenticate application users/services, does not issue identity,
 
 Each system keeps its own source authority:
 
-- `ingtrader21-spec/Caddy` — shared Caddy TLS/reverse-proxy edge source and policy.
+- `appolon1908/Caddy` — shared Caddy TLS/reverse-proxy edge source and policy.
 - `appolon1908/Kong` — Kong gateway services, routes, plugins, OIDC/scope policy and gateway reconciliation.
-- `ingtrader21-spec/Keycloak` — identity, clients, scopes and token issuance.
-- `ingtrader21-spec/Middleware-` — cross-system command/event control plane and privileged provider orchestration.
+- `appolon1908/Keycloak` — identity, clients, scopes and token issuance.
+- `appolon1908/Middleware-` — cross-system command/event control plane and privileged provider orchestration.
 - product/provider repositories — their own application and runtime source.
-- `appolon1908-hue/codestra-production-platform` — historical runtime/deployment/reconciliation/rollback evidence only. It is a migration reference, not principal source for future Caddy changes.
+- `appolon1908/codestra-production-platform` — historical runtime/deployment/reconciliation/rollback evidence only. It is a migration reference, not principal source for future Caddy changes.
 
 ## Canonical source layout
 
@@ -132,7 +132,7 @@ The repository may use short-lived authority or migration branches for source-co
 
 The first `api.codestra.co` source was imported from:
 
-`appolon1908-hue/codestra-production-platform:release/production-activation:operations/caddy/api.codestra.co.caddy`
+`appolon1908/codestra-production-platform:release/production-activation:operations/caddy/api.codestra.co.caddy`
 
 That repository is reference/evidence only. Its historical source does not prove a live host currently matches this repository.
 

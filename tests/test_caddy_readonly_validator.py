@@ -191,9 +191,10 @@ class ReadonlyValidatorTests(unittest.TestCase):
                 hosts = {h for m in route.get("match") or [] for h in m.get("host") or []}
                 if hosts & {"api.codestra.co", "automation.codestra.co"}:
                     collect(route)
-        # The generic legacy fallback was retired by #191; every remaining
-        # exact-method group, Kong prefix, realtime and editor proxy is checked.
-        self.assertEqual(len(proxies), len({row["method"] for row in contract["serviceJwtRouteContract"]["routes"]}) + 3)
+        # Every exact-method contract group, Kong-owned route, the realtime and
+        # the editor proxy is checked; no prefix fallback remains.
+        self.assertEqual(len(proxies), len({row["method"] for row in contract["serviceJwtRouteContract"]["routes"]})
+                         + len(contract["kongOwnedRoutes"]) + 2)
         for proxy in proxies:
             deleted = set(((proxy.get("headers") or {}).get("request") or {}).get("delete") or [])
             self.assertEqual(required - deleted, set(), proxy["upstreams"])

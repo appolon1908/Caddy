@@ -16,35 +16,9 @@ DEFAULT_INVENTORY = ROOT / "generated" / "caddy-route-inventory.json"
 
 ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "ANY"}
 ALLOWED_VISIBILITY = {"public", "private"}
-FORBIDDEN_IDENTITY_HEADERS = (
-    "X-User-ID",
-    "X-Username",
-    "X-Email",
-    "X-Roles",
-    "X-Scopes",
-    "X-Authenticated-UserID",
-    "X-Authenticated-User",
-    "X-Authenticated-Client",
-    "X-Authenticated-Subject",
-    "X-Authenticated-Tenant",
-    "X-Authenticated-Campaign",
-    "X-Authenticated-Role",
-    "X-Authenticated-Email",
-    "X-Codestra-Tenant",
-    "X-Codestra-Scopes",
-    "X-Codestra-Gateway-Secret",
-    "X-Internal-Service",
-    "X-Admin",
-    "X-Consumer-ID",
-    "X-Consumer-Username",
-    "X-Consumer-Custom-ID",
-    "X-Credential-Identifier",
-    "X-Anonymous-Consumer",
-    # Kong-internal policy carriers; Kong derives them, clients never supply them.
-    "X-Codestra-Contract-Operation",
-    "X-Codestra-Expected-Azp",
-    "X-Codestra-Required-Scope",
-)
+HEADER_POLICY = json.loads((ROOT / "config" / "header-policy.v1.json").read_text(encoding="utf-8"))
+# Client-asserted identity: deleted at the public boundary and again on every Kong handoff.
+FORBIDDEN_IDENTITY_HEADERS = tuple(HEADER_POLICY["strip"]["identity"])
 
 
 class RouteAuthorityError(ValueError):
@@ -391,12 +365,19 @@ def validate_edge_authority(authority: dict[str, Any]) -> None:
         raise RouteAuthorityError('unknown_routes_must_fail_closed')
     if authority.get('canonicalHost') != 'api.codestra.co':
         raise RouteAuthorityError('invalid_canonical_host')
-    paths = authority.get('privateOnlyPaths', []) + authority.get('pendingContractPaths', []) + authority.get('kongManagedPathPrefixes', []) + authority.get('transitionalPaths', [])
+    if 'kongManagedPathPrefixes' in authority:
+        raise RouteAuthorityError('prefix_fallback_forbidden')
+    paths = authority.get('privateOnlyPaths', []) + authority.get('pendingContractPaths', []) + authority.get('transitionalPaths', [])
     if any(not re.fullmatch(r'/[A-Za-z0-9/._*+-]*', x) for x in paths):
         raise RouteAuthorityError('invalid_path')
-    for row in authority['serviceJwtRouteContract']['routes']:
-        if row['method'] not in ALLOWED_METHODS - {'ANY'} or not re.fullmatch(r'/[A-Za-z0-9/._{}-]*', row['path']):
+    contract = authority['serviceJwtRouteContract']['routes'] + authority['middlewareDeniedRoutes'] + authority['kongOwnedRoutes']
+    for row in contract:
+        methods = row.get('methods') or [row['method']]
+        if not set(methods) <= ALLOWED_METHODS - {'ANY'} or not re.fullmatch(r'/[A-Za-z0-9/._{}-]*', row['path']):
             raise RouteAuthorityError('invalid_contract_route')
+    if any(row.get('classification') not in {'denied', 'private_only'} for row in authority['middlewareDeniedRoutes']):
+        raise RouteAuthorityError('unknown_classification')
+    validate_route_ownership(authority)
     if not {'/metrics', '/metrics/*', '/internal', '/internal/*'} <= set(authority['privateOnlyPaths']):
         raise RouteAuthorityError('required_private_prefix_missing')
     if set(authority['identityHeaders']['deletedBeforeKong']) != set(FORBIDDEN_IDENTITY_HEADERS):
@@ -405,8 +386,84 @@ def validate_edge_authority(authority: dict[str, Any]) -> None:
         raise RouteAuthorityError('invalid_compatibility_upstream')
 
 
-def kong_path_matcher(path: str) -> str:
-    return path if path in {'/api/v1/automation/policy-check', '/api/v1/integration/campaign-actions'} else path + '*'
+def _probe(path: str) -> str:
+    return re.sub(r'\{[a-z_]+\}', 'probe-1', path)
+
+
+def _kong_owned_regex(row: dict) -> str:
+    base = route_regex(row['path'])
+    return f'^{base}(/.*)?$' if row['match'] == 'prefix' else f'^{base}$'
+
+
+def validate_route_ownership(authority: dict[str, Any]) -> None:
+    """Each method+path has one owner; nothing forwarded overlaps a denied or private route."""
+    shared = [(row['method'], row['path']) for row in authority['serviceJwtRouteContract']['routes']]
+    closed = [(row['method'], row['path']) for row in authority['middlewareDeniedRoutes']]
+    if len(set(shared)) != len(shared):
+        raise RouteAuthorityError('duplicate_operation_ownership')
+    for method, path in closed:
+        if (method, path) in shared:
+            raise RouteAuthorityError(f'denied_route_with_upstream:{method}:{path}')
+    private = tuple(p.rstrip('*').rstrip('/') for p in authority['privateOnlyPaths'])
+    for row in authority['kongOwnedRoutes']:
+        if row['match'] not in {'exact', 'prefix'}:
+            raise RouteAuthorityError('unknown_classification')
+        if row['path'].startswith(private):
+            raise RouteAuthorityError('private_only_routed_publicly')
+        pattern = re.compile(_kong_owned_regex(row))
+        for method, path in shared:
+            if method in row['methods'] and pattern.match(_probe(path)):
+                raise RouteAuthorityError(f'duplicate_operation_ownership:{method}:{path}')
+        for method, path in closed:
+            if method in row['methods'] and pattern.match(_probe(path)):
+                raise RouteAuthorityError(f'denied_route_with_upstream:{method}:{path}')
+
+
+def kong_owned_block(routes: list[dict]) -> list[str]:
+    lines = ['\t\t# Kong-owned routes beyond the public route contract (config/kong-owned-edge-routes.v1.json).']
+    for index, row in enumerate(routes):
+        matcher = f'kong_owned_{index:02d}'
+        lines += [f'\t\t@{matcher} {{', '\t\t\tmethod ' + ' '.join(row['methods']),
+                  f'\t\t\tpath_regexp {_kong_owned_regex(row)}', '\t\t}',
+                  f'\t\thandle @{matcher} {{', f'\t\t\tvars edge_route_id edge.kong.{row["kongRoute"]}',
+                  *proxy_lines(), '\t\t}', '']
+    return lines
+
+
+AGENCY_START = "\t\t# BEGIN GENERATED LEGACY AGENCY KONG ROUTES"
+AGENCY_END = "\t\t# END GENERATED LEGACY AGENCY KONG ROUTES"
+
+
+def legacy_agency_block(authority: dict[str, Any]) -> str:
+    """api.codestra.agency serves only flagged Kong-owned routes, exactly as the canonical host does."""
+    lines = [AGENCY_START, '\t\t# Generated from config/kong-owned-edge-routes.v1.json (legacyAgencyHost); Kong sees the canonical host.']
+    for index, row in enumerate(authority['kongOwnedRoutes']):
+        if not row.get('legacyAgencyHost'):
+            continue
+        matcher = f'kong_owned_{index:02d}'
+        proxy = proxy_lines()
+        proxy[1] = proxy[1].replace('header_up Host {host}', 'header_up Host api.codestra.co')
+        proxy[2:2] = ['\t\t\t\theader_up X-Forwarded-Host {host}', '\t\t\t\theader_up X-Forwarded-Proto {scheme}']
+        lines += [f'\t\t@{matcher} {{', '\t\t\tmethod ' + ' '.join(row['methods']),
+                  f'\t\t\tpath_regexp {_kong_owned_regex(row)}', '\t\t}',
+                  f'\t\thandle @{matcher} {{', f'\t\t\tvars edge_route_id edge.legacy_agency.{row["kongRoute"]}',
+                  *proxy, '\t\t}', '']
+    lines.append(AGENCY_END)
+    return '\n'.join(lines)
+
+
+def render_legacy_agency_site(authority: dict[str, Any], source: str) -> str:
+    start, end = source.index(AGENCY_START), source.index(AGENCY_END) + len(AGENCY_END)
+    return source[:start] + legacy_agency_block(authority) + source[end:]
+
+
+def denied_block(routes: list[dict]) -> list[str]:
+    lines = ['\t\t# Middleware denied and private_only operations terminate here; they never reach Kong.']
+    for method in sorted({row['method'] for row in routes}):
+        expression = '^(' + '|'.join(sorted(route_regex(row['path']) for row in routes if row['method'] == method)) + ')$'
+        lines += [f'\t\t@contract_denied_{method.lower()} {{', f'\t\t\tmethod {method}', f'\t\t\tpath_regexp {expression}',
+                  '\t\t}', f'\t\thandle @contract_denied_{method.lower()} {{', '\t\t\trespond 404', '\t\t}', '']
+    return lines
 
 
 def compile_edge_site(authority: dict[str, Any]) -> str:
@@ -414,10 +471,9 @@ def compile_edge_site(authority: dict[str, Any]) -> str:
     lines = ['\troute {']
     for matcher, paths in [('private_only', authority['privateOnlyPaths']), ('pending_contract', authority['pendingContractPaths'])]:
         lines += [f'\t\t@{matcher} path ' + ' '.join(paths), f'\t\thandle @{matcher} {{', '\t\t\trespond 404', '\t\t}', '']
+    lines += denied_block(authority['middlewareDeniedRoutes'])
     lines.append(route_block(authority['serviceJwtRouteContract']['routes']))
-    lines += ['', '\t\t# Paths already represented by reviewed Kong source']
-    prefixes = [kong_path_matcher(x) for x in authority['kongManagedPathPrefixes']]
-    lines += ['\t\t@kong path ' + ' '.join(prefixes), '\t\thandle @kong {', '\t\t\tvars edge_route_id edge.kong', *proxy_lines(), '\t\t}', '']
+    lines += ['', *kong_owned_block(authority['kongOwnedRoutes'])]
     lines += ['\t\t# Transitional compatibility remains explicitly allowlisted.', '\t\t@realtime path ' + ' '.join(authority['transitionalPaths']), '\t\thandle @realtime {', '\t\t\tvars edge_route_id edge.realtime']
     lines += [x.replace('CADDY_KONG_UPSTREAM', 'CADDY_REALTIME_UPSTREAM') for x in proxy_lines()]
     lines += ['\t\t}', '', '\t\t# Unknown public API paths fail closed.', '\t\thandle {', '\t\t\trespond 404', '\t\t}', '\t}']
@@ -433,11 +489,13 @@ def edge_inventory(authority: dict[str, Any], generated: str) -> dict[str, Any]:
                      'host': authority['canonicalHost'], 'path': path, 'methods': methods,
                      'visibility': visibility, 'upstream_ref': upstream,
                      'upstream_service': 'kong' if upstream == 'CADDY_KONG_UPSTREAM' else ('none' if upstream == 'NONE' else 'realtime'),
-                     'owner': 'ingtrader21-spec/Caddy'})
+                     'owner': 'appolon1908/Caddy'})
     for row in authority['serviceJwtRouteContract']['routes']:
         add(row['path'], [row['method']], 'public', 'CADDY_KONG_UPSTREAM', 'edge.canonical.' + row['method'].lower())
-    for path in authority['kongManagedPathPrefixes']:
-        add(kong_path_matcher(path), ['ANY'], 'public', 'CADDY_KONG_UPSTREAM', 'edge.kong')
+    for row in authority['kongOwnedRoutes']:
+        add(row['path'] + ('/*' if row['match'] == 'prefix' else ''), row['methods'], 'public', 'CADDY_KONG_UPSTREAM', 'edge.kong.' + row['kongRoute'])
+    for row in authority['middlewareDeniedRoutes']:
+        add(row['path'], [row['method']], 'private', 'NONE', 'edge.contract.' + row['classification'])
     for path in authority['transitionalPaths']:
         add(path, ['ANY'], 'compatibility', 'CADDY_REALTIME_UPSTREAM', 'edge.realtime')
     for path in authority['privateOnlyPaths'] + authority['pendingContractPaths']:

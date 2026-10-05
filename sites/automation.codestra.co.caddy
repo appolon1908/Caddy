@@ -1,5 +1,5 @@
-# Canonical n8n editor edge source owned by ingtrader21-spec/Caddy.
-# Historical reference: appolon1908-hue/codestra-production-platform
+# Canonical n8n editor edge source owned by appolon1908/Caddy.
+# Historical reference: appolon1908/codestra-production-platform
 # ref: release/production-activation
 # path: operations/caddy/api.codestra.co.caddy
 #
@@ -66,6 +66,8 @@ automation.codestra.co {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin

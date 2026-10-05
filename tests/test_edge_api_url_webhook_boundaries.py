@@ -59,7 +59,7 @@ def test_webhooks_have_exact_methods_and_explicit_owners():
     for entry in WEBHOOKS["entries"]:
         assert entry["methods"] == ["POST"]
         assert entry["gateway"] == "appolon1908/Kong"
-        assert entry["downstream_owner"] == "ingtrader21-spec/Middleware-"
+        assert entry["downstream_owner"] == "appolon1908/Middleware-"
         assert entry["identity_gate_owner"]
         assert entry["replay_protection_owner"]
         assert entry["log_redaction"]

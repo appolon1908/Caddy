@@ -154,14 +154,14 @@ https_get() { status_of --resolve "$1:443:${public_bind}" "https://$1$2" "${@:3}
 
 api_status="$("$CURL" --noproxy '*' --silent --show-error --max-time 15 --dump-header "$work/api.headers" \
   --output /dev/null --write-out '%{http_code}' --resolve "api.codestra.co:443:${public_bind}" \
-  -H "${AUTH_HEADER_NAME}: ${AUTH_SCHEME} bounded-production-canary-invalid" https://api.codestra.co/api/v1/health)"
+  -H "${AUTH_HEADER_NAME}: ${AUTH_SCHEME} bounded-production-canary-invalid" https://api.codestra.co/platform/v1/kernel/describe)"
 case "$api_status" in 200|204|401|403) ;; *) fail "live_kong_status:${api_status}" ;; esac
 grep -Eqi '^strict-transport-security: max-age=31536000' "$work/api.headers" || fail live_hsts
-redirect_status="$(status_of --resolve "api.codestra.co:80:${public_bind}" http://api.codestra.co/api/v1/health)"
+redirect_status="$(status_of --resolve "api.codestra.co:80:${public_bind}" http://api.codestra.co/platform/v1/kernel/describe)"
 [[ "$redirect_status" =~ ^30(1|7|8)$ ]] || fail "live_redirect:${redirect_status}"
 version_status="$(https_get api.codestra.co /version)"
 [[ "$version_status" == 200 ]] || fail "live_realtime_status:${version_status}"
-for path in /not-a-contracted-route /metrics '/metrics;x' /internal/v1/database/health; do
+for path in /not-a-contracted-route /api/v1/health /metrics '/metrics;x' /internal/v1/database/health; do
   denied="$(https_get api.codestra.co "$path")"
   [[ "$denied" == 404 ]] || fail "live_private_or_unknown:${path}:${denied}"
 done

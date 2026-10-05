@@ -159,27 +159,29 @@
     },
     {
       "route": "codestra-n8n-command-read",
-      "decision": "FORWARD_TO_KONG",
+      "decision": "DENY_MIDDLEWARE_CONTRACT",
       "probes": [
         {
           "host": "api.codestra.co",
           "method": "GET",
           "path": "/v1/integrations/n8n/operations",
-          "expect": "kong"
+          "expect": 404
         }
-      ]
+      ],
+      "reason": "the Middleware public route contract classifies this operation as denied, so Caddy answers 404 and never forwards it"
     },
     {
       "route": "codestra-n8n-command-submit",
-      "decision": "FORWARD_TO_KONG",
+      "decision": "DENY_MIDDLEWARE_CONTRACT",
       "probes": [
         {
           "host": "api.codestra.co",
           "method": "POST",
           "path": "/v1/integrations/n8n/commands",
-          "expect": "kong"
+          "expect": 404
         }
-      ]
+      ],
+      "reason": "the Middleware public route contract classifies this operation as denied, so Caddy answers 404 and never forwards it"
     },
     {
       "route": "codestra-sms-standby-route",

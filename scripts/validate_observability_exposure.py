@@ -222,7 +222,7 @@ def extract_static_site_addresses(all_sites: str) -> tuple[str, ...]:
 def validate(contract: dict[str, Any], site: str, all_sites: str, runtime: str, headers: str) -> None:
     if contract.get("schema") != "codestra.observability-exposure.v1":
         raise ExposureError("unsupported exposure schema")
-    if contract.get("principalRepository") != "ingtrader21-spec/Caddy":
+    if contract.get("principalRepository") != "appolon1908/Caddy":
         raise ExposureError("Caddy repository is not principal authority")
     if any(key in contract for key in ("dnsTarget", "publicIpv4", "dnsTtlSeconds")):
         raise ExposureError("repository-only contract must not assert production DNS state")

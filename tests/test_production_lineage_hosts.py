@@ -5,6 +5,7 @@ runs the pinned Caddy binary on loopback against a synthetic upstream and a
 synthetic oauth2-proxy stand-in. No real certificate, identity or provider is used.
 """
 import http.client
+import json
 import os
 import re
 import shutil
@@ -93,9 +94,10 @@ def test_legacy_agency_host_never_widens_the_canonical_host():
     def matcher(source, name):
         return re.search(rf"(?m)^\s*@{name} path (.+)$", source).group(1).split()
 
-    canonical_kong = matcher(canonical, "kong")
-    for prefix in matcher(legacy, "kong"):
-        assert any(prefix == c or (c.endswith("*") and prefix.startswith(c[:-1])) for c in canonical_kong), prefix
+    from caddy_kong_contract import kong_route_matchers
+    canonical_kong = kong_route_matchers(canonical)
+    legacy_kong = kong_route_matchers(legacy)
+    assert legacy_kong and all(canonical_kong.get(name) == value for name, value in legacy_kong.items())
     assert matcher(legacy, "pending_contract") == matcher(canonical, "pending_contract")
 
 
@@ -138,7 +140,8 @@ def edge(tmp_path_factory):
 
         def _reply(self):
             length = int(self.headers.get("Content-Length", "0") or 0)
-            if length and len(self.rfile.read(length)) < length:
+            payload = self.rfile.read(length) if length else b""
+            if len(payload) < length:
                 truncated.append(self.path)
                 return
             if self.path == "/oauth2/auth":
@@ -153,7 +156,7 @@ def edge(tmp_path_factory):
                 drops.append(self.command)
                 self.connection.shutdown(socket.SHUT_RDWR)
                 return
-            seen.append({"path": self.path, "method": self.command,
+            seen.append({"path": self.path, "method": self.command, "body": payload,
                          "headers": {k.lower(): v for k, v in self.headers.items()}})
             body = b"{}"
             self.send_response(200)
@@ -162,7 +165,7 @@ def edge(tmp_path_factory):
             self.end_headers()
             self.wfile.write(body)
 
-        do_GET = do_POST = _reply
+        do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = do_HEAD = do_OPTIONS = _reply
 
     upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
     threading.Thread(target=upstream.serve_forever, daemon=True).start()
@@ -186,7 +189,7 @@ def edge(tmp_path_factory):
     port = _free_port()
     shutil.copytree(ROOT / "snippets", tmp_path / "snippets")
     (tmp_path / "sites").mkdir()
-    for name in ("api.breero.com.caddy", "api.codestra.agency.caddy", "agent-desktop.codestra.agency.caddy",
+    for name in ("api.codestra.co.caddy", "api.breero.com.caddy", "api.codestra.agency.caddy", "agent-desktop.codestra.agency.caddy",
                  "monitoring.codestra.co.caddy", "middleware-private.caddy", "klyrow-events.private.caddy",
                  "staging-internal.caddy", "automation.codestra.co.caddy", "crm.codestra.agency.caddy"):
         source = (ROOT / "sites" / name).read_text(encoding="utf-8")
@@ -246,9 +249,11 @@ def test_kong_bound_hosts_strip_identity_and_fail_closed(edge):
     assert "server" not in edge.request("api.breero.com", "/api/v1/orders")[1]
     for path in ("/other", "/metrics", "/internal/v1/database/health"):
         assert edge.request("api.breero.com", path)[0] == 404
-    assert edge.request("api.codestra.agency", "/api/v1/events/delivery")[0] == 200
+    assert edge.request("api.codestra.agency", "/v1/crm/contacts", "POST")[0] == 200
     assert edge.last()["headers"]["host"] == "api.codestra.co"
-    for path in ("/api/v1/events/telnexa", "/api/v1/control/unlisted", "/platform/v1/kernel/describe"):
+    assert edge.last()["headers"]["x-forwarded-host"] == "api.codestra.agency"
+    for path in ("/api/v1/events/telnexa", "/api/v1/events/delivery", "/api/v1/control/unlisted",
+                 "/platform/v1/kernel/describe", "/v1/integrations/n8n/commands", "/v1/intake/x"):
         assert edge.request("api.codestra.agency", path)[0] == 404
 
 
@@ -337,3 +342,81 @@ def test_uncertain_write_is_never_resent(edge):
                           headers={"Idempotency-Key": "k-drop", "Content-Type": "application/json"})[0]
     assert status == 502
     assert edge.drops == ["POST"]
+
+
+POLICY = json.loads((ROOT / "config" / "header-policy.v1.json").read_text(encoding="utf-8"))
+CONTRACT = json.loads((ROOT / "config" / "middleware-public-api-route-contract.v1.json").read_text(encoding="utf-8"))
+PRESERVED = {"Authorization": "Bearer TEST_SYN_CLIENT_TOKEN", "Idempotency-Key": "TEST-SYN-idem-1",
+             "X-Correlation-ID": "TEST-SYN-corr.7", "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+             "tracestate": "codestra=t61rcWkgMzE", "Content-Type": "application/json", "X-Tenant-ID": "tenant-a",
+             "X-Causation-ID": "TEST-SYN-cause-1", "X-Codestra-Event-ID": "TEST-SYN-event-1",
+             "X-Codestra-Timestamp": "1791000000", "X-Codestra-Signature": "v1=TEST_SYN_SIGNATURE"}
+KONG_HANDOFFS = [("api.codestra.co", "/platform/v1/kernel/describe"), ("api.breero.com", "/api/v1/orders"),
+                 ("api.codestra.agency", "/v1/crm/contacts")]
+
+
+def _concrete(path):
+    return re.sub(r"\{[^}]+\}", "probe-1", path)
+
+
+@pytest.mark.parametrize("host, path", KONG_HANDOFFS)
+def test_header_policy_holds_on_every_kong_handoff(edge, host, path):
+    stripped = POLICY["strip"]["identity"] + POLICY["strip"]["proxy_identity"]
+    assert {p["header"] for p in POLICY["preserve"]} == set(PRESERVED)
+    assert edge.request(host, path, headers={**{name: "forged" for name in stripped}, **PRESERVED})[0] == 200
+    forwarded = edge.last()["headers"]
+    assert not {name.lower() for name in stripped} & set(forwarded), host
+    for name, value in PRESERVED.items():
+        assert forwarded[name.lower()] == value, (host, name)
+
+
+@pytest.mark.parametrize("method, path, body", [
+    ("GET", "/platform/v1/commands/op-1/result?page=2&filter=a%2Fb&empty=", b""),
+    ("POST", "/platform/v1/commands?dry_run=true", b'{"command":"TEST_SYN","amount":"1.10"}'),
+    ("PATCH", "/platform/v1/contacts/contact.1", b'{"name":"TEST SYN"}'),
+    ("POST", "/platform/v1/agent-provisioning/req-1/webrtc/revoke", b"{}"),
+])
+def test_canonical_api_requests_reach_kong_unchanged(edge, method, path, body):
+    status = edge.request("api.codestra.co", path, method, body=body or None, headers=PRESERVED)[0]
+    assert status == 200
+    seen = edge.last()
+    assert (seen["method"], seen["path"], seen["body"]) == (method, path, body)
+    assert seen["headers"]["host"] == "api.codestra.co"
+    assert seen["headers"]["authorization"] == PRESERVED["Authorization"]
+    assert seen["headers"]["idempotency-key"] == PRESERVED["Idempotency-Key"]
+
+
+@pytest.mark.parametrize("route", CONTRACT["routes"], ids=lambda r: f"{r['classification']}:{r['method']}:{r['path']}")
+def test_every_contract_route_is_classified_on_the_live_edge(edge, route):
+    before = len(edge.seen)
+    status = edge.request("api.codestra.co", _concrete(route["path"]), route["method"],
+                          body=b"{}" if route["method"] in {"POST", "PUT", "PATCH"} else None)[0]
+    if route["classification"] == "shared_edge":
+        assert status == 200 and len(edge.seen) == before + 1
+        assert (edge.last()["method"], edge.last()["path"]) == (route["method"], _concrete(route["path"]))
+    else:
+        assert status == 404 and len(edge.seen) == before
+
+
+@pytest.mark.parametrize("method, path", [
+    ("DELETE", "/platform/v1/commands"), ("PUT", "/platform/v1/kernel/describe"),
+    ("GET", "/platform/v2/kernel/describe"), ("GET", "/platform/v1/not-a-contracted-route"),
+    ("GET", "/platform/v1/commands/op-1/result/extra"), ("GET", "/platform/v1/commands/../internal/x"),
+    ("GET", "/platform/v1/commands/%2e%2e/x"), ("GET", "/Platform/v1/kernel/describe"),
+    ("GET", "/platform/v1/kernel/describe/"), ("GET", "/platform//v1/kernel/describe"),
+    ("GET", "/platform/v1/commands/bad%20id/result"), ("GET", "/"),
+])
+def test_unknown_methods_versions_and_paths_never_leave_the_edge(edge, method, path):
+    before = len(edge.seen)
+    assert edge.request("api.codestra.co", path, method)[0] in {400, 404}
+    assert len(edge.seen) == before
+
+
+@pytest.mark.parametrize("host", ["api.codestra.co", "api.breero.com", "crm.codestra.agency"])
+@pytest.mark.parametrize("path", ["/metrics", "/metrics/", "/metrics;x", "/internal", "/internal/x",
+                                  "//metrics", "/%6Detrics", "/internal%2Fx", "/metrics?format=prometheus"])
+def test_private_namespaces_are_closed_on_every_public_host(edge, host, path):
+    before = len(edge.seen)
+    for method in ("GET", "HEAD", "POST", "OPTIONS"):
+        assert edge.request(host, path, method)[0] in {400, 404}, (host, path, method)
+    assert len(edge.seen) == before

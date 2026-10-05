@@ -37,6 +37,8 @@ api.breero.com {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin
@@ -78,6 +80,8 @@ api.breero.com {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin

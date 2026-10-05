@@ -147,7 +147,7 @@ def validate_registries(public: dict[str, Any], webhooks: dict[str, Any]) -> dic
             raise CertificationError(f"webhook method drift: {row.get('id')}")
         if row.get("gateway") != KONG_GATEWAY:
             raise CertificationError(f"webhook bypasses Kong: {row.get('id')}")
-        if row.get("downstream_owner") != "ingtrader21-spec/Middleware-":
+        if row.get("downstream_owner") != "appolon1908/Middleware-":
             raise CertificationError(f"webhook downstream owner drift: {row.get('id')}")
         for field in (
             "identity_gate_owner",

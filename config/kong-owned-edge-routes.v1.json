@@ -1,0 +1,25 @@
+{
+  "schema": "codestra.caddy-kong-owned-edge-routes.v1",
+  "kongRepository": "appolon1908/Kong",
+  "kongSourceSha": "82bb82611a694783506ddfccf3910de9c9f1555a",
+  "kongInventories": ["config/kong-production-route-inventory.v2.json", "config/kong-mcr-routes.v1.json"],
+  "host": "api.codestra.co",
+  "rule": "Kong routes on api.codestra.co that the Middleware public contract does not own. Exact routes match one method and path; prefix routes mirror a Kong prefix route and its methods. Nothing else on the host reaches Kong. Routes marked legacyAgencyHost are also served on api.codestra.agency, with the canonical Host.",
+  "routes": [
+    {"kongRoute": "mcr-plan", "match": "exact", "methods": ["POST"], "path": "/platform/v1/campaign-engine/plan"},
+    {"kongRoute": "mcr-execute", "match": "exact", "methods": ["POST"], "path": "/platform/v1/campaign-engine/execute"},
+    {"kongRoute": "mcr-status", "match": "exact", "methods": ["GET"], "path": "/platform/v1/campaign-engine/status"},
+    {"kongRoute": "mcr-journey", "match": "exact", "methods": ["GET"], "path": "/platform/v1/leads/{lead_id}/journey"},
+    {"kongRoute": "mcr-next-action", "match": "exact", "methods": ["GET"], "path": "/platform/v1/leads/{lead_id}/next-action"},
+    {"kongRoute": "mcr-eligible-leads", "match": "exact", "methods": ["GET"], "path": "/platform/v1/campaigns/{campaign_id}/eligible-leads"},
+    {"kongRoute": "mcr-delivery-events", "match": "exact", "methods": ["POST"], "path": "/platform/v1/delivery-events"},
+    {"kongRoute": "mcr-suppressions", "match": "exact", "methods": ["POST"], "path": "/platform/v1/suppressions"},
+    {"kongRoute": "codestra-communication-canonical-read", "legacyAgencyHost": true, "match": "exact", "methods": ["GET"], "path": "/api/v1/messages"},
+    {"kongRoute": "codestra-communication-canonical-write", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/api/v1/control/messages"},
+    {"kongRoute": "codestra-communication-canonical-write", "legacyAgencyHost": true, "match": "exact", "methods": ["POST"], "path": "/api/v1/results/messages"},
+    {"kongRoute": "crm-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST", "PATCH", "OPTIONS"], "path": "/v1/crm"},
+    {"kongRoute": "email-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST"], "path": "/v1/email"},
+    {"kongRoute": "sms-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["GET", "POST"], "path": "/v1/sms"},
+    {"kongRoute": "webhooks-route", "legacyAgencyHost": true, "match": "prefix", "methods": ["POST"], "path": "/v1/webhooks"}
+  ]
+}

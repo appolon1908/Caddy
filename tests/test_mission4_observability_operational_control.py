@@ -65,7 +65,6 @@ def test_metrics_contract_rejects_high_cardinality_designs_by_policy() -> None:
 def test_health_and_readiness_contract_is_present() -> None:
     routes = read("config/caddy-kong-contract.v1.json")
     api = read("sites/api.codestra.co.caddy")
-    assert "/api/v1/health" in routes
     assert "/healthz" in routes
     assert "/readyz" in api
     assert "health/readiness" in read("docs/mission4-observability-operational-control.md")

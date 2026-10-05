@@ -165,6 +165,11 @@ def _matches(matcher: Mapping[str, Any], method: str, path: str, host: str) -> b
         re.search(pattern, path) for pattern in _regexp_patterns(path_regexp)
     ):
         return False
+    for placeholder, value in (matcher.get("vars_regexp") or {}).items():
+        if placeholder != "{http.request.uri.path}":
+            return False
+        if not any(re.search(pattern, path) for pattern in _regexp_patterns(value)):
+            return False
     # A negated matcher (for example `not remote_ip`) depends on request
     # properties a static probe does not model; treat it as not matching.
     if matcher.get("not"):

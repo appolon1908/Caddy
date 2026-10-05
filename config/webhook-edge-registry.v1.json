@@ -1,9 +1,9 @@
 {
-  "authority": "ingtrader21-spec/Caddy",
+  "authority": "appolon1908/Caddy",
   "entries": [
     {
       "classification": "CANONICAL",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging",
         "production-gated"
@@ -28,7 +28,7 @@
     },
     {
       "classification": "CANONICAL",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging",
         "production-gated"
@@ -54,7 +54,7 @@
     {
       "blocker": "Middleware issue #264 / route not present in current public-edge contract",
       "classification": "TRANSITIONAL_PENDING_CONTRACT",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging"
       ],
@@ -79,7 +79,7 @@
     {
       "blocker": "Kernel convergence / route not present in current public-edge contract",
       "classification": "TRANSITIONAL_PENDING_CONTRACT",
-      "downstream_owner": "ingtrader21-spec/Middleware-",
+      "downstream_owner": "appolon1908/Middleware-",
       "enabled_environments": [
         "staging"
       ],

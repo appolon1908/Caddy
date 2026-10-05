@@ -1,5 +1,5 @@
-# Legacy hostname compatibility is path-bounded and cannot bypass Kong.
-# Every prefix is a subset of the canonical api.codestra.co Kong prefixes and
+# Legacy hostname compatibility is route-bounded and cannot bypass Kong.
+# Its Kong routes are generated from the canonical host's Kong-owned routes and
 # the canonical pending-contract denials apply here too, so the legacy
 # hostname never widens exposure. Kong sees the canonical host.
 api.codestra.agency {
@@ -19,14 +19,19 @@ api.codestra.agency {
 			respond 404
 		}
 
-		@kong path /api/v1/control/messages* /api/v1/control/campaigns* /api/v1/control/agents* /api/v1/control/memberships* /api/v1/control/adapters* /api/v1/messages* /api/v1/events* /api/v1/results* /api/v1/reconciliation* /api/v1/health* /v1/integrations/n8n* /v1/admin/system* /v1/crm* /v1/email* /v1/sms* /v1/webhooks* /v1/intake*
-		handle @kong {
-			vars edge_route_id edge.legacy_agency.kong
+		# BEGIN GENERATED LEGACY AGENCY KONG ROUTES
+		# Generated from config/kong-owned-edge-routes.v1.json (legacyAgencyHost); Kong sees the canonical host.
+		@kong_owned_08 {
+			method GET
+			path_regexp ^/api/v1/messages$
+		}
+		handle @kong_owned_08 {
+			vars edge_route_id edge.legacy_agency.codestra-communication-canonical-read
 			reverse_proxy {$CADDY_KONG_UPSTREAM} {
 				header_up Host api.codestra.co
-				header_up X-Real-IP {remote_host}
 				header_up X-Forwarded-Host {host}
 				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
 				header_up -X-User-ID
 				header_up -X-Username
 				header_up -X-Email
@@ -42,6 +47,8 @@ api.codestra.agency {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin
@@ -59,6 +66,284 @@ api.codestra.agency {
 				}
 			}
 		}
+
+		@kong_owned_09 {
+			method POST
+			path_regexp ^/api/v1/control/messages$
+		}
+		handle @kong_owned_09 {
+			vars edge_route_id edge.legacy_agency.codestra-communication-canonical-write
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@kong_owned_10 {
+			method POST
+			path_regexp ^/api/v1/results/messages$
+		}
+		handle @kong_owned_10 {
+			vars edge_route_id edge.legacy_agency.codestra-communication-canonical-write
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@kong_owned_11 {
+			method GET POST PATCH OPTIONS
+			path_regexp ^/v1/crm(/.*)?$
+		}
+		handle @kong_owned_11 {
+			vars edge_route_id edge.legacy_agency.crm-route
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@kong_owned_12 {
+			method GET POST
+			path_regexp ^/v1/email(/.*)?$
+		}
+		handle @kong_owned_12 {
+			vars edge_route_id edge.legacy_agency.email-route
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@kong_owned_13 {
+			method GET POST
+			path_regexp ^/v1/sms(/.*)?$
+		}
+		handle @kong_owned_13 {
+			vars edge_route_id edge.legacy_agency.sms-route
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@kong_owned_14 {
+			method POST
+			path_regexp ^/v1/webhooks(/.*)?$
+		}
+		handle @kong_owned_14 {
+			vars edge_route_id edge.legacy_agency.webhooks-route
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host api.codestra.co
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Real-IP {remote_host}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		# END GENERATED LEGACY AGENCY KONG ROUTES
 
 		@realtime path /ws/agent /api/v1/realtime/sessions /healthz /readyz /version
 		handle @realtime {
@@ -83,6 +368,8 @@ api.codestra.agency {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin

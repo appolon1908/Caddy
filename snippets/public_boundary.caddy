@@ -6,7 +6,13 @@
 		@public_private_paths path /metrics /metrics/* /metrics;* /internal /internal/* /internal;*
 		respond @public_private_paths 404
 
+		# Matchers see a cleaned path but upstreams receive the raw one, so a
+		# path that cleaning would change never leaves the edge.
+		@ambiguous_path vars_regexp {http.request.uri.path} (//|/\.\.?(/|$))
+		respond @ambiguous_path 400
+
 		# Gateways derive identity; client assertions never cross this boundary.
+		# The list is config/header-policy.v1.json strip.identity + strip.proxy_identity.
 		request_header -X-User-ID
 		request_header -X-Username
 		request_header -X-Email
@@ -22,6 +28,8 @@
 		request_header -X-Authenticated-Email
 		request_header -X-Codestra-Tenant
 		request_header -X-Codestra-Scopes
+		request_header -X-Codestra-User
+		request_header -X-Codestra-Role
 		request_header -X-Codestra-Gateway-Secret
 		request_header -X-Internal-Service
 		request_header -X-Admin

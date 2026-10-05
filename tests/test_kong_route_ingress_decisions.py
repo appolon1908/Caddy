@@ -17,7 +17,7 @@ def test_decisions_name_the_paired_kong_and_are_complete_and_explained():
     routes = [item["route"] for item in DECISIONS["decisions"]]
     assert len(routes) == len(set(routes)) == 35
     for item in DECISIONS["decisions"]:
-        assert item["decision"] in {"FORWARD_TO_KONG", "DENY_PENDING_CONTRACT", "NOT_AN_EDGE_HOST"}
+        assert item["decision"] in {"FORWARD_TO_KONG", "DENY_PENDING_CONTRACT", "DENY_MIDDLEWARE_CONTRACT", "NOT_AN_EDGE_HOST"}
         assert item["probes"], item["route"]
         if item["decision"] != "FORWARD_TO_KONG":
             assert item.get("reason"), item["route"]

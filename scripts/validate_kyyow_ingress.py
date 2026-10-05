@@ -17,8 +17,8 @@ def require(condition, message):
 
 def validate(contract, site, runtime):
     require(contract['schema'] == 'kyyow.ingress.v1', 'schema mismatch')
-    require(contract['principalRepository'] == 'ingtrader21-spec/Caddy', 'ingress authority mismatch')
-    require(contract['identityRepository'] == 'ingtrader21-spec/Keycloak', 'identity authority mismatch')
+    require(contract['principalRepository'] == 'appolon1908/Caddy', 'ingress authority mismatch')
+    require(contract['identityRepository'] == 'appolon1908/Keycloak', 'identity authority mismatch')
     require(contract['activation'] == {
         'repositoryConfigurationOnly': True, 'dnsChangeAuthorized': False,
         'liveReloadAuthorized': False, 'productionCutoverAuthorized': False,

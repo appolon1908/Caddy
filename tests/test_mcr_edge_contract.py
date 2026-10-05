@@ -17,11 +17,14 @@ MCR = [
 ]
 
 
-def test_platform_v1_is_kong_managed_for_all_mcr_paths():
-    managed = set(CONTRACT["kongManagedPathPrefixes"])
-    assert "/platform/v1" in managed
-    assert all(path.startswith("/platform/v1/") for path in MCR)
-    assert "/platform/v1*" in SITE
+def test_every_mcr_route_is_an_exact_kong_owned_route():
+    owned = {row["kongRoute"]: row for row in CONTRACT["kongOwnedRoutes"]}
+    names = CONTRACT["mcrBoundary"]["coveredByKongOwnedRoutes"]
+    assert len(names) == 8
+    for name in names:
+        assert owned[name]["match"] == "exact" and len(owned[name]["methods"]) == 1, name
+        assert any(owned[name]["path"].startswith(prefix) for prefix in MCR), name
+    assert "/platform/v1*" not in SITE and "kongManagedPathPrefixes" not in CONTRACT
 
 
 def test_mcr_boundary_is_explicit_and_not_cutover_authority():
@@ -32,12 +35,11 @@ def test_mcr_boundary_is_explicit_and_not_cutover_authority():
     assert b["authorizationHeaderForwarded"] is True
     assert b["trustedIdentityHeadersCreatedByCaddy"] is False
     assert b["publicInternalAndMetricsForbidden"] is True
-    assert b["coveredByKongManagedPrefix"] == "/platform/v1"
     assert b["managedPaths"] == MCR
 
 
 def test_platform_v1_handoff_targets_kong_not_middleware_or_provider():
-    start = SITE.index("@kong path")
+    start = SITE.index("# Kong-owned routes")
     end = SITE.index("# Transitional compatibility", start)
     block = SITE[start:end]
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in block
@@ -48,7 +50,7 @@ def test_platform_v1_handoff_targets_kong_not_middleware_or_provider():
 
 
 def test_authorization_is_preserved_to_kong_and_only_redacted_from_logs():
-    start = SITE.index("@kong path")
+    start = SITE.index("# Kong-owned routes")
     end = SITE.index("# Transitional compatibility", start)
     block = SITE[start:end]
     assert "header_up Authorization" not in block
@@ -92,11 +94,13 @@ def test_adapted_config_hands_mcr_and_kernel_to_kong_and_denies_private_paths():
         ("GET", "/platform/v1/campaigns/CMP-TEST-SYN-0001/eligible-leads"),
         ("POST", "/platform/v1/delivery-events"),
         ("POST", "/platform/v1/suppressions"),
-        ("DELETE", "/platform/v1/suppressions"),
-        ("GET", "/platform/v1/unknown"),
     ):
         resolution = resolver.resolve_request(document, method, path)
         assert resolution.upstream == kong, (method, path, resolution)
+    for method, path in (("DELETE", "/platform/v1/suppressions"), ("GET", "/platform/v1/unknown"),
+                         ("GET", "/platform/v1/campaign-engine/plan"), ("POST", "/platform/v1/leads/L-1/journey")):
+        resolution = resolver.resolve_request(document, method, path)
+        assert resolution.upstream is None and resolution.response_status == 404, (method, path, resolution)
     for method in ("GET", "POST", "DELETE"):
         for path in ("/internal", "/internal/v1/database/health", "/metrics", "/metrics/runtime"):
             resolution = resolver.resolve_request(document, method, path)

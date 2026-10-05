@@ -6,47 +6,55 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-KONG_MATCHER_RE = re.compile(r"(?m)^[ \t]*@kong[ \t]+path[ \t]+([^\r\n#]+?)\s*$")
+MATCHER_RE = re.compile(
+    r"(?ms)^[ \t]*@([a-z0-9_]+)[ \t]*\{\s*method[ \t]+([A-Z ]+?)\s*\n\s*path_regexp[ \t]+(\S+)\s*\}"
+)
+HANDLE_RE = re.compile(r"(?ms)^([ \t]*)handle[ \t]+@([a-z0-9_]+)[ \t]*\{\n(.*?)^\1\}")
+KONG_TARGET = "reverse_proxy {$CADDY_KONG_UPSTREAM} {"
 
 
-def routed_kong_prefixes(site_source: str) -> tuple[str, ...]:
-    """Return normalized prefixes from the sole named ``@kong path`` matcher."""
-    matches = KONG_MATCHER_RE.findall(site_source)
-    if len(matches) != 1:
-        raise ValueError(f"kong_path_matcher_count:{len(matches)}")
-
-    route_tokens = matches[0].split()
-    if not route_tokens:
-        raise ValueError("empty_kong_path_matcher")
-
-    normalized: list[str] = []
-    for token in route_tokens:
-        if not token.startswith("/") or "*" in token[:-1]:
-            raise ValueError(f"invalid_kong_route:{token}")
-        prefix = token[:-1] if token.endswith("*") else token
-        if not prefix or prefix == "/":
-            raise ValueError(f"invalid_kong_route:{token}")
-        normalized.append(prefix)
-
-    if len(normalized) != len(set(normalized)):
-        raise ValueError("duplicate_kong_route")
-    return tuple(normalized)
+def kong_route_matchers(site_source: str) -> dict[str, tuple[frozenset[str], str]]:
+    """Every matcher whose handle hands traffic to Kong, as (methods, path regex)."""
+    matchers = {name: (frozenset(methods.split()), regex) for name, methods, regex in MATCHER_RE.findall(site_source)}
+    routed: dict[str, tuple[frozenset[str], str]] = {}
+    for _indent, name, body in HANDLE_RE.findall(site_source):
+        if KONG_TARGET not in body:
+            continue
+        if name not in matchers:
+            raise ValueError(f"kong_route_without_exact_matcher:{name}")
+        routed[name] = matchers[name]
+    if not routed:
+        raise ValueError("kong_route_count:0")
+    return routed
 
 
-def validate_exact_kong_routes(site_source: str, managed_paths: Iterable[str]) -> None:
-    """Fail unless Caddy matcher routes and declared Kong paths are identical."""
-    declared = tuple(managed_paths)
-    if len(declared) != len(set(declared)):
-        raise ValueError("duplicate_kong_managed_path")
+def expected_kong_matchers(authority: dict) -> dict[str, tuple[frozenset[str], str]]:
+    from caddy_route_compiler import _kong_owned_regex, route_regex
 
-    routed = set(routed_kong_prefixes(site_source))
-    contracted = set(declared)
-    uncontracted = sorted(routed - contracted)
-    unrouted = sorted(contracted - routed)
+    expected: dict[str, tuple[frozenset[str], str]] = {}
+    shared = authority["serviceJwtRouteContract"]["routes"]
+    for method in sorted({row["method"] for row in shared}):
+        regex = "^(" + "|".join(sorted(route_regex(r["path"]) for r in shared if r["method"] == method)) + ")$"
+        expected[f"canonical_{method.lower()}"] = (frozenset({method}), regex)
+    for index, row in enumerate(authority["kongOwnedRoutes"]):
+        expected[f"kong_owned_{index:02d}"] = (frozenset(row["methods"]), _kong_owned_regex(row))
+    return expected
+
+
+def validate_exact_kong_routes(site_source: str, authority: dict) -> None:
+    """Fail unless every Kong handoff is exactly a contract or Kong-owned route."""
+    routed = kong_route_matchers(site_source)
+    expected = expected_kong_matchers(authority)
+    uncontracted = sorted(name for name in routed if routed[name] != expected.get(name))
+    unrouted = sorted(name for name in expected if name not in routed)
     if uncontracted:
         raise ValueError(f"kong_route_not_contracted:{','.join(uncontracted)}")
     if unrouted:
         raise ValueError(f"kong_contract_not_routed:{','.join(unrouted)}")
+
+
+def kong_forwards(site_source: str, method: str, path: str) -> bool:
+    return any(method in methods and re.match(regex, path) for methods, regex in kong_route_matchers(site_source).values())
 
 
 TRUSTED_IDENTITY_HEADERS = (
@@ -171,8 +179,8 @@ def private_only_paths(site_source: str) -> tuple[str, ...]:
 
 
 def validate_private_only_paths(site_source: str, contracted_paths: Iterable[str]) -> None:
-    """Private Middleware surfaces are answered 404 at the edge, ahead of the Kong
-    handoff and the legacy fallback, and are never also routed to Kong."""
+    """Private Middleware surfaces are answered 404 at the edge, ahead of every
+    upstream, and no Kong matcher can select them."""
     declared = tuple(contracted_paths)
     if not declared:
         raise ValueError("missing_private_only_paths")
@@ -187,15 +195,13 @@ def validate_private_only_paths(site_source: str, contracted_paths: Iterable[str
     if len(handles) != 1:
         raise ValueError(f"private_only_handle_count:{len(handles)}")
     handle_at = site_source.index(handles[0])
-    kong_match = KONG_MATCHER_RE.search(site_source)
-    if kong_match is None or handle_at > kong_match.start():
+    first_upstream = min((at for at in (site_source.find("{$CADDY_KONG_UPSTREAM}"),
+                                        site_source.find("{$CADDY_REALTIME_UPSTREAM}"),
+                                        site_source.find("{$CADDY_LEGACY_API_UPSTREAM}")) if at != -1), default=-1)
+    if first_upstream == -1 or handle_at > first_upstream:
         raise ValueError("private_only_not_before_kong_handoff")
-    legacy_at = site_source.find("{$CADDY_LEGACY_API_UPSTREAM}")
-    if legacy_at != -1 and handle_at > legacy_at:
-        raise ValueError("private_only_not_before_legacy_fallback")
-    kong_prefixes = routed_kong_prefixes(site_source)
     for path in routed:
-        bare = path[:-1] if path.endswith("*") else path
-        for prefix in kong_prefixes:
-            if bare == prefix or bare.startswith(prefix.rstrip("/") + "/") or prefix.startswith(bare.rstrip("/") + "/"):
+        probe = path[:-1] + "probe" if path.endswith("*") else path
+        for method in ("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"):
+            if kong_forwards(site_source, method, probe):
                 raise ValueError(f"private_only_path_routed_to_kong:{path}")
