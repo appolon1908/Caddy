@@ -63,13 +63,12 @@ jobs:
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          # shellcheck disable=SC1083
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
           test -z "$(git status --porcelain --untracked-files=all)"
           test "$(git rev-parse --is-inside-work-tree)" = true
           echo "SOURCE_SHA=${EXPECTED_SHA}"
-          echo "SOURCE_TREE=$(git rev-parse HEAD^{tree})"
+          echo "SOURCE_TREE=$(git rev-parse 'HEAD^{tree}')"
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -140,154 +139,6 @@ jobs:
           print("STRUCTURE_VALIDATION=PASS")
           PY
           git diff --check
-
-      - name: Detect source stacks
-        id: stacks
-        run: |
-          # shellcheck disable=SC2015,SC2129
-          set -Eeuo pipefail
-          has_node=false
-          has_python=false
-          has_go=false
-          has_docker=false
-          find . -maxdepth 5 -type f -name package.json -not -path '*/node_modules/*' -print -quit | grep -q . && has_node=true || true
-          find . -maxdepth 5 -type f \( -name pyproject.toml -o -name requirements.txt -o -name requirements.lock -o -name setup.py \) -print -quit | grep -q . && has_python=true || true
-          find . -maxdepth 5 -type f -name go.mod -not -path '*/vendor/*' -print -quit | grep -q . && has_go=true || true
-          find . -maxdepth 5 -type f -name Dockerfile -print -quit | grep -q . && has_docker=true || true
-          echo "node=${has_node}" >> "$GITHUB_OUTPUT"
-          echo "python=${has_python}" >> "$GITHUB_OUTPUT"
-          echo "go=${has_go}" >> "$GITHUB_OUTPUT"
-          echo "docker=${has_docker}" >> "$GITHUB_OUTPUT"
-          echo "NODE=${has_node}"
-          echo "PYTHON=${has_python}"
-          echo "GO=${has_go}"
-          echo "DOCKER=${has_docker}"
-
-      - name: Set up Node.js
-        if: false && steps.stacks.outputs.node == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        with:
-          node-version: "22.14.0"
-
-      - name: Run Node.js projects
-        if: false && steps.stacks.outputs.node == 'true'
-        run: |
-          set -Eeuo pipefail
-          while IFS= read -r manifest; do
-            directory="$(dirname "$manifest")"
-            echo "NODE_PROJECT=${directory}"
-            pushd "$directory" >/dev/null
-            if [[ -f package-lock.json ]]; then
-              npm ci --legacy-peer-deps --no-audit --fund=false
-              runner=(npm run)
-            elif [[ -f pnpm-lock.yaml ]]; then
-              corepack enable
-              pnpm install --frozen-lockfile
-              runner=(pnpm run)
-            elif [[ -f yarn.lock ]]; then
-              corepack enable
-              yarn install --immutable || yarn install --frozen-lockfile
-              runner=(yarn run)
-            else
-              npm install --legacy-peer-deps --no-audit --fund=false
-              runner=(npm run)
-            fi
-            for script in lint typecheck test build; do
-              if node -e 'const p=require("./package.json"); process.exit(p.scripts && typeof p.scripts[process.argv[1]]==="string" ? 0 : 1)' "$script"; then
-                "${runner[@]}" "$script"
-              fi
-            done
-            npm audit --omit=dev --audit-level=critical
-            popd >/dev/null
-          done < <(find . -maxdepth 5 -type f -name package.json -not -path '*/node_modules/*' | sort)
-
-      - name: Run Python projects
-        if: false && steps.stacks.outputs.python == 'true'
-        run: |
-          set -Eeuo pipefail
-          python - <<'PY'
-          from __future__ import annotations
-
-          import pathlib
-          import shutil
-          import subprocess
-          import sys
-
-          root = pathlib.Path(".").resolve()
-          excluded = {".git", ".venv", ".venv-ci", "__pycache__", "node_modules", "vendor"}
-          roots: set[pathlib.Path] = set()
-          for name in ("pyproject.toml", "requirements.lock", "requirements.txt", "setup.py"):
-              for path in root.rglob(name):
-                  rel = path.relative_to(root)
-                  if any(part in excluded for part in rel.parts) or len(rel.parts) > 5:
-                      continue
-                  roots.add(path.parent)
-
-          for directory in sorted(roots):
-              print(f"PYTHON_PROJECT={directory.relative_to(root) or pathlib.Path('.')}", flush=True)
-              venv = directory / ".venv-ci"
-              shutil.rmtree(venv, ignore_errors=True)
-              subprocess.run([sys.executable, "-m", "venv", str(venv)], cwd=directory, check=True)
-              python = venv / "bin" / "python"
-              subprocess.run([str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--upgrade", "pip"], cwd=directory, check=True)
-              requirement = next((directory / name for name in ("requirements.lock", "requirements.txt") if (directory / name).is_file()), None)
-              if requirement:
-                  subprocess.run([str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "-r", requirement.name], cwd=directory, check=True)
-              elif (directory / "pyproject.toml").is_file():
-                  subprocess.run([str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "-e", "."], cwd=directory, check=True)
-              subprocess.run([str(python), "-m", "compileall", "-q", "."], cwd=directory, check=True)
-              if (directory / "tests").is_dir():
-                  subprocess.run([str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "pytest==8.4.2"], cwd=directory, check=True)
-                  subprocess.run([str(python), "-m", "pytest", "-q"], cwd=directory, check=True)
-              subprocess.run([str(python), "-m", "pip", "check"], cwd=directory, check=True)
-              shutil.rmtree(venv, ignore_errors=True)
-          PY
-
-      - name: Run Go modules
-        if: false && steps.stacks.outputs.go == 'true'
-        env:
-          GOTOOLCHAIN: auto
-          GOWORK: "off"
-        run: |
-          set -Eeuo pipefail
-          while IFS= read -r module; do
-            directory="$(dirname "$module")"
-            echo "GO_MODULE=${directory}"
-            (
-              cd "$directory"
-              go mod verify
-              go test ./...
-              go vet ./...
-            )
-          done < <(find . -maxdepth 5 -type f -name go.mod -not -path '*/vendor/*' | sort)
-
-      - name: Validate Compose files
-        if: false
-        run: |
-          set -Eeuo pipefail
-          while IFS= read -r compose; do
-            echo "COMPOSE_FILE=${compose}"
-            compose_dir="$(dirname "$compose")"
-            args=()
-            if [[ -f "${compose_dir}/.env.example" ]]; then
-              args+=(--env-file "${compose_dir}/.env.example")
-            fi
-            docker compose "${args[@]}" -f "$compose" config --quiet
-          done < <(find . -maxdepth 5 -type f \( -name compose.yml -o -name compose.yaml -o -name docker-compose.yml -o -name docker-compose.yaml \) | sort)
-
-      - name: Build primary container without publishing
-        if: false && steps.stacks.outputs.docker == 'true'
-        run: |
-          set -Eeuo pipefail
-          dockerfile="$(find . -maxdepth 5 -type f -name Dockerfile | sort | head -n1)"
-          context="$(dirname "$dockerfile")"
-          docker build \
-            --pull=false \
-            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
-            --label "org.opencontainers.image.revision=${{ github.event.pull_request.head.sha || github.sha }}" \
-            -f "$dockerfile" \
-            -t "codestra-ci:${{ github.event.pull_request.head.sha || github.sha }}" \
-            "$context"
 
       - name: Emit source readiness summary
         run: |
@@ -431,11 +282,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # shellcheck disable=SC1083,SC2034,SC2094,SC2129
           set -Eeuo pipefail
           mkdir -p evidence
           source_sha="$(git rev-parse HEAD)"
-          source_tree="$(git rev-parse HEAD^{tree})"
           test "$source_sha" = "$GITHUB_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
 
@@ -651,16 +500,20 @@ jobs:
               encoding="utf-8",
           )
           PY
+          checksums_tmp="${RUNNER_TEMP}/deploy-readiness-checksums.sha256"
           (
             cd evidence
             find . -maxdepth 1 -type f ! -name checksums.sha256 -print0 |
               sort -z |
-              xargs -0 sha256sum > checksums.sha256
+              xargs -0 sha256sum > "$checksums_tmp"
+            cp "$checksums_tmp" checksums.sha256
             sha256sum --check --strict checksums.sha256
           )
-          echo "artifact_kind=${artifact_kind}" >> "$GITHUB_OUTPUT"
-          echo "artifact_reference=${artifact_reference}" >> "$GITHUB_OUTPUT"
-          echo "artifact_digest=${artifact_digest}" >> "$GITHUB_OUTPUT"
+          {
+            echo "artifact_kind=${artifact_kind}"
+            echo "artifact_reference=${artifact_reference}"
+            echo "artifact_digest=${artifact_digest}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload immutable candidate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
