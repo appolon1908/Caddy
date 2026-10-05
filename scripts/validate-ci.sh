@@ -2,9 +2,13 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-readonly CADDY_VALIDATOR_IMAGE='docker.io/library/caddy@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c'
 
 cd "$ROOT_DIR"
+# Every configuration gate runs the version authority's verified release binary
+# inside the pinned distroless runtime base, so certification and production
+# never disagree about the Caddy version.
+CADDY_VALIDATOR_IMAGE="$(python3 scripts/caddy_version.py field runtime_base_image)"
+readonly CADDY_VALIDATOR_IMAGE
 python3 scripts/caddy_route_compiler.py --check
 python3 scripts/test_caddy_kong_contract.py
 python3 scripts/validate_repository.py
@@ -16,6 +20,7 @@ docker_root_parent="${HOME}/.cache"
 mkdir -p "$docker_root_parent"
 docker_root="$(mktemp -d "$docker_root_parent/caddy-validator.XXXXXX")"
 tar --exclude=.git -cf - . | tar -C "$docker_root" -xf -
+caddy_release_bin="$(python3 scripts/caddy_version.py fetch "$docker_root_parent/caddy-release-$(python3 scripts/caddy_version.py field version)/caddy")"
 # Disposable certificates for the private mTLS listeners: provisioning
 # validation loads every configured certificate and trust pool.
 python3 scripts/synthetic_private_pki.py "$docker_root/pki" >/dev/null
@@ -23,7 +28,11 @@ python3 scripts/synthetic_private_pki.py "$docker_root/pki" >/dev/null
 common_args=(
   --rm
   --network none
+  --user "$(id -u):$(id -g)"
   --workdir /srv
+  -e XDG_DATA_HOME=/tmp/data
+  -e XDG_CONFIG_HOME=/tmp/config
+  -e CADDY_LOG_DIR=/tmp/logs
   -e CADDY_KONG_UPSTREAM=127.0.0.1:8000
   -e CADDY_LEGACY_API_UPSTREAM=127.0.0.1:18101
   -e CADDY_REALTIME_UPSTREAM=127.0.0.1:18102
@@ -64,6 +73,7 @@ common_args=(
   -e CADDY_MIDDLEWARE_PKI_DIR=/srv/pki/middleware
   -e CADDY_KLYROW_PKI_DIR=/srv/pki/klyrow
   -v "$docker_root:/srv:ro"
+  -v "$caddy_release_bin:/usr/bin/caddy:ro"
 )
 
 formatted_file="$(mktemp)"
@@ -92,11 +102,10 @@ docker run "${common_args[@]}" "$CADDY_VALIDATOR_IMAGE" \
 python3 scripts/caddy_adapted_routes.py "$adapted_file" \
   --kong-upstream 127.0.0.1:8000 \
   --legacy-upstream 127.0.0.1:18101
-# Certify native HTTP, admin readback and Postman against this exact image binary.
-validator_container="$(docker create "$CADDY_VALIDATOR_IMAGE")"
-docker cp "$validator_container:/usr/bin/caddy" "$docker_root/caddy"
-docker rm "$validator_container" >/dev/null
-export CADDY_BIN="$docker_root/caddy"
+# Certify native HTTP, admin readback, Postman and the release rehearsal
+# against this exact verified binary.
+export CADDY_BIN="$caddy_release_bin"
+export CADDY_RELEASE_BIN="$caddy_release_bin"
 export CADDY_ADAPTED_JSON="$adapted_file"
 export CADDY_MIDDLEWARE_PKI_DIR="$docker_root/pki/middleware"
 export CADDY_KLYROW_PKI_DIR="$docker_root/pki/klyrow"

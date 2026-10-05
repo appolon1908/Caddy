@@ -28,7 +28,8 @@ def test_required_m6_artifacts_exist() -> None:
 
 def test_native_validation_uses_immutable_pinned_caddy_image() -> None:
     ci = read("scripts/validate-ci.sh")
-    assert "docker.io/library/caddy@sha256:" in ci
+    assert "scripts/caddy_version.py field runtime_base_image" in ci
+    assert "scripts/caddy_version.py fetch" in ci
     assert "caddy adapt --config /srv/Caddyfile" in ci
     assert "caddy validate --config /srv/Caddyfile" in ci
 

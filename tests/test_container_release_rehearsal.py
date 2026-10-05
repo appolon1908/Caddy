@@ -1,8 +1,9 @@
 """Disposable rehearsal of the controlled release against real Docker and Compose.
 
-Tiny images built from the pinned Caddy image stand in for releases; one
-Compose project with a unique name and 64 MiB containers stands in for the
-production runtime. Nothing here touches the canonical container.
+Tiny images built from the version authority's verified release binary on the
+pinned distroless base stand in for releases; one Compose project with a
+unique name and 64 MiB containers stands in for the production runtime.
+Nothing here touches the canonical container.
 """
 import os
 import shutil
@@ -15,6 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+import caddy_version  # noqa: E402
 from caddy_container_release import ContainerRelease, Release, ReleaseError, Runtime  # noqa: E402
 
 CADDYFILES = {
@@ -43,7 +45,7 @@ COMPOSE = """services:
       - /config:uid=65532,gid=65532
       - /tmp:uid=65532,gid=65532
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "/busybox/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
       interval: 1s
       timeout: 2s
       retries: 2
@@ -51,22 +53,31 @@ COMPOSE = """services:
 """
 
 
-def _pinned_image():
-    text = (ROOT / "scripts" / "validate-ci.sh").read_text(encoding="utf-8")
-    return text.split("CADDY_VALIDATOR_IMAGE='", 1)[1].split("'", 1)[0]
-
-
 @pytest.fixture(scope="module")
 def rehearsal(tmp_path_factory):
     docker = shutil.which("docker")
-    pinned = _pinned_image()
+    binary = Path(os.environ.get("CADDY_RELEASE_BIN", ""))
+    base = caddy_version.field("rehearsal_base_image")
 
     def run(*args, **kwargs):
         return subprocess.run([docker, *args], capture_output=True, text=True, timeout=180, **kwargs)
 
-    if not docker or run("compose", "version").returncode or run("image", "inspect", pinned).returncode:
-        pytest.skip("requires Docker, Compose and the pinned Caddy image locally")
+    if not docker or not binary.is_file() or run("compose", "version").returncode:
+        pytest.skip("requires Docker, Compose and CADDY_RELEASE_BIN (the verified Linux release binary)")
     work = tmp_path_factory.mktemp("rehearsal")
+    runtime = work / "runtime"
+    runtime.mkdir()
+    shutil.copy(binary, runtime / "caddy")
+    (runtime / "Dockerfile").write_text(f"FROM {base}\nCOPY --chmod=0755 caddy /usr/bin/caddy\nUSER 65532:65532\n"
+                                        'ENTRYPOINT ["/usr/bin/caddy"]\n'
+                                        'CMD ["run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]\n',
+                                        encoding="utf-8", newline="\n")
+    # BuildKit resolves FROM by name, never by a bare local image ID.
+    pinned = f"codestra-caddy-rehearsal-runtime:{uuid.uuid4().hex[:12]}"
+    built = run("build", "-q", "-t", pinned, str(runtime))
+    assert built.returncode == 0, built.stderr
+    version = run("run", "--rm", "--network", "none", pinned, "version")
+    assert version.stdout.split()[0] == caddy_version.field("version"), version.stdout
     images = {}
     for name, caddyfile in CADDYFILES.items():
         context = work / name
@@ -94,7 +105,7 @@ def rehearsal(tmp_path_factory):
         yield tool, releases, run
     finally:
         run("compose", "-f", str(compose), "--env-file", str(env_file), "down", "--timeout", "1")
-        for digest in images.values():
+        for digest in [*images.values(), pinned]:
             run("image", "rm", "-f", digest)
         for name in environment:
             os.environ.pop(name, None)

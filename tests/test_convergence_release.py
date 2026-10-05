@@ -55,12 +55,18 @@ def test_release_verifier_rejects_arbitrary_bundle_paths(tmp_path):
         verify_release(out, expected_source_sha=m['source_sha'])
 
 
-def test_release_verifier_rejects_manifest_image_substitution(tmp_path):
+@pytest.mark.parametrize('field, value', [('version', 'v0.0.0-unreviewed'), ('runtime_base_image', 'unreviewed:latest')])
+def test_release_verifier_rejects_caddy_runtime_substitution(tmp_path, field, value):
     from caddy_release import build_release, verify_release, ReleaseError
     root = repository(tmp_path)
+    (root / 'config').mkdir()
+    (root / 'config' / 'caddy-version-authority.v1.json').write_bytes((ROOT / 'config' / 'caddy-version-authority.v1.json').read_bytes())
+    for cmd in [['add', '.'], ['commit', '-qm', 'authority']]:
+        subprocess.run(['git', '-C', str(root), *cmd], check=True)
     out = tmp_path / 'release'
     m = build_release(root, out, 'HEAD')
-    m['image_reference'] = 'unreviewed:latest'
+    assert m['caddy_runtime']['version'] == json.loads((ROOT / 'config' / 'caddy-version-authority.v1.json').read_text())['version']
+    m['caddy_runtime'][field] = value
     (out / 'manifest.json').write_text(json.dumps(m))
-    with pytest.raises(ReleaseError, match='image'):
+    with pytest.raises(ReleaseError, match='runtime identity'):
         verify_release(out, expected_source_sha=m['source_sha'])
