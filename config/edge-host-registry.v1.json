@@ -328,6 +328,7 @@
       "route_class": "staging-internal",
       "tls_profile": "internal-ca",
       "upstreams": [
+        "CADDY_N8N_STAGING_UPSTREAM",
         "CADDY_STAGING_PORTAL_UPSTREAM"
       ],
       "auth_boundary": "internal-dns",

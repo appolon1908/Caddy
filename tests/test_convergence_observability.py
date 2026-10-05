@@ -11,7 +11,8 @@ def test_every_public_site_uses_structured_edge_context():
     snippet = (ROOT / 'snippets/edge_observability.caddy').read_text()
     for field in ('route_id', 'upstream', 'request_id', 'correlation_id', 'configuration_digest', 'release_sha'):
         assert 'log_append ' + field in snippet
-    assert 'request>headers>Authorization delete' in (ROOT / 'sites/api.codestra.co.caddy').read_text()
+    assert 'import access_log api-codestra-co' in (ROOT / 'sites/api.codestra.co.caddy').read_text()
+    assert 'request>headers>Authorization delete' in (ROOT / 'snippets/access_log.caddy').read_text()
 
 
 def test_metrics_only_on_loopback_admin_without_host_cardinality():

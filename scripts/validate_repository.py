@@ -9,6 +9,7 @@ from mission5_desired_state import (
     build_plan, classify_drift, configuration_identity, desired_state_paths,
     desired_state_material, plan_outcome, promotion_allowed, validate_plan,
 )
+from caddy_site_source import read_site
 from caddy_kong_contract import (
     validate_exact_kong_routes,
     validate_identity_header_boundary,
@@ -66,7 +67,7 @@ for path in (
 
 README = README_PATH.read_text(encoding="utf-8")
 SITE = SITE_PATH.read_text(encoding="utf-8")
-N8N_SITE = N8N_SITE_PATH.read_text(encoding="utf-8")
+N8N_SITE = read_site(N8N_SITE_PATH)
 CADDYFILE = ROOT_CADDYFILE.read_text(encoding="utf-8")
 CONTRACT = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 N8N_CONTRACT = json.loads(N8N_CONTRACT_PATH.read_text(encoding="utf-8"))
@@ -138,7 +139,9 @@ if "{$CADDY_KONG_UPSTREAM}" not in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=kong_handoff_missing")
 if "header_up Host {host}" not in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=kong_host_preservation_missing")
-if "Authorization delete" not in SITE:
+if "import access_log api-codestra-co" not in SITE or "request>headers>Authorization delete" not in (
+    ROOT / "snippets" / "access_log.caddy"
+).read_text(encoding="utf-8"):
     raise SystemExit("CADDY_AUTHORITY_ERROR=authorization_log_redaction_missing")
 if "header_up Authorization" in SITE or "header_up -Authorization" in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=authorization_forwarding_modified")

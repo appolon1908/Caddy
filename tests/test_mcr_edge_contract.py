@@ -56,7 +56,8 @@ def test_authorization_is_preserved_to_kong_and_only_redacted_from_logs():
     assert "header_up Authorization" not in block
     assert "header_up -Authorization" not in block
     assert "request_header -Authorization" not in block
-    assert "request>headers>Authorization delete" in SITE
+    assert "import access_log api-codestra-co" in SITE
+    assert "request>headers>Authorization delete" in (ROOT / "snippets/access_log.caddy").read_text(encoding="utf-8")
 
 
 def test_private_internal_and_metrics_stay_edge_denied():

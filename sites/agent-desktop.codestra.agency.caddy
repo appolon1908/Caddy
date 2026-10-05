@@ -95,50 +95,7 @@ phone.codestra.agency {
 		}
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/phone-codestra-agency-access.log {
-			roll_size 20MiB
-			roll_keep 5
-			roll_keep_for 720h
-		}
-		format filter {
-			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>X-Auth-Request-Access-Token delete
-			request>headers>X-Access-Token delete
-			request>headers>X-Id-Token delete
-			request>headers>X-Refresh-Token delete
-			request>headers>X-Vault-Token delete
-			request>headers>X-Bao-Token delete
-			request>uri query {
-				delete access_token
-				delete api-key
-				delete api_key
-				delete apikey
-				delete client_secret
-				delete code
-				delete id_token
-				delete oauth_token
-				delete password
-				delete rd
-				delete refresh_token
-				delete secret
-				delete session_state
-				delete state
-				delete token
-			}
-			resp_headers>Authorization delete
-			resp_headers>Proxy-Authorization delete
-			resp_headers>Set-Cookie delete
-			resp_headers>X-Access-Token delete
-			resp_headers>X-Auth-Request-Access-Token delete
-			resp_headers>X-Id-Token delete
-			resp_headers>X-Refresh-Token delete
-		}
-	}
+	import access_log phone-codestra-agency
 }
 
 dialer.codestra.agency {
@@ -246,48 +203,5 @@ dialer.codestra.agency {
 		}
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/dialer-codestra-agency-access.log {
-			roll_size 20MiB
-			roll_keep 5
-			roll_keep_for 720h
-		}
-		format filter {
-			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>X-Auth-Request-Access-Token delete
-			request>headers>X-Access-Token delete
-			request>headers>X-Id-Token delete
-			request>headers>X-Refresh-Token delete
-			request>headers>X-Vault-Token delete
-			request>headers>X-Bao-Token delete
-			request>uri query {
-				delete access_token
-				delete api-key
-				delete api_key
-				delete apikey
-				delete client_secret
-				delete code
-				delete id_token
-				delete oauth_token
-				delete password
-				delete rd
-				delete refresh_token
-				delete secret
-				delete session_state
-				delete state
-				delete token
-			}
-			resp_headers>Authorization delete
-			resp_headers>Proxy-Authorization delete
-			resp_headers>Set-Cookie delete
-			resp_headers>X-Access-Token delete
-			resp_headers>X-Auth-Request-Access-Token delete
-			resp_headers>X-Id-Token delete
-			resp_headers>X-Refresh-Token delete
-		}
-	}
+	import access_log dialer-codestra-agency
 }

@@ -2,11 +2,14 @@ import importlib.util
 import json
 import os
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "caddy_readonly_validator.py"
+sys.path.insert(0, str(ROOT / "scripts"))
+from caddy_site_source import read_site  # noqa: E402
 SPEC = importlib.util.spec_from_file_location("caddy_readonly_validator", MODULE_PATH)
 validator = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader
@@ -144,7 +147,7 @@ class ReadonlyValidatorTests(unittest.TestCase):
     def test_every_repository_site_meets_the_access_log_redaction_floor(self):
         site_address = re.compile(r"(?m)^\S.*\{\s*$")
         for path in sorted((ROOT / "sites").glob("*.caddy")):
-            source = path.read_text(encoding="utf-8")
+            source = read_site(path)
             sites = site_address.split(source)[1:]
             self.assertTrue(sites, path.name)
             for index, block in enumerate(sites):

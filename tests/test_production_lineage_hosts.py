@@ -22,6 +22,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import validate_observability_exposure as exposure  # noqa: E402
+from caddy_site_source import read_site  # noqa: E402
 
 PRODUCTION_ADDRESSES = {
     "api.breero.com", "api.codestra.agency", "api.codestra.co", "auth.codestra.co", "automation.codestra.co",
@@ -53,12 +54,12 @@ def test_kyyow_hosts_stay_out_of_the_deployed_configuration():
 
 def _validate_with(site_file, old, new):
     sources = exposure.load_root_caddy_sources()
-    original = (ROOT / "sites" / site_file).read_text(encoding="utf-8") if site_file else (ROOT / "Caddyfile").read_text(encoding="utf-8")
+    original = read_site(ROOT / "sites" / site_file) if site_file else (ROOT / "Caddyfile").read_text(encoding="utf-8")
     assert old in original, old
     mutated = sources.replace(original, original.replace(old, new, 1))
     exposure.validate(
         exposure.load_contract(),
-        exposure.SITE_PATH.read_text(encoding="utf-8"),
+        read_site(exposure.SITE_PATH),
         mutated,
         exposure.RUNTIME_PATH.read_text(encoding="utf-8"),
         exposure.HEADERS_PATH.read_text(encoding="utf-8"),

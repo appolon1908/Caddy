@@ -24,3 +24,9 @@
 
 import snippets/*.caddy
 import sites/*.caddy
+
+# Unknown hosts on port 80 get an explicit 404; registered hosts keep Caddy's
+# automatic HTTPS redirect, which matches by host before this catch-all.
+http:// {
+	respond 404
+}

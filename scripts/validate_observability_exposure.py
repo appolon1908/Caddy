@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from caddy_site_source import read_site
+
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_CADDYFILE_PATH = ROOT / "Caddyfile"
 CONTRACT_PATH = ROOT / "config" / "observability-exposure.v1.json"
@@ -74,6 +76,7 @@ PRIVATE_INGRESS = {
     "middleware-email-events.internal.codestra.agency:18080",
 }
 LEGACY_PRIVATE_EDITORS = ("n8n.codestra.agency", "n8n-staging.codestra.agency")
+UNKNOWN_HOST_HTTP_ADDRESS = "http://"
 PRIVATE_METRICS_ADDRESS = ":2020"
 PRIVATE_METRICS_BLOCK = (
     ":2020 {\n"
@@ -118,7 +121,9 @@ def validate_fragment_imports(path: Path, source: str) -> None:
             imports.append(line.removeprefix("import ").strip())
     relative_parent = path.parent.relative_to(ROOT)
     allowed = {"security_headers", "public_boundary", "edge_observability"} if relative_parent == Path("sites") else set()
-    unexpected = sorted({value for value in imports if value not in allowed})
+    # access_log takes one argument: the log file stem.
+    unexpected = sorted({value for value in imports if value not in allowed
+                         and not (relative_parent == Path("sites") and re.fullmatch(r"access_log [a-z0-9-]+", value))})
     if unexpected:
         raise ExposureError(
             f"nested or unreviewed import in {path.relative_to(ROOT)}: {unexpected}"
@@ -127,7 +132,7 @@ def validate_fragment_imports(path: Path, source: str) -> None:
 
 def load_root_caddy_sources() -> str:
     return "\n".join(
-        path.read_text(encoding="utf-8") for path in root_caddy_source_paths()
+        read_site(path) for path in root_caddy_source_paths()
     )
 
 
@@ -187,6 +192,9 @@ def extract_static_site_addresses(all_sites: str) -> tuple[str, ...]:
                         continue
                     if candidate == PRIVATE_METRICS_ADDRESS:
                         addresses.append(candidate)
+                        continue
+                    if candidate == UNKNOWN_HOST_HTTP_ADDRESS:
+                        # The reviewed port-80 catch-all answers 404 and nothing else.
                         continue
                     lowered = candidate.lower()
                     if lowered.startswith("http://"):
@@ -451,7 +459,7 @@ def configuration_checksum(contract: dict[str, Any], site: str, runtime: str, he
 
 def run(write: bool) -> str:
     contract = load_contract()
-    site = SITE_PATH.read_text(encoding="utf-8")
+    site = read_site(SITE_PATH)
     runtime = RUNTIME_PATH.read_text(encoding="utf-8")
     headers = HEADERS_PATH.read_text(encoding="utf-8")
     all_sites = load_root_caddy_sources()
