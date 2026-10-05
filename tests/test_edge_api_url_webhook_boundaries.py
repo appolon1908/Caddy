@@ -71,17 +71,19 @@ def test_pending_webhooks_are_not_misrepresented_as_canonical():
     assert by_id["webhook.vicidial-call-result"]["classification"] == "TRANSITIONAL_PENDING_CONTRACT"
 
 
-def test_digest_chain_pins_current_middleware_and_repinned_kong():
-    expected = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    assert CHAIN["middleware"]["source_sha"] == "2862af0aa97367b18cb360af69212abe4243a1ac"
+def test_digest_chain_pins_current_middleware_and_states_the_kong_pair_truthfully():
+    expected = "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21"
+    assert CHAIN["middleware"]["repository"] == "appolon1908/Middleware-"
+    assert CHAIN["middleware"]["source_sha"] == "e873010e0b50e2659ecfc820d86868ffda3a89e5"
     assert CHAIN["middleware"]["public_contract_sha256"] == expected
-    # The chain records the Kong commit certified as this edge's pair and the
-    # same Middleware digest on both sides of the handoff.
-    assert CHAIN["kong"]["repository"] == "appolon1908/Kong"
-    assert CHAIN["kong"]["source_sha"] == "82bb82611a694783506ddfccf3910de9c9f1555a"
-    assert CHAIN["kong"]["required_sha256"] == expected
-    assert CHAIN["kong"]["middleware_contract_sha256"] == expected
-    assert CHAIN["kong"]["status"] == "PASS"
+    assert (ROOT / "config" / "middleware-public-api-route-contract.sha256").read_text().strip() == expected
+    # Kong must carry the same Middleware digest before the pair can pass; a
+    # pending pair records Kong's actual digest and never claims PASS.
+    kong = CHAIN["kong"]
+    assert kong["repository"] == "appolon1908/Kong"
+    assert kong["required_sha256"] == expected
+    assert kong["status"] in {"PASS", "PENDING_KONG_ADOPTION"}
+    assert (kong["status"] == "PASS") == (kong["middleware_contract_sha256"] == expected)
 
 
 def test_digest_chain_postman_digest_matches_committed_collection():

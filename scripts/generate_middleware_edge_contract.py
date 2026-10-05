@@ -22,7 +22,7 @@ PINNED = ROOT / "config/middleware-public-api-route-contract.sha256"
 EDGE = ROOT / "config/caddy-kong-contract.v1.json"
 SITE = ROOT / "sites/api.codestra.co.caddy"
 
-MIDDLEWARE_SOURCE_SHA = "2862af0aa97367b18cb360af69212abe4243a1ac"
+MIDDLEWARE_SOURCE_SHA = "e873010e0b50e2659ecfc820d86868ffda3a89e5"
 # Kong was transferred to appolon1908; the numeric ID is the stable identity.
 KONG_REPOSITORY = "appolon1908/Kong"
 KONG_REPOSITORY_ID = 1347790742

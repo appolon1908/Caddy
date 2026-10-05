@@ -88,10 +88,10 @@
   },
   "middlewareEdgeContract": {
     "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
-    "sourceSha": "2862af0aa97367b18cb360af69212abe4243a1ac",
+    "sourceSha": "e873010e0b50e2659ecfc820d86868ffda3a89e5",
     "kongVendoredCopy": "Kong:config/middleware-public-api-route-contract.v1.json",
-    "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
-    "sharedEdgeOperations": 105,
+    "sha256": "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21",
+    "sharedEdgeOperations": 133,
     "deniedOperations": 10,
     "privateOnlyOperations": 2,
     "rule": "every shared_edge and denied path is kept away from the legacy fallback; private_only operations never appear at the public edge",
@@ -144,9 +144,9 @@
   "serviceJwtRouteContract": {
     "sourceRepository": "ingtrader21-spec/Middleware-",
     "sourcePath": "deploy/public-api-route-contract.json",
-    "sourceSha": "2862af0aa97367b18cb360af69212abe4243a1ac",
+    "sourceSha": "e873010e0b50e2659ecfc820d86868ffda3a89e5",
     "sourceSchema": "codestra.middleware.public-api-route-contract.v2",
-    "sha256": "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b",
+    "sha256": "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21",
     "hashRule": "sha256 over json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')",
     "routes": [
       {
@@ -231,6 +231,14 @@
       },
       {
         "method": "POST",
+        "path": "/platform/v1/agent-provisioning/adopt-extension",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
         "path": "/platform/v1/agent-provisioning/requests",
         "scope": "identity.request",
         "audience": "middleware-api",
@@ -240,6 +248,14 @@
       {
         "method": "GET",
         "path": "/platform/v1/agent-provisioning/requests/{request_id}",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/agent-provisioning/requests/{request_id}/history",
         "scope": "identity.request",
         "audience": "middleware-api",
         "callingClient": "authorized-provisioning-client",
@@ -272,6 +288,70 @@
       {
         "method": "POST",
         "path": "/platform/v1/agent-provisioning/requests/{request_id}/suspend",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/reserve-extension",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/webrtc/tickets",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/{request_id}/disable",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/agent-provisioning/{request_id}/readback",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/{request_id}/release-extension",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/{request_id}/repair-intents",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/{request_id}/sync",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/agent-provisioning/{request_id}/webrtc/revoke",
         "scope": "identity.request",
         "audience": "middleware-api",
         "callingClient": "authorized-provisioning-client",
@@ -359,6 +439,102 @@
       },
       {
         "method": "GET",
+        "path": "/platform/v1/commands/{operation_id}",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/commands/{operation_id}/cancel",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/commands/{operation_id}/history",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/commands/{operation_id}/replay",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/commands/{operation_id}/result",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/commands/{operation_id}/retry",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/connectors",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/connectors/{connector_id}",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/connectors/{connector_id}/capabilities",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/connectors/{connector_id}/health",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/connectors/{connector_id}/readback",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/connectors/{connector_id}/reconcile",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
         "path": "/platform/v1/contacts",
         "scope": "identity.request",
         "audience": "middleware-api",
@@ -428,6 +604,22 @@
         "audience": "middleware-api",
         "callingClient": "authorized-provisioning-client",
         "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/dead-letters",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/dead-letters/{operation_id}",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
       },
       {
         "method": "GET",
@@ -558,6 +750,14 @@
         "matcher": "canonical_post"
       },
       {
+        "method": "GET",
+        "path": "/platform/v1/operations/{operation_id}/recovery-history",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_get"
+      },
+      {
         "method": "POST",
         "path": "/platform/v1/operations/{operation_id}/replay",
         "scope": "platform.command.replay",
@@ -644,6 +844,30 @@
         "audience": "middleware-api",
         "callingClient": "authorized-provisioning-client",
         "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/rehearsals/no-effect",
+        "scope": "platform.command.replay",
+        "audience": "middleware-api",
+        "callingClient": "platform-command-client",
+        "matcher": "canonical_post"
+      },
+      {
+        "method": "GET",
+        "path": "/platform/v1/rehearsals/{rehearsal_id}",
+        "scope": "platform.command.read",
+        "audience": "middleware-api",
+        "callingClient": "platform-command-client",
+        "matcher": "canonical_get"
+      },
+      {
+        "method": "POST",
+        "path": "/platform/v1/replays/{replay_id}/cancel",
+        "scope": "identity.request",
+        "audience": "middleware-api",
+        "callingClient": "authorized-provisioning-client",
+        "matcher": "canonical_post"
       },
       {
         "method": "GET",
