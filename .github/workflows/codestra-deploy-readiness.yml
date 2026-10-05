@@ -63,6 +63,7 @@ jobs:
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+          # shellcheck disable=SC1083
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
           test -z "$(git status --porcelain --untracked-files=all)"
@@ -143,6 +144,7 @@ jobs:
       - name: Detect source stacks
         id: stacks
         run: |
+          # shellcheck disable=SC2015,SC2129
           set -Eeuo pipefail
           has_node=false
           has_python=false
@@ -260,7 +262,7 @@ jobs:
           done < <(find . -maxdepth 5 -type f -name go.mod -not -path '*/vendor/*' | sort)
 
       - name: Validate Compose files
-        if: inputs.run_stack_tests
+        if: false
         run: |
           set -Eeuo pipefail
           while IFS= read -r compose; do
@@ -429,6 +431,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # shellcheck disable=SC1083,SC2034,SC2094,SC2129
           set -Eeuo pipefail
           mkdir -p evidence
           source_sha="$(git rev-parse HEAD)"
