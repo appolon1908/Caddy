@@ -71,7 +71,7 @@ require_direct_or_reconciliation() {
 
 case "$BASE_BRANCH" in
   development)
-    [[ "$HEAD_BRANCH" =~ ^(feat|fix|chore|docs|refactor)/ ]] || fail invalid_development_source
+    [[ "$HEAD_BRANCH" =~ ^(feat|fix|chore|docs|refactor|ci)/ ]] || fail invalid_development_source
     ;;
   test)
     require_direct_or_reconciliation development test invalid_test_source
