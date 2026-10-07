@@ -1,0 +1,23 @@
+{
+  "workstation": "caddy::cd-07-release::01-environment-promotion",
+  "product": "caddy",
+  "section": "cd-07-release",
+  "subsection": "01-environment-promotion",
+  "branch": "subsection/cd-07-release--01-environment-promotion",
+  "parent_branch": "section/cd-07-release",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-07-release/subsections/01-environment-promotion/repo",
+  "depends_on": [
+    "caddy::cd-06-observability::03-slo-alerts"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

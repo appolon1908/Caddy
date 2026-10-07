@@ -1,0 +1,23 @@
+{
+  "workstation": "caddy::cd-06-observability::01-metrics",
+  "product": "caddy",
+  "section": "cd-06-observability",
+  "subsection": "01-metrics",
+  "branch": "subsection/cd-06-observability--01-metrics",
+  "parent_branch": "section/cd-06-observability",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-06-observability/subsections/01-metrics/repo",
+  "depends_on": [
+    "caddy::cd-05-kong-integration::03-failure-policy"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

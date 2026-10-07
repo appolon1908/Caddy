@@ -1,0 +1,24 @@
+{
+  "workstation": "caddy::cd-06-observability::02-access-logs",
+  "product": "caddy",
+  "section": "cd-06-observability",
+  "subsection": "02-access-logs",
+  "branch": "subsection/cd-06-observability--02-access-logs",
+  "parent_branch": "section/cd-06-observability",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-06-observability/subsections/02-access-logs/repo",
+  "depends_on": [
+    "caddy::cd-05-kong-integration::03-failure-policy",
+    "caddy::cd-06-observability::01-metrics"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

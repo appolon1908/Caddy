@@ -1,0 +1,96 @@
+{
+  "product": "caddy",
+  "repository": "appolon1908/Caddy",
+  "promotion_chain": [
+    "subsection/*",
+    "section/*",
+    "development",
+    "testing",
+    "staging",
+    "production"
+  ],
+  "sections": [
+    {
+      "section": "cd-01-tls",
+      "branch": "section/cd-01-tls",
+      "depends_on": [],
+      "subsections": [
+        "01-certificates",
+        "02-cipher-policy",
+        "03-renewal"
+      ]
+    },
+    {
+      "section": "cd-02-domains",
+      "branch": "section/cd-02-domains",
+      "depends_on": [
+        "cd-01-tls"
+      ],
+      "subsections": [
+        "01-domain-inventory",
+        "02-routing-map",
+        "03-dns-contract"
+      ]
+    },
+    {
+      "section": "cd-03-proxy",
+      "branch": "section/cd-03-proxy",
+      "depends_on": [
+        "cd-02-domains"
+      ],
+      "subsections": [
+        "01-upstreams",
+        "02-health-retry",
+        "03-header-contract"
+      ]
+    },
+    {
+      "section": "cd-04-trusted-proxy-security",
+      "branch": "section/cd-04-trusted-proxy-security",
+      "depends_on": [
+        "cd-03-proxy"
+      ],
+      "subsections": [
+        "01-trusted-proxies",
+        "02-forwarded-identity",
+        "03-private-surfaces"
+      ]
+    },
+    {
+      "section": "cd-05-kong-integration",
+      "branch": "section/cd-05-kong-integration",
+      "depends_on": [
+        "cd-04-trusted-proxy-security"
+      ],
+      "subsections": [
+        "01-edge-chain",
+        "02-route-parity",
+        "03-failure-policy"
+      ]
+    },
+    {
+      "section": "cd-06-observability",
+      "branch": "section/cd-06-observability",
+      "depends_on": [
+        "cd-05-kong-integration"
+      ],
+      "subsections": [
+        "01-metrics",
+        "02-access-logs",
+        "03-slo-alerts"
+      ]
+    },
+    {
+      "section": "cd-07-release",
+      "branch": "section/cd-07-release",
+      "depends_on": [
+        "cd-06-observability"
+      ],
+      "subsections": [
+        "01-environment-promotion",
+        "02-certification",
+        "03-rollback"
+      ]
+    }
+  ]
+}

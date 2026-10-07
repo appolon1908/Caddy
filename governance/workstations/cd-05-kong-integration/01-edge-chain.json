@@ -1,0 +1,23 @@
+{
+  "workstation": "caddy::cd-05-kong-integration::01-edge-chain",
+  "product": "caddy",
+  "section": "cd-05-kong-integration",
+  "subsection": "01-edge-chain",
+  "branch": "subsection/cd-05-kong-integration--01-edge-chain",
+  "parent_branch": "section/cd-05-kong-integration",
+  "order": 1,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-05-kong-integration/subsections/01-edge-chain/repo",
+  "depends_on": [
+    "caddy::cd-04-trusted-proxy-security::03-private-surfaces"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}
