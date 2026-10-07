@@ -99,3 +99,13 @@ apply() {
 for branch in development testing staging production main; do
   apply "$branch"
 done
+
+# The first promotion hop is subsection/* -> matching section/*, so every
+# existing section branch must carry the same mandatory governance contexts.
+# Enumerate from GitHub rather than maintaining a second static section list.
+while IFS= read -r branch; do
+  [[ "$branch" == section/* ]] || continue
+  apply "$branch"
+done < <(
+  gh api --paginate "/repos/${owner}/${repo}/branches?per_page=100" --jq '.[].name'
+)
