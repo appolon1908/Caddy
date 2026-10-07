@@ -29,7 +29,7 @@
 # branch it is required for.
 set -Eeuo pipefail
 
-repository="${1:-ingtrader21-spec/Caddy}"
+repository="${1:-appolon1908/Caddy}"
 owner="${repository%%/*}"
 repo="${repository#*/}"
 
@@ -41,9 +41,9 @@ readonly promotion_contexts='"promotion-guard","control-plane-certification"'
 contexts_for() {
   case "$1" in
     main)
-      # Mirrors config/github/main-ruleset.json, which
-      # scripts/validate_observability_exposure.py asserts independently.
-      printf '["validate-source","validate-merge-result"]' ;;
+      # Main remains bootstrap-capable only for PR #203; after bootstrap the
+      # promotion guard intentionally rejects all ordinary PRs to main.
+      printf '["validate-source","validate-merge-result","promotion-guard","control-plane-certification"]' ;;
     production)
       printf '[%s,%s,"staging-certification"]' "$base_contexts" "$promotion_contexts" ;;
     *)
@@ -103,9 +103,10 @@ done
 # The first promotion hop is subsection/* -> matching section/*, so every
 # existing section branch must carry the same mandatory governance contexts.
 # Enumerate from GitHub rather than maintaining a second static section list.
+section_branches="$(
+  gh api --paginate "/repos/${owner}/${repo}/branches?per_page=100" --jq '.[].name'
+)"
 while IFS= read -r branch; do
   [[ "$branch" == section/* ]] || continue
   apply "$branch"
-done < <(
-  gh api --paginate "/repos/${owner}/${repo}/branches?per_page=100" --jq '.[].name'
-)
+done <<< "$section_branches"
