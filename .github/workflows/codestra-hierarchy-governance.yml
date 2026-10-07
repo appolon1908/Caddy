@@ -29,10 +29,11 @@ jobs:
           path: trusted-governance
       - name: Enforce promotion path from trusted main
         if: ${{ !(github.event.pull_request.number == 203 && github.head_ref == 'governance/development-control-plane-v1' && github.base_ref == 'main') }}
+        working-directory: trusted-governance
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_BASE_REF: ${{ github.base_ref }}
-        run: python3 trusted-governance/governance/promotion_guard.py
+        run: python3 governance/promotion_guard.py
 
   control-plane-certification:
     name: control-plane-certification
@@ -40,10 +41,15 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Verify exact SHA in Codestra development control plane
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -Eeuo pipefail
           /srv/codestra/dev-platform/control-plane/bin/codestra-github-check \
             --product 'caddy' \
             --repo-path '/srv/codestra/apps/Caddy' \
-            --head-ref '${{ github.head_ref }}' \
-            --base-ref '${{ github.base_ref }}' \
-            --head-sha '${{ github.event.pull_request.head.sha }}'
+            --head-ref "$HEAD_REF" \
+            --base-ref "$BASE_REF" \
+            --head-sha "$HEAD_SHA"
