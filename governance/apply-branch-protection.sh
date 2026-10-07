@@ -2,7 +2,7 @@
 #
 # Apply the canonical protection for the Caddy promotion chain:
 #
-#   feature/* -> development -> test -> staging -> production -> main
+#   subsection/* -> section/* -> development -> testing -> staging -> production
 #
 # Run through .github/workflows/apply-branch-protection.yml, which supplies a
 # repository-administration token and archives the read-back as evidence.
@@ -52,7 +52,7 @@ contexts_for() {
 }
 
 # main and production are the branches where the last pusher must not also be
-# the approver. development and test stay workable by a single maintainer.
+# the approver. development and testing stay workable by a single maintainer.
 last_push_approval_for() {
   case "$1" in
     main|production) printf 'true' ;;
@@ -96,6 +96,6 @@ apply() {
       approvals:.protection.required_pull_request_reviews.required_approving_review_count}'
 }
 
-for branch in development test staging production main; do
+for branch in development testing staging production main; do
   apply "$branch"
 done
