@@ -438,7 +438,7 @@ jobs:
           )
           status=$?
           set -e
-          python - "$report" <<'PY'
+          python3 - "$report" <<'PY'
           import json
           import pathlib
           import sys
