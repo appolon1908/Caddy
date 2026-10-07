@@ -32,7 +32,7 @@
   ],
   "required_status_contexts": [
     "promotion-guard",
-    "promotion-gate"
+    "control-plane-certification"
   ],
   "production_defaults": {
     "PRODUCTION_GO": "NO",
