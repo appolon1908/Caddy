@@ -36,7 +36,7 @@ repo="${repository#*/}"
 # Reported by validate.yml on every pull request, whatever the base branch.
 readonly base_contexts='"validate-source","validate"'
 # Reported by the promotion and release gates carried on the promotion chain.
-readonly promotion_contexts='"promotion-guard","immutable-release-gate"'
+readonly promotion_contexts='"promotion-guard","control-plane-certification"'
 
 contexts_for() {
   case "$1" in
