@@ -1,0 +1,24 @@
+{
+  "schema": "codestra.caddy.dashboard-edge.staging.v1",
+  "source": "config/sites/api.codestra.co.caddy",
+  "host": "api.codestra.co",
+  "prefix": "/platform/v1/dashboard/",
+  "gateway": "Kong",
+  "upstream_environment": "CADDY_KONG_UPSTREAM",
+  "method_authority": "Kong GET-only route",
+  "strip_client_identity_headers": true,
+  "forward_bearer": true,
+  "backend_rechecks_keycloak": true,
+  "production_go": false,
+  "runtime_apply_authorized": false,
+  "private_paths_denied": [
+    "/metrics",
+    "/internal"
+  ],
+  "tests_required": [
+    "Kong authorized token + scope",
+    "Kong unauthorized scope",
+    "backend PostgreSQL ready",
+    "exact SHA Postman E2E"
+  ]
+}
