@@ -21,3 +21,24 @@ def test_only_get_to_kong_for_dashboard_api():
     assert "127.0.0.1:8792" not in s
     assert "handle @private_only" in s
     assert "PRODUCTION_GO=YES" not in s
+
+
+def test_dispatch_order_fail_closed_before_static_frontend():
+    source = SOURCE.read_text()
+    positions = [
+        source.index("handle @private_only"),
+        source.index("handle @dashboard_get"),
+        source.index("handle @dashboard_unknown"),
+        source.index("handle @frontend_read"),
+    ]
+    assert positions == sorted(positions)
+    for endpoint in (
+        "contract", "repositories", "repository", "agents", "tasks",
+        "task", "local-work", "sources", "notifications",
+    ):
+        assert f"/platform/v1/dashboard/{endpoint}" in source
+    assert "method GET" in source
+    assert "respond 405" in source
+    assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in source
+    # A single dedicated backend is never exposed as a public Caddy upstream.
+    assert "mission-control-readonly:8792" not in source
