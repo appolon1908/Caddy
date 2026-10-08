@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-CADDY=(ROOT/"config/sites/api.codestra.co.caddy").read_text()
-CONTRACT=json.loads((ROOT/"config/staging/caddy-mission-control-dashboard.staging.json").read_text())
+CADDY=(ROOT/"deploy/staging/overlays/api.codestra.co.caddy").read_text()
+CONTRACT=json.loads((ROOT/"deploy/staging/caddy-mission-control-dashboard.staging.json").read_text())
 
 
 class DashboardEdgeTests(unittest.TestCase):
@@ -18,6 +18,7 @@ class DashboardEdgeTests(unittest.TestCase):
         self.assertEqual(CONTRACT["gateway"],"Kong")
         self.assertFalse(CONTRACT["production_go"])
         self.assertFalse(CONTRACT["runtime_apply_authorized"])
+        self.assertEqual(CONTRACT["status"],"REVIEW_ONLY_OVERLAY_NOT_ACTIVE_CONFIGURATION")
 
     def test_client_cannot_assert_identity(self):
         for name in ["X-User-ID","X-Authenticated-Client","X-Authenticated-Tenant",

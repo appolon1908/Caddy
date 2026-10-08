@@ -31,6 +31,27 @@ api.codestra.co {
 			}
 		}
 
+		# Mission Control read-only API is a separate registered backend.
+		# Kong enforces staging OIDC; this edge never mints identity headers.
+		@mission_dashboard {
+			method GET
+			path /platform/v1/dashboard/contract /platform/v1/dashboard/repositories /platform/v1/dashboard/repository /platform/v1/dashboard/sources /platform/v1/dashboard/agents /platform/v1/dashboard/tasks /platform/v1/dashboard/task /platform/v1/dashboard/local-work /platform/v1/dashboard/notifications
+		}
+		handle @mission_dashboard {
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				import proxy_common
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Tenant
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Gateway-Secret
+			}
+		}
+
 		# Only route path families backed by reviewed Kong source. Broad
 		# /api/v1/control matching is deliberately avoided so an unimplemented
 		# control subtype cannot become reachable by accident.

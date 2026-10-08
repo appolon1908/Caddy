@@ -1,6 +1,6 @@
 {
   "schema": "codestra.caddy.dashboard-edge.staging.v1",
-  "source": "config/sites/api.codestra.co.caddy",
+  "source": "deploy/staging/overlays/api.codestra.co.caddy",
   "host": "api.codestra.co",
   "prefix": "/platform/v1/dashboard/",
   "gateway": "Kong",
@@ -20,5 +20,6 @@
     "Kong unauthorized scope",
     "backend PostgreSQL ready",
     "exact SHA Postman E2E"
-  ]
+  ],
+  "status": "REVIEW_ONLY_OVERLAY_NOT_ACTIVE_CONFIGURATION"
 }
