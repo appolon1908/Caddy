@@ -35,6 +35,9 @@ def test_canary_is_read_only_by_construction():
     assert code.count('run_validator "$work/') == 2
     assert 'cmp -s "$work/pre.json" "$work/post.json"' in code
     assert "--network none" in code and "--read-only" in code
+    # Production binaries must remain owned by root and non-writable by other users.
+    assert '"$owner" == 0' in code
+    assert '8#022' in code
 
 
 def _executable(path: Path, body: str) -> None:
@@ -137,6 +140,13 @@ if "--write-out" in args:
     for binary, replacement in (("/usr/bin/docker", bin_dir / "docker"), ("/usr/bin/python3", python),
                                 ("/usr/bin/curl", bin_dir / "curl"), ("/usr/bin/openssl", bin_dir / "openssl")):
         script = script.replace(f"={binary}\n", f"={replacement}\n")
+    # This *copied test fixture only* uses unprivileged mock executables.
+    # Keep the real production script's root ownership guard unchanged;
+    # model trusted fixture ownership using the current test UID, while
+    # retaining its write-bit restriction and every subsequent canary check.
+    trust_owner = '"$owner" == 0'
+    assert script.count(trust_owner) == 1
+    script = script.replace(trust_owner, '( "$owner" == 0 || "$owner" == "$EUID" )')
     _executable(root / "scripts" / "run_production_readonly_canary.sh", script)
     files = {}
     for name in ("env", "client.crt", "client.key", "ca.crt"):
@@ -185,3 +195,23 @@ def test_canary_fails_closed(harness, flag, reason):
     assert result.returncode == 2
     assert f"CADDY_PRODUCTION_READONLY_CANARY=FAIL:{reason}" in result.stderr
     assert not (work / "production-canary-evidence.json").exists()
+
+
+def test_original_production_guard_rejects_non_root_test_executables(tmp_path):
+    import subprocess
+    if os.name == "nt" or not shutil.which("bash"):
+        pytest.skip("requires POSIX shell")
+    # No live service is accessed: rejection happens before docker info.
+    root = tmp_path / "scripts"
+    root.mkdir()
+    copied = SOURCE
+    fake_docker = tmp_path / "docker"
+    _executable(fake_docker, "#!/bin/sh\nexit 0\n")
+    copied = copied.replace("readonly DOCKER=/usr/bin/docker", f"readonly DOCKER={fake_docker}")
+    script = root / "run_production_readonly_canary.sh"
+    _executable(script, copied)
+    env = {**os.environ, "CADDY_CANARY_IMAGE": "ghcr.io/appolon1908-hue/codestra-caddy@sha256:" + "2" * 64,
+           "CADDY_CANARY_SOURCE_SHA": "c" * 40, "CADDY_CANARY_CONFIG_SHA256": "b" * 64}
+    result = subprocess.run(["bash", str(script)], env=env, text=True, capture_output=True, timeout=15)
+    assert result.returncode == 2
+    assert "CADDY_PRODUCTION_READONLY_CANARY=FAIL:trusted_binary:docker" in result.stderr
