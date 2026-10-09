@@ -1,0 +1,28 @@
+{
+  "schema": "codestra.caddy-edge-profiles.v1",
+  "rule": "Every host in config/edge-host-registry.v1.json names one profile of each kind. Caddy owns only broad edge limits; Kong owns API rate and per-route size policy.",
+  "request_size": {
+    "webphone": "16KB",
+    "api-small": "256KB",
+    "auth": "5MB",
+    "vault": "2MB",
+    "api-standard": "10MB",
+    "editor": "{$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}",
+    "approved-upload": "25MB"
+  },
+  "tls": {
+    "public-acme": "Caddy-managed ACME certificate, TLS 1.2 and 1.3 only (Caddy defaults), HSTS max-age=31536000; includeSubDomains, port 80 redirects to HTTPS",
+    "private-mtls": "operator-provisioned server certificate on the private ingress address, client certificate required",
+    "internal-ca": "Caddy internal CA for *.staging.internal names, never installed into a trust store"
+  },
+  "security_headers": {
+    "api": "security_headers snippet only: HSTS, nosniff, frame DENY, referrer and permissions policy, no CSP",
+    "web_app": "security_headers snippet; the site may tighten frame and permissions policy",
+    "auth_ui": "security_headers snippet in front of Keycloak, which sets its own CSP",
+    "observability_ui": "security_headers snippet; the UI sets its own CSP",
+    "private": "security_headers snippet on private mTLS ingress"
+  },
+  "logging": {
+    "json-redacted": "JSON access log per host under CADDY_LOG_DIR, rolled at 20MiB, 5 files, 720h; Authorization, cookies, API keys, tokens and secret query values deleted; no bodies"
+  }
+}

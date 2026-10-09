@@ -14,7 +14,7 @@ def test_canonical_namespaces_go_to_kong_without_legacy_fallback():
     for key in ("edge.platform-v1", "edge.automation-v2"):
         entry = by_id[key]
         assert entry["classification"] == "CANONICAL"
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
+        assert entry["gateway"] == "appolon1908/Kong"
         assert entry["caddy_upstream"] == "CADDY_KONG_UPSTREAM"
         assert entry["legacy_fallback"] is False
 
@@ -58,8 +58,8 @@ def test_webhooks_have_exact_methods_and_explicit_owners():
     assert WEBHOOKS["entries"]
     for entry in WEBHOOKS["entries"]:
         assert entry["methods"] == ["POST"]
-        assert entry["gateway"] == "ingtrader21-spec/Kong"
-        assert entry["downstream_owner"] == "ingtrader21-spec/Middleware-"
+        assert entry["gateway"] == "appolon1908/Kong"
+        assert entry["downstream_owner"] == "appolon1908/Middleware-"
         assert entry["identity_gate_owner"]
         assert entry["replay_protection_owner"]
         assert entry["log_redaction"]
@@ -71,16 +71,19 @@ def test_pending_webhooks_are_not_misrepresented_as_canonical():
     assert by_id["webhook.vicidial-call-result"]["classification"] == "TRANSITIONAL_PENDING_CONTRACT"
 
 
-def test_digest_chain_pins_current_middleware_and_repinned_kong():
-    expected = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    assert CHAIN["middleware"]["source_sha"] == "2862af0aa97367b18cb360af69212abe4243a1ac"
+def test_digest_chain_pins_current_middleware_and_states_the_kong_pair_truthfully():
+    expected = "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21"
+    assert CHAIN["middleware"]["repository"] == "appolon1908/Middleware-"
+    assert CHAIN["middleware"]["source_sha"] == "e873010e0b50e2659ecfc820d86868ffda3a89e5"
     assert CHAIN["middleware"]["public_contract_sha256"] == expected
-    # Kong protected main repinned the final Middleware contract; the chain must
-    # record that head and carry the same digest on both sides of the handoff.
-    assert CHAIN["kong"]["source_sha"] == "3e68cb2a4955bd71ddb3e839f4d9e3770465fc08"
-    assert CHAIN["kong"]["required_sha256"] == expected
-    assert CHAIN["kong"]["middleware_contract_sha256"] == expected
-    assert CHAIN["kong"]["status"] == "PASS"
+    assert (ROOT / "config" / "middleware-public-api-route-contract.sha256").read_text().strip() == expected
+    # Kong must carry the same Middleware digest before the pair can pass; a
+    # pending pair records Kong's actual digest and never claims PASS.
+    kong = CHAIN["kong"]
+    assert kong["repository"] == "appolon1908/Kong"
+    assert kong["required_sha256"] == expected
+    assert kong["status"] in {"PASS", "PENDING_KONG_ADOPTION"}
+    assert (kong["status"] == "PASS") == (kong["middleware_contract_sha256"] == expected)
 
 
 def test_digest_chain_postman_digest_matches_committed_collection():

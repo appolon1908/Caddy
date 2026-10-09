@@ -255,8 +255,8 @@ def test_apply_validates_candidate_before_load(tmp_path: Path):
         mutation_enabled=True,
     )
     manager.apply(idempotency_key="validated")
-    posts = [url for method, url, _ in transport.calls if method == "POST"]
-    assert posts.index("http://127.0.0.1:2019/adapt") < posts.index("http://127.0.0.1:2019/load")
+    posts = [url.rsplit("/", 1)[-1] for method, url, _ in transport.calls if method == "POST"]
+    assert posts.index("adapt") < posts.index("load")
 
 def test_apply_rejects_candidate_digest_tamper(tmp_path: Path):
     transport = FakeTransport({"old": True})

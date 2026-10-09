@@ -1,5 +1,5 @@
-# Canonical shared API-edge source owned by ingtrader21-spec/Caddy.
-# Historical reference: appolon1908-hue/codestra-production-platform
+# Canonical shared API-edge source owned by appolon1908/Caddy.
+# Historical reference: appolon1908/codestra-production-platform
 # ref: release/production-activation
 # path: operations/caddy/api.codestra.co.caddy
 #
@@ -18,29 +18,5 @@ api.codestra.co {
 
 @@ROUTES@@
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/api-codestra-co-access.log {
-			roll_size 20MiB
-			roll_keep 5
-		}
-		format filter {
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>uri query {
-				delete apikey
-				delete api_key
-				delete access_token
-				delete refresh_token
-				delete id_token
-				delete client_secret
-				delete password
-				delete secret
-				delete token
-			}
-			resp_headers>Set-Cookie delete
-		}
-	}
+	import access_log api-codestra-co
 }

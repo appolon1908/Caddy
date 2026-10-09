@@ -10,7 +10,7 @@ def test_generator_preserves_private_root_and_subtree_denials():
     spec = importlib.util.spec_from_file_location('edge_generator', ROOT / 'scripts/generate_middleware_edge_contract.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    rendered, _ = module.render()
+    rendered, _, _ = module.render()
     assert set(json.loads(rendered)['privateOnlyPaths']) == {
         '/metrics', '/metrics/*', '/internal', '/internal/*'
     }
@@ -27,6 +27,10 @@ def test_all_public_hosts_deny_private_paths_before_upstream():
              for route in server.get('routes', []) for matcher in route.get('match', [])
              for host in matcher.get('host', [])}
     assert hosts
+    # The private Klyrow listener's only route lives under /internal; it is
+    # gated by mTLS, a source CIDR and one method+path (see
+    # tests/test_production_lineage_hosts.py), not by the public boundary.
+    hosts.discard('middleware-email-events.internal.codestra.agency')
     for host in hosts:
         for path in ('/metrics', '/metrics/', '/metrics/nested', '/internal', '/internal/', '/internal/nested'):
             for method in ('GET', 'POST', 'OPTIONS'):

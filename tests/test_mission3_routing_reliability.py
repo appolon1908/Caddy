@@ -23,16 +23,16 @@ def test_m3_required_documents_exist():
 def test_api_site_routes_kong_and_unknown_routes_fail_closed():
     source = SITE.read_text(encoding="utf-8")
     assert "api.codestra.co {" in source
-    assert "@kong path" in source
+    assert "@kong path" not in source and "@kong_owned_00" in source
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in source
     assert "reverse_proxy {$CADDY_LEGACY_API_UPSTREAM}" not in source
-    assert source.index("@private_only path") < source.index("@kong path")
+    assert source.index("@private_only path") < source.index("{$CADDY_KONG_UPSTREAM}")
     assert source.rindex("reverse_proxy {$CADDY_KONG_UPSTREAM}") < source.rindex("respond 404")
 
 
 def test_known_paths_and_maintenance_behavior_are_explicit():
     source = SITE.read_text(encoding="utf-8")
-    assert "/api/v1/health" in source
+    assert "/healthz" in source and "/readyz" in source
     assert "/api/v1/realtime/sessions" in source
     assert "maintenance".lower() in source.lower() or "@realtime" in source
 

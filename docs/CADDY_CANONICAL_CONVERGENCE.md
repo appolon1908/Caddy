@@ -18,7 +18,7 @@ Unknown API paths return 404; the explicitly accepted realtime compatibility pat
 
 Both activation implementations default to disabled. The control API's apply and rollback operations share a filesystem lock; idempotency checks occur inside it. Source identity rejects dirty authority. Public binding and ambiguous/non-loopback admin URLs are rejected. This branch authorizes no live deployment.
 
-Structured access logs include bounded route labels, upstream, status, duration, request/correlation identity, release SHA and configuration digest. Deployments must provide `CADDY_RELEASE_SHA` and `CADDY_CONFIGURATION_SHA256`; unsealed source validation is explicitly marked `UNSEALED`. Native metrics exist only at the loopback Admin API, with per-host labels disabled. Trace headers remain transport context, not trusted application identity.
+Structured access logs include bounded route labels, upstream, status, duration, request/correlation identity, release SHA and configuration digest. Deployments must provide `CADDY_RELEASE_SHA` and `CADDY_CONFIGURATION_SHA256`; unsealed source validation is explicitly marked `UNSEALED`. Native metrics exist only on the private Admin API socket and the private `:2020` scrape listener, with per-host labels disabled. Trace headers remain transport context, not trusted application identity.
 
 ## Local certification and release
 

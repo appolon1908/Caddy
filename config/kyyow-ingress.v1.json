@@ -1,7 +1,7 @@
 {
   "schema": "kyyow.ingress.v1",
-  "principalRepository": "ingtrader21-spec/Caddy",
-  "identityRepository": "ingtrader21-spec/Keycloak",
+  "principalRepository": "appolon1908/Caddy",
+  "identityRepository": "appolon1908/Keycloak",
   "publicHosts": {
     "app.kyyow.com": {"service": "portal", "upstream": "CADDY_KYYOW_APP_UPSTREAM", "authentication": "application-oidc"},
     "api.kyyow.com": {"service": "public-api", "upstream": "CADDY_KYYOW_API_UPSTREAM", "authentication": "bearer-at-api-authority"},

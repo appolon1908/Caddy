@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+from caddy_site_source import read_site  # noqa: E402
 from validate_observability_exposure import (  # noqa: E402
     CONTRACT_PATH,
     HEADERS_PATH,
@@ -28,7 +29,7 @@ class ExposureContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.contract = load_contract()
-        cls.site = SITE_PATH.read_text(encoding="utf-8")
+        cls.site = read_site(SITE_PATH)
         cls.runtime = RUNTIME_PATH.read_text(encoding="utf-8")
         cls.headers = HEADERS_PATH.read_text(encoding="utf-8")
         cls.all_sites = load_root_caddy_sources()

@@ -83,7 +83,7 @@ class McrKEdgeTests(unittest.TestCase):
 
     def test_caddy_kong_handoff_matches_normative_header_policy(self):
         site = (ROOT / 'sites/api.codestra.co.caddy').read_text(encoding='utf-8')
-        start = site.index('@kong path')
+        start = site.index('# BEGIN GENERATED MIDDLEWARE CONTRACT ROUTES')
         block = site[start:site.index('# Transitional compatibility', start)].lower()
         for name in self.contract['preserve']:
             self.assertNotIn('header_up -' + name + '\n', block)

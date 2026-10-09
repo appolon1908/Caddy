@@ -110,6 +110,9 @@ REQUIRED_STRIPPED_HEADERS = frozenset(
         "X-Consumer-Custom-ID",
         "X-Credential-Identifier",
         "X-Anonymous-Consumer",
+        "X-Codestra-Contract-Operation",
+        "X-Codestra-Expected-Azp",
+        "X-Codestra-Required-Scope",
     )
 )
 # Neither preserved transport headers nor spoofable identity headers may be
@@ -162,6 +165,11 @@ def _matches(matcher: Mapping[str, Any], method: str, path: str, host: str) -> b
         re.search(pattern, path) for pattern in _regexp_patterns(path_regexp)
     ):
         return False
+    for placeholder, value in (matcher.get("vars_regexp") or {}).items():
+        if placeholder != "{http.request.uri.path}":
+            return False
+        if not any(re.search(pattern, path) for pattern in _regexp_patterns(value)):
+            return False
     # A negated matcher (for example `not remote_ip`) depends on request
     # properties a static probe does not model; treat it as not matching.
     if matcher.get("not"):
@@ -200,11 +208,19 @@ def _resolve_routes(
     return None
 
 
+def _serves_port(server: Mapping[str, Any], port: int) -> bool:
+    """A request reaches only servers listening on its port; unlisted fixtures match."""
+    listen = server.get("listen")
+    return not listen or any(str(address).rsplit(":", 1)[-1] == str(port) for address in listen)
+
+
 def resolve_request(
-    document: Mapping[str, Any], method: str, path: str, host: str = CANONICAL_HOST
+    document: Mapping[str, Any], method: str, path: str, host: str = CANONICAL_HOST, port: int = 443
 ) -> Resolution:
     servers = document.get("apps", {}).get("http", {}).get("servers", {})
     for server in servers.values():
+        if not _serves_port(server, port):
+            continue
         resolution = _resolve_routes(server.get("routes") or (), method, path, host)
         if resolution is not None:
             return resolution

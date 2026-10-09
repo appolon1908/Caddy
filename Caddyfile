@@ -1,8 +1,32 @@
 {
-	admin 127.0.0.1:2019
+	# Only local processes with access to the socket file can reconfigure Caddy.
+	admin unix//run/caddy/admin.sock
+	email admin@codestra.agency
+	# Public sites listen only on the reviewed public address and loopback;
+	# private listeners bind their own private addresses explicitly.
+	default_bind {$CADDY_PUBLIC_BIND} 127.0.0.1
+	# Caddy's internal CA serves *.staging.internal names; never install it
+	# into the host trust store.
+	skip_install_trust
 	metrics
 	order route before handle
 }
 
+# Private Prometheus scrape target (Codestra-Prometheus target caddy:2020).
+# It binds only the private metrics address and serves nothing but metrics
+# and a liveness probe.
+:2020 {
+	bind {$CADDY_PRIVATE_METRICS_BIND}
+	metrics /metrics
+	respond /healthz "ok" 200
+	respond 404
+}
+
 import snippets/*.caddy
 import sites/*.caddy
+
+# Unknown hosts on port 80 get an explicit 404; registered hosts keep Caddy's
+# automatic HTTPS redirect, which matches by host before this catch-all.
+http:// {
+	respond 404
+}

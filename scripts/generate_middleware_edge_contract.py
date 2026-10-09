@@ -3,7 +3,8 @@
 
 This generator keeps Caddy as TLS/public-edge authority only:
 - exact shared_edge method/path routes go to Kong;
-- denied/unsupported canonical families stay on the Kong prefix fallback;
+- denied and private_only operations answer 404 at Caddy;
+- Kong-owned routes outside the contract are forwarded exactly, never by prefix fallback;
 - /metrics, /metrics/*, /internal and /internal/* remain public-edge 404s;
 - spoofable identity headers are deleted before Kong;
 - Authorization/correlation/idempotency/trace headers are untouched.
@@ -13,17 +14,21 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from pathlib import Path
-from caddy_route_compiler import route_regex, proxy_lines, route_block, compile_caddy
+from caddy_route_compiler import FORBIDDEN_IDENTITY_HEADERS, compile_caddy, render_legacy_agency_site
 
 ROOT = Path(__file__).resolve().parents[1]
 VENDORED = ROOT / "config/middleware-public-api-route-contract.v1.json"
 PINNED = ROOT / "config/middleware-public-api-route-contract.sha256"
 EDGE = ROOT / "config/caddy-kong-contract.v1.json"
+KONG_OWNED = ROOT / "config/kong-owned-edge-routes.v1.json"
 SITE = ROOT / "sites/api.codestra.co.caddy"
+AGENCY_SITE = ROOT / "sites/api.codestra.agency.caddy"
 
-MIDDLEWARE_SOURCE_SHA = "2862af0aa97367b18cb360af69212abe4243a1ac"
+MIDDLEWARE_SOURCE_SHA = "e873010e0b50e2659ecfc820d86868ffda3a89e5"
+# Kong was transferred to appolon1908; the numeric ID is the stable identity.
+KONG_REPOSITORY = "appolon1908/Kong"
+KONG_REPOSITORY_ID = 1347790742
 START = "\t\t# BEGIN GENERATED MIDDLEWARE CONTRACT ROUTES"
 END = "\t\t# END GENERATED MIDDLEWARE CONTRACT ROUTES"
 INSERT_MARKER = "\t\t# Paths already represented by reviewed Kong source"
@@ -36,31 +41,7 @@ PRESERVED_HEADERS = [
     "traceparent",
     "tracestate",
 ]
-DELETED_IDENTITY_HEADERS = [
-    "X-User-ID",
-    "X-Username",
-    "X-Email",
-    "X-Roles",
-    "X-Scopes",
-    "X-Authenticated-UserID",
-    "X-Authenticated-User",
-    "X-Authenticated-Client",
-    "X-Authenticated-Subject",
-    "X-Authenticated-Tenant",
-    "X-Authenticated-Campaign",
-    "X-Authenticated-Role",
-    "X-Authenticated-Email",
-    "X-Codestra-Tenant",
-    "X-Codestra-Scopes",
-    "X-Codestra-Gateway-Secret",
-    "X-Internal-Service",
-    "X-Admin",
-    "X-Consumer-ID",
-    "X-Consumer-Username",
-    "X-Consumer-Custom-ID",
-    "X-Credential-Identifier",
-    "X-Anonymous-Consumer",
-]
+DELETED_IDENTITY_HEADERS = list(FORBIDDEN_IDENTITY_HEADERS)
 
 
 def canonical_sha256(document: dict) -> str:
@@ -87,17 +68,27 @@ def render() -> tuple[str, str]:
     edge = json.loads(EDGE.read_text(encoding="utf-8"))
     edge.update(
         {
-            "principalRepository": "ingtrader21-spec/Caddy",
-            "gatewayRepository": "ingtrader21-spec/Kong",
-            "identityRepository": "ingtrader21-spec/Keycloak",
-            "writeBoundaryRepository": "ingtrader21-spec/Middleware-",
-            "referenceRepository": "appolon1908-hue/codestra-production-platform",
+            "principalRepository": "appolon1908/Caddy",
+            "gatewayRepository": KONG_REPOSITORY,
+            "gatewayRepositoryId": KONG_REPOSITORY_ID,
+            "identityRepository": "appolon1908/Keycloak",
+            "writeBoundaryRepository": "appolon1908/Middleware-",
+            "referenceRepository": "appolon1908/codestra-production-platform",
         }
     )
 
-    prefixes = set(edge.get("kongManagedPathPrefixes", []))
-    prefixes.update({"/platform/v1", "/v2/automation", "/api/v1/odoo"})
-    edge["kongManagedPathPrefixes"] = sorted(prefixes)
+    edge.pop("kongManagedPathPrefixes", None)
+    kong_owned = json.loads(KONG_OWNED.read_text(encoding="utf-8"))
+    edge["kongOwnedRoutesSource"] = {"repository": kong_owned["kongRepository"], "sourceSha": kong_owned["kongSourceSha"],
+                                     "path": "config/kong-owned-edge-routes.v1.json"}
+    edge["kongOwnedRoutes"] = kong_owned["routes"]
+    mcr = edge["mcrBoundary"]
+    mcr.pop("coveredByKongManagedPrefix", None)
+    mcr["coveredByKongOwnedRoutes"] = [row["kongRoute"] for row in kong_owned["routes"] if row["kongRoute"].startswith("mcr-")]
+    edge["middlewareDeniedRoutes"] = [
+        {"method": row["method"], "path": row["path"], "classification": row["classification"]}
+        for row in denied + private
+    ]
     edge["privateOnlyPaths"] = ["/metrics", "/metrics/*", "/internal", "/internal/*"]
     edge["privateOnlyRule"] = (
         "Private Middleware surfaces are answered 404 at the Caddy public edge before "
@@ -106,7 +97,7 @@ def render() -> tuple[str, str]:
     )
 
     edge["middlewareEdgeContract"] = {
-        "source": "ingtrader21-spec/Middleware-:deploy/public-api-route-contract.json",
+        "source": "appolon1908/Middleware-:deploy/public-api-route-contract.json",
         "sourceSha": MIDDLEWARE_SOURCE_SHA,
         "kongVendoredCopy": "Kong:config/middleware-public-api-route-contract.v1.json",
         "sha256": digest,
@@ -121,7 +112,7 @@ def render() -> tuple[str, str]:
     }
 
     edge["serviceJwtRouteContract"] = {
-        "sourceRepository": "ingtrader21-spec/Middleware-",
+        "sourceRepository": "appolon1908/Middleware-",
         "sourcePath": "deploy/public-api-route-contract.json",
         "sourceSha": MIDDLEWARE_SOURCE_SHA,
         "sourceSchema": contract["schema"],
@@ -138,15 +129,9 @@ def render() -> tuple[str, str]:
             }
             for row in shared
         ],
-        "unsupportedMethodHandling": (
-            "canonical path families remain on the Kong-owned prefix fallback; "
-            "Kong answers 404/405 and the legacy fallback never receives them"
-        ),
+        "unsupportedMethodHandling": "an unsupported method on a canonical path answers 404 at Caddy",
         "retiredPathPrefixes": retired_prefixes(denied),
-        "retiredPathHandling": (
-            "retired canonical paths remain on the Kong-owned prefix fallback; "
-            "they never reach the legacy fallback"
-        ),
+        "retiredPathHandling": "denied canonical paths answer 404 at Caddy and never reach Kong",
     }
 
     edge["identityHeaders"] = {
@@ -185,14 +170,17 @@ def render() -> tuple[str, str]:
     }
 
     site = compile_caddy(edge)
+    agency = render_legacy_agency_site(edge, AGENCY_SITE.read_text(encoding="utf-8"))
 
-    return json.dumps(edge, indent=2) + "\n", site
+    return json.dumps(edge, indent=2) + "\n", site, agency
 
 
 def main() -> None:
-    edge, site = render()
-    EDGE.write_text(edge, encoding="utf-8")
-    SITE.write_text(site, encoding="utf-8")
+    edge, site, agency = render()
+    # LF on every platform keeps the committed outputs byte-identical to CI.
+    EDGE.write_text(edge, encoding="utf-8", newline="\n")
+    SITE.write_text(site, encoding="utf-8", newline="\n")
+    AGENCY_SITE.write_text(agency, encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

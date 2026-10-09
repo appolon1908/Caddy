@@ -1,0 +1,209 @@
+# Staging hosts. *.staging.internal names use Caddy's internal CA and are never
+# public ACME targets; the two public staging names use ACME. None of them
+# carries production traffic.
+api.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.api
+		reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log api-staging-internal
+}
+
+n8n.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
+	encode gzip
+
+	@live path /health/live
+	handle @live {
+		vars edge_route_id edge.staging.n8n
+		rewrite * /healthz
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@ready path /health/ready
+	handle @ready {
+		vars edge_route_id edge.staging.n8n
+		rewrite * /healthz/readiness
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@metadata path /.well-known/codestra-service
+	handle @metadata {
+		header Content-Type application/json
+		respond `{"service":"codestra-n8n","environment":"staging","contract_version":"1.0","live_path":"/health/live","ready_path":"/health/ready"}` 200
+	}
+
+	handle {
+		vars edge_route_id edge.staging.portal
+		reverse_proxy {$CADDY_STAGING_PORTAL_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log n8n-staging-internal
+}
+
+auth.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.keycloak
+		reverse_proxy {$CADDY_STAGING_KEYCLOAK_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log auth-staging-internal
+}
+
+auth-staging.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 5MB
+	}
+
+	handle {
+		vars edge_route_id edge.staging.keycloak
+		reverse_proxy {$CADDY_STAGING_KEYCLOAK_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log auth-staging-codestra-co
+}
+
+odoo.staging.internal.codestra.agency {
+	tls internal
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
+	encode gzip
+
+	handle {
+		vars edge_route_id edge.staging.odoo
+		reverse_proxy {$CADDY_STAGING_ODOO_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log odoo-staging-internal
+}
+
+bridge-staging.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 10MB
+	}
+
+	@private_callback path /api/v1/events/vicidial
+	handle @private_callback {
+		respond 404
+	}
+
+	handle {
+		vars edge_route_id edge.staging.bridge
+		reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log bridge-staging
+}

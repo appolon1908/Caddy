@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from caddy_activation import ActivationError, ActivationManager
+from caddy_admin_endpoint import ADMIN_ADDRESS
 from caddy_candidate import CandidateBuildError, CandidateBuilder
 from caddy_execution_store import ExecutionStore, ExecutionStoreError
 from caddy_route_compiler import (
@@ -31,7 +32,7 @@ from caddy_runtime_readback import CaddyRuntime, RuntimeReadbackError, canonical
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8784
-DEFAULT_ADMIN_API = os.environ.get("CADDY_ADMIN_API", "http://127.0.0.1:2019")
+DEFAULT_ADMIN_API = os.environ.get("CADDY_ADMIN_API", ADMIN_ADDRESS)
 DEFAULT_CANDIDATE_JSON = Path(
     os.environ.get("CADDY_RUNTIME_CANDIDATE_JSON", str(ROOT / "generated" / "pas144-runtime-candidate.json"))
 )

@@ -1,5 +1,5 @@
-# Canonical n8n editor edge source owned by ingtrader21-spec/Caddy.
-# Historical reference: appolon1908-hue/codestra-production-platform
+# Canonical n8n editor edge source owned by appolon1908/Caddy.
+# Historical reference: appolon1908/codestra-production-platform
 # ref: release/production-activation
 # path: operations/caddy/api.codestra.co.caddy
 #
@@ -18,10 +18,10 @@ automation.codestra.co {
 	import public_boundary
 	encode zstd gzip
 
-	# The editor accepts workflow imports, so the body ceiling is lower than the
-	# shared API edge rather than inherited from it.
+	# Workflow imports need n8n's payload ceiling; the value must equal
+	# N8N_PAYLOAD_SIZE_MAX for the same deployment.
 	request_body {
-		max_size 4MB
+		max_size {$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}
 	}
 
 	# Defence in depth beneath the gateway's OIDC flow. The editor is never
@@ -35,6 +35,13 @@ automation.codestra.co {
 	# answer first and this gate would never run.
 	route {
 		handle @offnet {
+			respond "Not Found" 404
+		}
+
+		# n8n test hooks and owner bootstrap are never reachable through the edge,
+		# even for allowlisted sources behind the gateway's login.
+		@never_public path /webhook-test* /form-test* /rest/owner/setup* /rest/owner/dismiss-banner*
+		handle @never_public {
 			respond "Not Found" 404
 		}
 
@@ -59,6 +66,8 @@ automation.codestra.co {
 				header_up -X-Authenticated-Email
 				header_up -X-Codestra-Tenant
 				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
 				header_up -X-Codestra-Gateway-Secret
 				header_up -X-Internal-Service
 				header_up -X-Admin
@@ -67,35 +76,12 @@ automation.codestra.co {
 				header_up -X-Consumer-Custom-ID
 				header_up -X-Credential-Identifier
 				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
 			}
 		}
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/automation-codestra-co-access.log {
-			roll_size 20MiB
-			roll_keep 5
-		}
-		format filter {
-			request>headers>Cookie delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>Authorization delete
-			request>headers>Proxy-Authorization delete
-			request>uri query {
-				delete apikey
-				delete code
-				delete state
-				delete api_key
-				delete access_token
-				delete refresh_token
-				delete id_token
-				delete client_secret
-				delete password
-				delete secret
-				delete token
-			}
-			resp_headers>Set-Cookie delete
-		}
-	}
+	import access_log automation-codestra-co
 }

@@ -31,3 +31,6 @@ acme/
 # Private generated runtime candidates are not source authority.
 generated/pas144-runtime-candidate.json
 generated/pas144-runtime-candidate.json.meta.json
+
+# Release build inputs and the staged image configuration.
+build/

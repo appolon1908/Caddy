@@ -43,9 +43,8 @@ CANONICAL_PROBES = (
     ("POST", "/platform/v1/runtime/observations"),
     ("POST", "/api/v1/control/callbacks"),
 )
-# Wrong methods, non-canonical subpaths and retired aliases. These must reach
-# Kong only through a prefix rule (so Kong answers 404/405) or be refused by
-# Caddy itself; they must never match an exact rule or reach the legacy upstream.
+# Wrong methods, non-canonical subpaths and Middleware-denied operations. Caddy
+# refuses every one itself; none reaches Kong, the legacy upstream or a provider.
 FAIL_CLOSED_PROBES = (
     ("GET", "/api/v1/integrations/n8n/results"),
     ("DELETE", "/api/v1/integrations/n8n/results"),
@@ -106,6 +105,13 @@ def _matches(matcher: Mapping[str, Any], method: str, path: str, host: str) -> b
     path_regexp = matcher.get("path_regexp")
     if path_regexp and not any(re.search(pattern, path) for pattern in _regexp_patterns(path_regexp)):
         return False
+    variables = matcher.get("vars_regexp")
+    if variables:
+        for placeholder, value in variables.items():
+            if placeholder != "{http.request.uri.path}":
+                raise ValueError(f"unsupported_vars_regexp:{placeholder}")
+            if not any(re.search(pattern, path) for pattern in _regexp_patterns(value)):
+                return False
     return True
 
 
@@ -163,11 +169,19 @@ def _resolve_routes(
     return None
 
 
+def _serves_port(server: Mapping[str, Any], port: int) -> bool:
+    """A request reaches only servers listening on its port; unlisted fixtures match."""
+    listen = server.get("listen")
+    return not listen or any(str(address).rsplit(":", 1)[-1] == str(port) for address in listen)
+
+
 def resolve_request(
-    document: Mapping[str, Any], method: str, path: str, host: str = "api.codestra.co"
+    document: Mapping[str, Any], method: str, path: str, host: str = "api.codestra.co", port: int = 443
 ) -> Resolution:
     servers = document.get("apps", {}).get("http", {}).get("servers", {})
     for server in servers.values():
+        if not _serves_port(server, port):
+            continue
         resolution = _resolve_routes(server.get("routes") or (), method, path, host)
         if resolution is not None:
             return resolution
@@ -189,11 +203,8 @@ def validate_edge_matrix(
 
     for method, path in FAIL_CLOSED_PROBES:
         resolution = resolve_request(document, method, path)
-        denied = resolution.response_status in (404, 405)
-        if resolution.upstream != kong_upstream and not denied:
-            raise ValueError(f"fail_closed_route_not_kong:{method} {path}:{resolution}")
-        if resolution.method_constrained:
-            raise ValueError(f"noncanonical_route_matched_exact_rule:{method} {path}:{resolution}")
+        if resolution.upstream is not None or resolution.response_status not in (404, 405):
+            raise ValueError(f"fail_closed_route_left_the_edge:{method} {path}:{resolution}")
 
     unknown = resolve_request(document, "GET", "/api/v2/unrelated")
     if unknown.upstream is not None or unknown.response_status != 404:

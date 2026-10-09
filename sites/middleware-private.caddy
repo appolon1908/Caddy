@@ -1,0 +1,90 @@
+# Private Middleware callback ingress. Owner-approved exception (2026-09-30) to
+# "Caddy never calls Middleware directly": private bind only, no public DNS,
+# mutual TLS, a pinned source CIDR and exactly one method+path. Everything
+# else answers 403. It never carries public API traffic.
+middleware.internal.codestra.agency {
+	bind {$CADDY_PRIVATE_INGRESS_BIND}
+	tls {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/server.crt {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/server.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/client-ca.crt
+		}
+	}
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 256KB
+	}
+
+	route {
+		@authorized_callback {
+			remote_ip {$CADDY_VICIDIAL_SOURCE_CIDRS}
+			method POST
+			path /api/v1/events/vicidial
+		}
+		handle @authorized_callback {
+			vars edge_route_id edge.middleware_private
+			reverse_proxy {$CADDY_MIDDLEWARE_CALLBACK_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+		handle {
+			respond 403
+		}
+	}
+
+	import access_log middleware-private
+}
+
+middleware-staging.internal.codestra.agency {
+	bind {$CADDY_PRIVATE_INGRESS_BIND}
+	tls {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/staging-server.crt {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/staging-server.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file {$CADDY_MIDDLEWARE_PKI_DIR:/etc/codestra/pki/middleware-private-ingress}/client-ca.crt
+		}
+	}
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 256KB
+	}
+
+	route {
+		@authorized_callback {
+			remote_ip {$CADDY_STAGING_EVENT_SOURCE_CIDRS}
+			method POST
+			path /api/v1/staging/events/vicidial
+		}
+		handle @authorized_callback {
+			vars edge_route_id edge.middleware_private
+			rewrite * /api/v1/events/vicidial
+			reverse_proxy {$CADDY_STAGING_API_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+		handle {
+			respond 403
+		}
+	}
+
+	import access_log middleware-staging-private
+}

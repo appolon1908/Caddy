@@ -109,7 +109,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$CADDY_CANARY_SOURCE_SHA"
           git fetch origin production --depth=1
           test "$(git rev-parse origin/production)" = "$CADDY_CANARY_SOURCE_SHA"
-          test "$(python3 scripts/config_digest.py)" = "$CADDY_CANARY_CONFIG_SHA256"
+          test "$(python3 scripts/stage_image_config.py --digest)" = "$CADDY_CANARY_CONFIG_SHA256"
       - name: Pin Go toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:

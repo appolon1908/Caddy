@@ -20,16 +20,16 @@ Caddy does not authenticate application users/services, does not issue identity,
 
 Each system keeps its own source authority:
 
-- `ingtrader21-spec/Caddy` — shared Caddy TLS/reverse-proxy edge source and policy.
-- `ingtrader21-spec/Kong` — Kong gateway services, routes, plugins, OIDC/scope policy and gateway reconciliation.
-- `ingtrader21-spec/Keycloak` — identity, clients, scopes and token issuance.
-- `ingtrader21-spec/Middleware-` — cross-system command/event control plane and privileged provider orchestration.
+- `appolon1908/Caddy` — shared Caddy TLS/reverse-proxy edge source and policy.
+- `appolon1908/Kong` — Kong gateway services, routes, plugins, OIDC/scope policy and gateway reconciliation.
+- `appolon1908/Keycloak` — identity, clients, scopes and token issuance.
+- `appolon1908/Middleware-` — cross-system command/event control plane and privileged provider orchestration.
 - product/provider repositories — their own application and runtime source.
-- `appolon1908-hue/codestra-production-platform` — historical runtime/deployment/reconciliation/rollback evidence only. It is a migration reference, not principal source for future Caddy changes.
+- `appolon1908/codestra-production-platform` — historical runtime/deployment/reconciliation/rollback evidence only. It is a migration reference, not principal source for future Caddy changes.
 
 ## Canonical source layout
 
-- `Caddyfile` — complete root source; Caddy admin API is loopback-only.
+- `Caddyfile` — complete root source; the Caddy admin API listens only on a private Unix socket.
 - `snippets/security_headers.caddy` — shared security-header snippet owned here, including HSTS. Every site block must import it; `scripts/validate_repository.py` fails the build if one does not.
 - `sites/api.codestra.co.caddy` — shared API-edge routing source.
 - `sites/automation.codestra.co.caddy` — administrative editor host gated by Kong's Keycloak browser flow (see "Two editor hosts, two gates").
@@ -41,6 +41,18 @@ Each system keeps its own source authority:
 - `config/community-n8n-credentials.v1.json` — metadata-only ownership and rotation contract.
 - `config/observability-exposure.v1.json` — repository-only public/private observability URL contract.
 - `sites/codestra.media.observability.caddy` — the only permitted observability UI/restricted-management routes.
+- Production-lineage hosts carried forward from `caddy-production-2489bf0` (owner decision, 2026-09-30):
+  `sites/api.breero.com.caddy`, `sites/api.codestra.agency.caddy`, `sites/auth.codestra.co.caddy`,
+  `sites/crm.codestra.agency.caddy`, `sites/agent-desktop.codestra.agency.caddy`,
+  `sites/monitoring.codestra.co.caddy`, `sites/n8n-legacy.codestra.agency.caddy`,
+  `sites/staging-internal.caddy`, and the private listeners in `sites/middleware-private.caddy`
+  and `sites/klyrow-events.private.caddy`. `tests/test_production_lineage_hosts.py` fails if any
+  production address is dropped or a gate is weakened.
+- `docs/PRODUCTION_RUNTIME.md`, `Dockerfile`, `deploy/compose.runtime.yaml` — the canonical production runtime: one immutable, signed, non-root container with controlled release and rollback.
+- `sites-pending/kyyow.com.caddy` — Kyyow hosts, kept in source but not imported until their DNS and
+  upstreams exist, so no certificate is requested for them.
+- The root `Caddyfile` keeps the private `:2020` metrics listener that Prometheus scrapes as
+  `caddy:2020`; it binds `CADDY_PRIVATE_METRICS_BIND` only.
 
 Grafana and Superset are the only public observability UI routes. OpenBao has a
 separate source-network gate in addition to native OIDC and policy enforcement.
@@ -67,8 +79,13 @@ current source authority. Neither supersedes the other.
 `automation.codestra.co` additionally applies a `CADDY_EDITOR_ADMIN_CIDRS`
 source-range gate ahead of the browser flow. Caddy authenticates nobody on
 either host: it terminates TLS, strips spoofable identity headers, and hands off
-to the gate that owns identity for that host. Adding a third editor edge, or
-pointing either host directly at n8n on `:5678`, is prohibited.
+to the gate that owns identity for that host. Pointing either host directly at
+n8n on `:5678` is prohibited.
+
+`n8n.codestra.agency` (and its staging twin) is the one reviewed exception: a
+legacy staff editor reachable only from private source addresses, with a 403
+for everyone else. It is not a third public editor, and adding any other editor
+edge is prohibited.
 
 ## Runtime values that must be supplied before deployment
 
@@ -95,6 +112,11 @@ The historical `codestra-production-platform` Caddy source used loopback listene
 
 No new shared API route should be added as a direct Caddy -> Middleware or Caddy -> provider path. The owning repository must add the service contract, Kong must own the gateway route/security policy, and Caddy then owns the outer edge handoff.
 
+The private callback ingress (`middleware.internal.codestra.agency`, its staging twin, and the Klyrow
+event listener on `:18080`) is the one reviewed exception to Caddy -> Middleware. Each binds only the
+private interface, requires a verified client certificate, accepts one method+path from one source
+range and answers 403 to everything else. It never carries public API traffic.
+
 ## Branch model
 
 - `development` — active integration branch.
@@ -110,7 +132,7 @@ The repository may use short-lived authority or migration branches for source-co
 
 The first `api.codestra.co` source was imported from:
 
-`appolon1908-hue/codestra-production-platform:release/production-activation:operations/caddy/api.codestra.co.caddy`
+`appolon1908/codestra-production-platform:release/production-activation:operations/caddy/api.codestra.co.caddy`
 
 That repository is reference/evidence only. Its historical source does not prove a live host currently matches this repository.
 
@@ -131,7 +153,7 @@ Before any Caddy cutover:
 
 1. Never commit TLS private keys, API tokens, credentials, passwords, `.env` files, ACME account data, or Caddy data-directory contents.
 2. Validate the complete root `Caddyfile` before a reload.
-3. Keep the Caddy admin API on `127.0.0.1:2019`; never expose it publicly.
+3. Keep the Caddy admin API on the `unix//run/caddy/admin.sock` socket; never expose it on a network listener.
 4. Caddy must not manufacture `X-Authenticated-*` or gateway-secret headers.
 5. Caddy must preserve the bearer token for Kong; Authorization is redacted from logs only.
 6. Shared API paths represented in Kong source must route Caddy -> Kong, never directly to Middleware.

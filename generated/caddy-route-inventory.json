@@ -1,8 +1,8 @@
 {
-  "generated_sha256": "c586e687f83d7fb588a8bb17afefb23b603659ca205e2864e4f5196835132d98",
-  "private_count": 11,
-  "public_count": 126,
-  "route_count": 142,
+  "generated_sha256": "8cb10028f0eda21445dfdb7c41f668acb75bec30df917c26585f373d7e3384da",
+  "private_count": 23,
+  "public_count": 150,
+  "route_count": 178,
   "routes": [
     {
       "handler_id": "edge.unknown",
@@ -10,7 +10,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "*",
       "route_id": "edge.d7ca03dab414c217ced9",
       "upstream_ref": "NONE",
@@ -18,25 +18,12 @@
       "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/automation/policy-check",
-      "route_id": "edge.d2f7666d789c945e9e63",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
       "handler_id": "edge.canonical.post",
       "host": "api.codestra.co",
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/automation/policy-check",
       "route_id": "edge.b5bc94fa58ac41b1e4b2",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -49,7 +36,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/callbacks",
       "route_id": "edge.900e9f6d04cae69d784f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -57,27 +44,15 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-control",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST",
+        "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/callbacks*",
-      "route_id": "edge.a69e575e2b919b3a85d8",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/control*",
-      "route_id": "edge.80aed5818ae7167d81cb",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/control/*",
+      "route_id": "edge.190230d72680bd0f6437",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -88,7 +63,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/control/callbacks",
       "route_id": "edge.ac6565681bbab518b20b",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -96,14 +71,14 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-events",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/events*",
-      "route_id": "edge.a4493213a04ced179240",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/events/*",
+      "route_id": "edge.954148f8c90bd9b67082",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -114,7 +89,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/events/telnexa",
       "route_id": "edge.11982c6776e98abc8f4b",
       "upstream_ref": "NONE",
@@ -122,30 +97,56 @@
       "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-health",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/health*",
-      "route_id": "edge.dee4e66614c1be72e9dd",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/health/*",
+      "route_id": "edge.07e67927bd11f2f0d53c",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.contract.private_only",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/integration/automation-results",
+      "route_id": "edge.e5378133d77a6d220a87",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/integration/campaign-actions",
-      "route_id": "edge.8c98453c6ba46a5673af",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
+      "route_id": "edge.51f307589ca8e7415308",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.private_only",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/integration/campaigns/actual-state",
+      "route_id": "edge.528b3ee7d746e375c06b",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
     },
     {
       "handler_id": "edge.canonical.post",
@@ -153,7 +154,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/integrations/n8n/results",
       "route_id": "edge.0940e0d36b0ab4c01974",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -161,25 +162,12 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/integrations/n8n/results*",
-      "route_id": "edge.22704349358dc07f9b2c",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
       "handler_id": "edge.canonical.get",
       "host": "api.codestra.co",
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/integrations/n8n/results/{event_id}",
       "route_id": "edge.64e1f3ee98895c37dc48",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -187,17 +175,43 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.contract.denied",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/integrations/odoo*",
-      "route_id": "edge.15ab4349a03f127a22c9",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/integrations/odoo/campaign-actions",
+      "route_id": "edge.5bf4ff7b50731c267bb2",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/integrations/odoo/campaign-commands",
+      "route_id": "edge.c63442e216560f965c7e",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/integrations/odoo/campaign-commands/{command_id}",
+      "route_id": "edge.0cec279839bee15d7e8d",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
     },
     {
       "handler_id": "edge.canonical.get",
@@ -205,7 +219,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/integrations/odoo/campaigns/{campaign_id}",
       "route_id": "edge.c35de436b971348ed23a",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -218,7 +232,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/integrations/odoo/campaigns/{campaign_id}/desired-state",
       "route_id": "edge.76c4c95ab65514250a2e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -226,14 +240,14 @@
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.communication-message-read",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/messages*",
-      "route_id": "edge.19adbd629eeff1f5c7c2",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/messages/*",
+      "route_id": "edge.4b2fe03ba086993eab08",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -244,7 +258,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/n8n/acknowledgements",
       "route_id": "edge.6bede326286466cfbffe",
       "upstream_ref": "NONE",
@@ -252,17 +266,17 @@
       "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.contract.denied",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/odoo*",
-      "route_id": "edge.c78a7ee3f90f22c8cdbd",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/odoo/campaign-actions",
+      "route_id": "edge.869ba5dad761f7731c17",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
     },
     {
       "handler_id": "edge.canonical.post",
@@ -270,7 +284,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/odoo/events",
       "route_id": "edge.ccae241f1d2f7765e66b",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -283,7 +297,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/api/v1/realtime/sessions",
       "route_id": "edge.a0bbfac84ad35d48fce7",
       "upstream_ref": "CADDY_REALTIME_UPSTREAM",
@@ -291,27 +305,28 @@
       "visibility": "compatibility"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-reconciliation",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "GET",
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/reconciliation*",
-      "route_id": "edge.e0f233e3f550800e93d8",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/reconciliation/*",
+      "route_id": "edge.fca1d72b25e389f4beaf",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-results",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/api/v1/results*",
-      "route_id": "edge.7eeac11c5f172637fc9e",
+      "owner": "appolon1908/Caddy",
+      "path": "/api/v1/results/*",
+      "route_id": "edge.d323fd212296169a5e95",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -322,7 +337,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/healthz",
       "route_id": "edge.eb63f0bdb7960b605fb3",
       "upstream_ref": "CADDY_REALTIME_UPSTREAM",
@@ -335,7 +350,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/internal",
       "route_id": "edge.cf60e300c62f99dea323",
       "upstream_ref": "NONE",
@@ -348,7 +363,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/internal/*",
       "route_id": "edge.d38c1affc596c649239f",
       "upstream_ref": "NONE",
@@ -361,7 +376,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/metrics",
       "route_id": "edge.c929397f216e4bb13ce6",
       "upstream_ref": "NONE",
@@ -374,7 +389,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/metrics/*",
       "route_id": "edge.a669dbd0a26da8b2c78f",
       "upstream_ref": "NONE",
@@ -382,25 +397,12 @@
       "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/platform/v1*",
-      "route_id": "edge.95b9d397e12dcbc7d3f6",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
       "handler_id": "edge.canonical.get",
       "host": "api.codestra.co",
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/activity",
       "route_id": "edge.292e769c827766c3bd52",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -413,7 +415,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/activity/{activity_id}",
       "route_id": "edge.e08a676cf4e51aa9845e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -426,7 +428,20 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/adopt-extension",
+      "route_id": "edge.dee780094821ad1d8c38",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests",
       "route_id": "edge.295ba84457742a9c0f99",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -439,9 +454,22 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests/{request_id}",
       "route_id": "edge.58009c1515a0328b9c24",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/requests/{request_id}/history",
+      "route_id": "edge.7ef46d8dec4339a5dfe2",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -452,7 +480,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests/{request_id}/reactivate",
       "route_id": "edge.de4e99c2da917a7b6b66",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -465,7 +493,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests/{request_id}/reconcile",
       "route_id": "edge.d2e81f53398e0951d864",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -478,7 +506,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests/{request_id}/revoke",
       "route_id": "edge.99fd1f0456ada81a1077",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -491,9 +519,48 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agent-provisioning/requests/{request_id}/suspend",
       "route_id": "edge.523d209615e5aa155818",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/reserve-extension",
+      "route_id": "edge.0c84667ee4e7becd4f1b",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/webrtc/tickets",
+      "route_id": "edge.97ced2964cb162dfad9e",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/disable",
+      "route_id": "edge.0c90600c4e5f7f5302f3",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -504,7 +571,72 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/readback",
+      "route_id": "edge.6cbe176ac537725716a4",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/release-extension",
+      "route_id": "edge.0c8b9ca8a4c644867742",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/repair-intents",
+      "route_id": "edge.cd02a41ce22cf881ae7d",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/sync",
+      "route_id": "edge.55b974a6a5e6d0a65ed8",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/agent-provisioning/{request_id}/webrtc/revoke",
+      "route_id": "edge.70ca008f63b46d305bc7",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agents/presence",
       "route_id": "edge.6005a1f7f3c327dee75d",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -517,7 +649,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/agents/{user_id}/presence",
       "route_id": "edge.594c9efd89fb7b9ab034",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -530,7 +662,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/calls",
       "route_id": "edge.a160e29ce544f0945902",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -543,9 +675,48 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/calls/{call_id}",
       "route_id": "edge.cb6a9597d7984658d605",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-execute",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/campaign-engine/execute",
+      "route_id": "edge.91ca629f049d2b967228",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-plan",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/campaign-engine/plan",
+      "route_id": "edge.b754f017bf791d5fc259",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-status",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/campaign-engine/status",
+      "route_id": "edge.eb8c7eac81c57d9b2813",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -556,7 +727,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/campaigns",
       "route_id": "edge.1e89aaee7980e2643c19",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -569,7 +740,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/campaigns/{campaign_id}",
       "route_id": "edge.5de085e42788a9e1732f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -582,9 +753,22 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/campaigns/{campaign_id}/channels",
       "route_id": "edge.6c4ea48124f65d50c3cf",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-eligible-leads",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/campaigns/{campaign_id}/eligible-leads",
+      "route_id": "edge.04ba06de7a69f28565ac",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -595,7 +779,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/campaigns/{campaign_id}/health",
       "route_id": "edge.19f2752531cb83146fe8",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -608,7 +792,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/campaigns/{campaign_id}/members",
       "route_id": "edge.1cb32126d57ca829fe7c",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -621,7 +805,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/commands",
       "route_id": "edge.0541e9127ef0786c75d7",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -634,7 +818,163 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}",
+      "route_id": "edge.59d2366167165fac5cc6",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}/cancel",
+      "route_id": "edge.1284ee46ef9db91e41bf",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}/history",
+      "route_id": "edge.042a453f20c14a7b8cc2",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}/replay",
+      "route_id": "edge.3fd49d093a4dcebc596f",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}/result",
+      "route_id": "edge.ebbadbf683a74f8e19c0",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/commands/{operation_id}/retry",
+      "route_id": "edge.3b11b5ad1f0c0d5dc32b",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors",
+      "route_id": "edge.fe2cdff63a4d07f952f9",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors/{connector_id}",
+      "route_id": "edge.84cae399c1333f9c0eda",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors/{connector_id}/capabilities",
+      "route_id": "edge.934d93fceba578d711b8",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors/{connector_id}/health",
+      "route_id": "edge.b6f37562066f0345906f",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors/{connector_id}/readback",
+      "route_id": "edge.09768b68a396a2bb101a",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/connectors/{connector_id}/reconcile",
+      "route_id": "edge.f208ee2ae48bf9cb3779",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts",
       "route_id": "edge.9dcba492f8aa8f49e469",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -647,7 +987,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts",
       "route_id": "edge.7cc5a8ad15ec97fbdc76",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -660,7 +1000,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}",
       "route_id": "edge.e20e99a298a5f6616a04",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -673,7 +1013,7 @@
       "methods": [
         "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}",
       "route_id": "edge.f3db181db60d74d5cdde",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -686,7 +1026,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}/notes",
       "route_id": "edge.64c8bce44b917e50d98e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -699,7 +1039,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}/notes",
       "route_id": "edge.32e556343d345bc03c26",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -712,7 +1052,7 @@
       "methods": [
         "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}/notes/{note_id}",
       "route_id": "edge.d05a716627a64dfa800f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -725,7 +1065,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}/tasks",
       "route_id": "edge.4cfe1b6ed531d14b333d",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -738,7 +1078,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/contacts/{contact_id}/tasks",
       "route_id": "edge.c7a5ec61d8602f8b0386",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -751,7 +1091,46 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/dead-letters",
+      "route_id": "edge.07b6389fcbf2304c2bb4",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/dead-letters/{operation_id}",
+      "route_id": "edge.8366a283a42d9c921870",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-delivery-events",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/delivery-events",
+      "route_id": "edge.0df16e552f88e441e184",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/identities",
       "route_id": "edge.e8644a4cab4074a85309",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -764,7 +1143,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/activate",
       "route_id": "edge.a7b2a29039ed7677e0e7",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -777,7 +1156,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/audit",
       "route_id": "edge.d04e90ff1b0acc22ae54",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -790,7 +1169,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/authorize",
       "route_id": "edge.0dca28c526b1919ba243",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -803,7 +1182,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/kill-switch",
       "route_id": "edge.890c7c01a238a59be73b",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -816,7 +1195,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/quotas",
       "route_id": "edge.50e28ec1d7078ea382bb",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -829,7 +1208,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/readiness",
       "route_id": "edge.8b7cb7621311dbb82a01",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -842,7 +1221,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/revoke",
       "route_id": "edge.ffdd08c99872fd0247e0",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -855,7 +1234,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/email/production/status",
       "route_id": "edge.3f10cff524accbf7f823",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -868,7 +1247,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/hosts",
       "route_id": "edge.139c745bbe3cae6c61a8",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -881,7 +1260,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/hosts/{host_id}",
       "route_id": "edge.e4e73ca15a9d2266eaaf",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -894,7 +1273,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/integrations/github/events",
       "route_id": "edge.4784cee69f610747cf2c",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -907,9 +1286,35 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/kernel/describe",
       "route_id": "edge.efb529f2d0d97d80d9e6",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-journey",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/leads/{lead_id}/journey",
+      "route_id": "edge.4e2ac60080754663121d",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-next-action",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/leads/{lead_id}/next-action",
+      "route_id": "edge.ad9fd318b183f5a09139",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -920,7 +1325,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/me/presence",
       "route_id": "edge.890a01cead74d694f338",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -933,7 +1338,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/operations/{operation_id}",
       "route_id": "edge.cfdef0490bc8e94e8b75",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -946,9 +1351,22 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/operations/{operation_id}/cancel",
       "route_id": "edge.13c5039a52c86a7574c4",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/operations/{operation_id}/recovery-history",
+      "route_id": "edge.dcc5dadb12a8779343e7",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -959,7 +1377,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/operations/{operation_id}/replay",
       "route_id": "edge.7e34bdafa1febfbd8edd",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -972,7 +1390,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/operations/{operation_id}/timeline",
       "route_id": "edge.bcaedd6fe60867ea6b05",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -985,7 +1403,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/opportunities",
       "route_id": "edge.df67cedcd22001429b96",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -998,7 +1416,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/opportunities",
       "route_id": "edge.721e741f634ba55602f5",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1011,7 +1429,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/opportunities/{opportunity_id}",
       "route_id": "edge.bcbe53b52b3be4740b97",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1024,7 +1442,7 @@
       "methods": [
         "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/opportunities/{opportunity_id}",
       "route_id": "edge.c2558320abb81de36232",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1037,7 +1455,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/queues",
       "route_id": "edge.ad46a40c699b41ac0d8e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1050,7 +1468,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/queues/{queue_id}",
       "route_id": "edge.304f20f74efe6f2b9444",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1063,7 +1481,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/queues/{queue_id}/calls",
       "route_id": "edge.a18c5791e820eaff503e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1076,7 +1494,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/queues/{queue_id}/members",
       "route_id": "edge.9b136580d898f5e1d19f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1089,9 +1507,22 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/queues/{queue_id}/metrics",
       "route_id": "edge.e971d6375e05c93fce43",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/rehearsals/no-effect",
+      "route_id": "edge.6e9e33e14a902a3c9716",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -1102,7 +1533,33 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/rehearsals/{rehearsal_id}",
+      "route_id": "edge.47893617f6910dd412bf",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.post",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/replays/{replay_id}/cancel",
+      "route_id": "edge.2c8f88731ccf78d7221b",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.canonical.get",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/repositories",
       "route_id": "edge.bb6b0f3514e308ef90c2",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1115,7 +1572,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/runtime/observations",
       "route_id": "edge.1ecbc453edeaf8e3ef1d",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1128,7 +1585,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/contract-refresh",
       "route_id": "edge.ecd698ee9a07cba02ba8",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1141,7 +1598,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/coverage",
       "route_id": "edge.344c7cf068dd6529ba92",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1154,7 +1611,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/dependencies",
       "route_id": "edge.3615fe801dd05786553e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1167,7 +1624,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/deployments",
       "route_id": "edge.ede5aae353c4f243f11f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1180,7 +1637,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/endpoints",
       "route_id": "edge.70c56d7d71888aa3ab60",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1193,7 +1650,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/services/{service_id}/telemetry-profile",
       "route_id": "edge.cf58491c2651fdde9268",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1206,7 +1663,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/session/context",
       "route_id": "edge.d05acad1ac5a1a73fec5",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1219,7 +1676,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/session/context/select",
       "route_id": "edge.febc3c02431a853000f0",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1232,9 +1689,22 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/sms/identities",
       "route_id": "edge.d90e3edb4391d882108b",
+      "upstream_ref": "CADDY_KONG_UPSTREAM",
+      "upstream_service": "kong",
+      "visibility": "public"
+    },
+    {
+      "handler_id": "edge.kong.mcr-suppressions",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/platform/v1/suppressions",
+      "route_id": "edge.98d3b8ab7ff443641042",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
@@ -1245,7 +1715,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/sync/reconciliations",
       "route_id": "edge.f868d5057fbeaa9cfcfe",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1258,7 +1728,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/sync/reconciliations/{reconciliation_id}",
       "route_id": "edge.f2000dc685edd8f06ddf",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1271,7 +1741,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/sync/status",
       "route_id": "edge.f6f0f19127079a7649ef",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1284,7 +1754,7 @@
       "methods": [
         "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tasks/{task_id}",
       "route_id": "edge.7efe4a16a719b940d640",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1297,7 +1767,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tasks/{task_id}/complete",
       "route_id": "edge.d1565dc8794c6ca35557",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1310,7 +1780,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/telemetry/heartbeats",
       "route_id": "edge.b384262aa8df32c2a779",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1323,7 +1793,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/telephony/assignments",
       "route_id": "edge.19d2cedb6836631c1254",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1336,7 +1806,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tenants",
       "route_id": "edge.b55b98d764acdf72df4d",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1349,7 +1819,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tenants/authorized",
       "route_id": "edge.a7afd3f44ad42f961ec8",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1362,7 +1832,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tenants/{tenant_id}",
       "route_id": "edge.4108e2b30e0ce4d4e064",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1375,7 +1845,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tenants/{tenant_id}/campaigns",
       "route_id": "edge.91ec816c1e9b71384406",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1388,7 +1858,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tenants/{tenant_id}/health",
       "route_id": "edge.e5bdbac4944b2e50c7df",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1401,7 +1871,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tickets",
       "route_id": "edge.0419398619faf2a8f70d",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1414,7 +1884,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tickets",
       "route_id": "edge.0e79c189618f8bea6c7b",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1427,7 +1897,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tickets/{ticket_id}",
       "route_id": "edge.bec826b735b204319ab1",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1440,7 +1910,7 @@
       "methods": [
         "PATCH"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/tickets/{ticket_id}",
       "route_id": "edge.52850e81f4925a3f076f",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1453,7 +1923,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/users/{employee_id}",
       "route_id": "edge.c59adb0077b062da67b2",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1466,7 +1936,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/users/{employee_id}/campaigns",
       "route_id": "edge.6ff76e6fd6ac7761ca55",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1479,7 +1949,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/platform/v1/users/{employee_id}/entitlements",
       "route_id": "edge.cd3da94ce4a71436cbf9",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1492,7 +1962,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/readyz",
       "route_id": "edge.20f937c91a8d3ca30000",
       "upstream_ref": "CADDY_REALTIME_UPSTREAM",
@@ -1500,69 +1970,108 @@
       "visibility": "compatibility"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.control-plane-system-admin",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/admin/system*",
-      "route_id": "edge.fbbc2fdeb6627c5d16c9",
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/admin/system/*",
+      "route_id": "edge.a97d4f0557baae9201b4",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.codestra-intake-leads",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/crm*",
-      "route_id": "edge.3867e1535098745d1430",
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/intake/leads",
+      "route_id": "edge.01da7fedf3bf23b2e1f8",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.kong.codestra-intake-survey-responses",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/email*",
-      "route_id": "edge.71ec20e86f409746b5bc",
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/intake/surveys/responses",
+      "route_id": "edge.c9b87db78e87dc46179e",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
       "upstream_service": "kong",
       "visibility": "public"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.contract.denied",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/intake*",
-      "route_id": "edge.8c6dba567f9f2b9dae9e",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/integrations/n8n/commands",
+      "route_id": "edge.66c28106e587a2219172",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
+      "handler_id": "edge.contract.denied",
       "host": "api.codestra.co",
       "methods": [
-        "ANY"
+        "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/integrations/n8n*",
-      "route_id": "edge.6f5be57a48a4866f304e",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/integrations/n8n/operations",
+      "route_id": "edge.89aa1d7750c29e2ad95a",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "GET"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/integrations/n8n/operations/{command_id}",
+      "route_id": "edge.4b3dacf11379f75d1c5e",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/integrations/n8n/operations/{command_id}/cancel",
+      "route_id": "edge.7adb01c8dc8fa1d000a9",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
+    },
+    {
+      "handler_id": "edge.contract.denied",
+      "host": "api.codestra.co",
+      "methods": [
+        "POST"
+      ],
+      "owner": "appolon1908/Caddy",
+      "path": "/v1/integrations/n8n/operations/{command_id}/reconcile",
+      "route_id": "edge.4cb3f67ef5946d0eb50c",
+      "upstream_ref": "NONE",
+      "upstream_service": "none",
+      "visibility": "private"
     },
     {
       "handler_id": "edge.denied",
@@ -1570,7 +2079,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v1/observability/incidents",
       "route_id": "edge.b014d373b120445e6c77",
       "upstream_ref": "NONE",
@@ -1583,7 +2092,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v1/observability/kpis",
       "route_id": "edge.7c6f6be50122f9fb9789",
       "upstream_ref": "NONE",
@@ -1591,51 +2100,12 @@
       "visibility": "private"
     },
     {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/sms*",
-      "route_id": "edge.21da5876771079874437",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v1/webhooks*",
-      "route_id": "edge.048f931ba113d476f12f",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
-      "handler_id": "edge.kong",
-      "host": "api.codestra.co",
-      "methods": [
-        "ANY"
-      ],
-      "owner": "ingtrader21-spec/Caddy",
-      "path": "/v2/automation*",
-      "route_id": "edge.c1ea0ef41fd9f2c6e6ad",
-      "upstream_ref": "CADDY_KONG_UPSTREAM",
-      "upstream_service": "kong",
-      "visibility": "public"
-    },
-    {
       "handler_id": "edge.canonical.post",
       "host": "api.codestra.co",
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/approvals",
       "route_id": "edge.01109b134b73005bd8d3",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1648,7 +2118,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/approvals/{approval_id}",
       "route_id": "edge.20b6f39d5f4fa3734c41",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1661,7 +2131,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/capabilities/{capability}",
       "route_id": "edge.dc9eaf4d5f2f983998d2",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1674,7 +2144,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/commands",
       "route_id": "edge.9eb3a614243df85ffd59",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1687,7 +2157,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/commands/{command_id}",
       "route_id": "edge.050cd38b7fc45670f6ad",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1700,7 +2170,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/dead-letters/{dead_letter_id}/replay",
       "route_id": "edge.29f69598adfb5cbb8451",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1713,7 +2183,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/claim",
       "route_id": "edge.981001a238fd520bf836",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1726,7 +2196,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/reconcile",
       "route_id": "edge.7bc064aa19d33bbc1dd0",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1739,7 +2209,7 @@
       "methods": [
         "GET"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/{job_id}",
       "route_id": "edge.2543a74db7d4f9318118",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1752,7 +2222,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/{job_id}/complete",
       "route_id": "edge.02e1b9d51df32cafff87",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1765,7 +2235,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/{job_id}/fail",
       "route_id": "edge.717f69262e66f0f8f5af",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1778,7 +2248,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/{job_id}/heartbeat",
       "route_id": "edge.35dc464b7d65d367b881",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1791,7 +2261,7 @@
       "methods": [
         "POST"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/v2/automation/jobs/{job_id}/steps",
       "route_id": "edge.440ebb8bc3ca8b25dc69",
       "upstream_ref": "CADDY_KONG_UPSTREAM",
@@ -1804,7 +2274,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/version",
       "route_id": "edge.81a86e353de37641d229",
       "upstream_ref": "CADDY_REALTIME_UPSTREAM",
@@ -1817,7 +2287,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/webhooks/sms/inbound/*",
       "route_id": "edge.f0e48c64f23ed408d511",
       "upstream_ref": "NONE",
@@ -1830,7 +2300,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/webhooks/vicidial/call-result/*",
       "route_id": "edge.bc1ce1a45ca28f035b45",
       "upstream_ref": "NONE",
@@ -1843,7 +2313,7 @@
       "methods": [
         "ANY"
       ],
-      "owner": "ingtrader21-spec/Caddy",
+      "owner": "appolon1908/Caddy",
       "path": "/ws/agent",
       "route_id": "edge.d213741cd002a7104e59",
       "upstream_ref": "CADDY_REALTIME_UPSTREAM",
@@ -1852,5 +2322,5 @@
     }
   ],
   "schema": "codestra.caddy.route-inventory.v1",
-  "source_sha256": "27c10b0dd6430ffae944c9fbd46b7b0cae4c234e520c6fec53e5b60e0b794650"
+  "source_sha256": "92940930d6f056027c211ce4f2f6ef295a63524814186c87d68d0ca25a9c96e6"
 }

@@ -36,6 +36,15 @@ def archive_files(data: bytes) -> dict[str, bytes]:
         return files
 
 
+VERSION_AUTHORITY = 'config/caddy-version-authority.v1.json'
+
+
+def caddy_runtime(files: dict[str, bytes]) -> dict:
+    authority = json.loads(files.get(VERSION_AUTHORITY, b'{}'))
+    return {'version': authority.get('version'), 'source_commit': authority.get('source', {}).get('commit'),
+            'runtime_base_image': authority.get('runtime_base_image')}
+
+
 def configuration_files(files: dict[str, bytes]) -> list[str]:
     names = ['Caddyfile', 'config/runtime-values.example']
     for directory, extension in [('config', '.json'), ('config', '.caddy'), ('snippets', '.caddy'), ('sites', '.caddy')]:
@@ -77,11 +86,10 @@ def build_release(root: Path, output: Path, rollback_ref: str) -> dict:
     }
     artifacts = {'source.tar': source, 'configuration.tar': configuration.getvalue(), 'rollback.tar': rollback,
                  'source.spdx.json': (json.dumps(sbom, indent=2, sort_keys=True) + '\n').encode()}
-    runtime = json.loads(files.get('release/pas146/caddy-staging-candidate.v1.json', b'{}')).get('immutable_runtime', {})
     manifest = {'schema': 'codestra.caddy.local-release.v1', 'source_sha': source_sha,
                 'configuration_sha256': configuration_digest(files), 'rollback_source_sha': rollback_sha,
                 'rollback_configuration_sha256': configuration_digest(rollback_files),
-                'image_reference': runtime.get('image_reference'), 'production_apply_authorized': False,
+                'caddy_runtime': caddy_runtime(files), 'production_apply_authorized': False,
                 'signing_status': 'REQUIRES_PROTECTED_CI',
                 'artifacts': {name: digest(data) for name, data in artifacts.items()}}
     if git(root, 'status', '--porcelain').strip() or git(root, 'rev-parse', 'HEAD').decode().strip() != source_sha:
@@ -106,10 +114,10 @@ def verify_release(output: Path, *, expected_source_sha: str) -> dict:
             raise ReleaseError('artifact digest mismatch: ' + name)
     source = archive_files((output / 'source.tar').read_bytes())
     rollback = archive_files((output / 'rollback.tar').read_bytes())
-    runtime = json.loads(source.get('release/pas146/caddy-staging-candidate.v1.json', b'{}')).get('immutable_runtime', {})
-    image = manifest.get('image_reference')
-    if image != runtime.get('image_reference') or (image is not None and not re.fullmatch(r'[A-Za-z0-9./:_-]+@sha256:[0-9a-f]{64}', image)):
-        raise ReleaseError('image identity mismatch or mutable image')
+    runtime = manifest.get('caddy_runtime')
+    image = (runtime or {}).get('runtime_base_image')
+    if runtime != caddy_runtime(source) or (image is not None and not re.fullmatch(r'[A-Za-z0-9./:_-]+@sha256:[0-9a-f]{64}', image)):
+        raise ReleaseError('Caddy runtime identity mismatch or mutable base image')
     configuration = archive_files((output / 'configuration.tar').read_bytes())
     if configuration != {name: source[name] for name in configuration_files(source)}:
         raise ReleaseError('configuration bundle mismatch')

@@ -70,6 +70,60 @@
           ]
         },
         {
+          "name": "Command result through public edge",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlation_id}}"
+              }
+            ],
+            "url": "{{base_url}}/platform/v1/commands/edge-cert-probe/result"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('command result reaches Kong, never the edge denial',()=>pm.expect(pm.response.code).to.be.oneOf([200,401,403,404]).and.not.equal(502));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Connector health through public edge",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlation_id}}"
+              }
+            ],
+            "url": "{{base_url}}/platform/v1/connectors/edge-cert-probe/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('connector health reaches Kong, never the edge denial',()=>pm.expect(pm.response.code).to.be.oneOf([200,401,403,404]).and.not.equal(502));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Unknown route fails closed",
           "request": {
             "method": "GET",
@@ -92,6 +146,23 @@
     {
       "name": "Private Route Denial",
       "item": [
+        {
+          "name": "/internal root denied",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/internal"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('internal root is private',()=>pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
         {
           "name": "/internal denied",
           "request": {
@@ -138,6 +209,23 @@
               "script": {
                 "exec": [
                   "pm.test('metrics subpath is private',()=>pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "/metrics path parameter denied",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/metrics;x"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('metrics path parameter is private',()=>pm.response.to.have.status(404));"
                 ]
               }
             }

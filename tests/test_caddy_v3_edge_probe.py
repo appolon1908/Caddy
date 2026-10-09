@@ -37,6 +37,9 @@ SPOOFABLE_IDENTITY_HEADERS = [
     "X-Consumer-Custom-ID",
     "X-Credential-Identifier",
     "X-Anonymous-Consumer",
+    "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp",
+    "X-Codestra-Required-Scope",
 ]
 
 # The same synthetic upstream values scripts/validate-ci.sh passes to the
@@ -60,6 +63,13 @@ CI_ENVIRONMENT = {
     "CADDY_KYYOW_AUTH_UPSTREAM": "127.0.0.1:18304",
     "CADDY_KYYOW_STATUS_UPSTREAM": "127.0.0.1:18305",
 }
+
+
+def adapted_ci_environment():
+    spec = importlib.util.spec_from_file_location("test_caddy_adapted_routes", ROOT / "tests" / "test_caddy_adapted_routes.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ci_environment()
 
 
 def load_module():
@@ -311,7 +321,7 @@ class RepositoryConfigTests(unittest.TestCase):
             [os.environ["CADDY_BIN"], "adapt", "--config", str(ROOT / "Caddyfile"), "--adapter", "caddyfile", "--validate"],
             capture_output=True,
             text=True,
-            env={**os.environ, **CI_ENVIRONMENT},
+            env={**adapted_ci_environment(), **CI_ENVIRONMENT},
             cwd=ROOT,
             check=True,
         )

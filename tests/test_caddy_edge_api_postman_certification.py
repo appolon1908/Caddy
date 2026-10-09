@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -87,15 +88,27 @@ def test_postman_api_and_webhook_probes_assert_kong_answers() -> None:
 
 def test_pas162_chain_is_exact_and_fully_bound() -> None:
     state = certifier.chain_state(CHAIN, certifier.sha256_file(certifier.COLLECTION_PATH))
-    expected_contract = "9c32daecd4a15104c6f9ff60ce19c8f7e78707fb31d9fd9fcb55b1b8dfa3512b"
-    expected_postman = "146730776132c946bd559178ec1062c92674e9502c7d4ed27f5b6057493a01e8"
+    expected_contract = "c48c20d8bc71918699abb03cefe1e3c5075536a9d91d8aea8df4fc031891db21"
+    expected_postman = "d6ec2e1b0f9ae8043a1bc6b680939a01fb3bd6ced710dc054e7e755b61a722f0"
     assert state["required_digest"] == expected_contract
     assert state["middleware_digest"] == expected_contract
-    assert state["kong_digest"] == expected_contract
-    assert state["digest_match"] is True
+    assert state["digest_match"] is (CHAIN["kong"]["status"] == "PASS")
     assert state["recorded_postman_sha256"] == expected_postman
     assert state["actual_postman_sha256"] == expected_postman
     assert state["postman_match"] is True
+
+
+def test_certification_refuses_an_unpaired_kong_contract() -> None:
+    adapted = os.environ.get("CADDY_ADAPTED_JSON")
+    if not adapted:
+        pytest.skip("CADDY_ADAPTED_JSON is not set")
+    arguments = {"adapted_json": Path(adapted), "kong_upstream": "127.0.0.1:8000"}
+    if CHAIN["kong"]["status"] == "PASS":
+        assert certifier.certify(**arguments, allow_pending_pas162=False)["verdict"] == "PASS"
+        return
+    with pytest.raises(certifier.CertificationError, match="not final"):
+        certifier.certify(**arguments, allow_pending_pas162=False)
+    assert certifier.certify(**arguments, allow_pending_pas162=True)["verdict"] == "PENDING_PAS_162"
 
 
 def test_collection_has_no_embedded_secret_values() -> None:

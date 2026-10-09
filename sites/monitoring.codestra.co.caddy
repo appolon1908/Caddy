@@ -1,0 +1,33 @@
+# Monitoring alert receiver. Only the receiver API is public; dashboards,
+# metrics and every other path fail closed.
+monitoring.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	request_body {
+		max_size 256KB
+	}
+
+	@monitoring_receiver path /healthz /readyz /api/v1/alerts/* /api/v1/dashboard
+	handle @monitoring_receiver {
+		vars edge_route_id edge.monitoring_receiver
+		reverse_proxy {$CADDY_MONITORING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	handle {
+		respond 404
+	}
+
+	import access_log monitoring-codestra-co
+}

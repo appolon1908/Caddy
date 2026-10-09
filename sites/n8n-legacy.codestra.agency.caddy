@@ -1,0 +1,97 @@
+# Third n8n editor edge, retained by owner decision (2026-09-30) as a
+# private-network-only legacy staff surface. Only private source addresses
+# reach the editor; public clients get the health probe or 403. It must
+# never be opened to a public audience or pointed at another gate.
+n8n.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size {$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}
+	}
+	encode gzip
+
+	@health path /healthz /healthz/readiness
+	handle @health {
+		vars edge_route_id edge.n8n_legacy.health
+		reverse_proxy {$CADDY_N8N_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@staff_private remote_ip private_ranges
+	handle @staff_private {
+		vars edge_route_id edge.n8n_legacy.staff
+		reverse_proxy {$CADDY_N8N_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	handle {
+		respond "Staff identity network required" 403
+	}
+
+	import access_log n8n-codestra-agency
+}
+
+n8n-staging.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size {$CADDY_N8N_EDITOR_MAX_REQUEST_BODY}
+	}
+	encode gzip
+
+	@health path /healthz /healthz/readiness
+	handle @health {
+		vars edge_route_id edge.n8n_legacy.health
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	@staff_private remote_ip private_ranges
+	handle @staff_private {
+		vars edge_route_id edge.n8n_legacy.staff
+		reverse_proxy {$CADDY_N8N_STAGING_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	handle {
+		respond "Staff identity network required" 403
+	}
+
+	import access_log n8n-staging-codestra-agency
+}

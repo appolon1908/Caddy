@@ -1,0 +1,109 @@
+# Breero public API. Every accepted request enters through Kong's proxy
+# listener; Kong Admin is never used.
+api.breero.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	request_body {
+		max_size 10MB
+	}
+
+	route {
+		@health {
+			method GET
+			path /health /health/ready
+		}
+		handle @health {
+			vars edge_route_id edge.breero.health
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		@api path /api/v1 /api/v1/*
+		handle @api {
+			vars edge_route_id edge.breero.api
+			reverse_proxy {$CADDY_KONG_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-Host {host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up -X-User-ID
+				header_up -X-Username
+				header_up -X-Email
+				header_up -X-Roles
+				header_up -X-Scopes
+				header_up -X-Authenticated-UserID
+				header_up -X-Authenticated-User
+				header_up -X-Authenticated-Client
+				header_up -X-Authenticated-Subject
+				header_up -X-Authenticated-Tenant
+				header_up -X-Authenticated-Campaign
+				header_up -X-Authenticated-Role
+				header_up -X-Authenticated-Email
+				header_up -X-Codestra-Tenant
+				header_up -X-Codestra-Scopes
+				header_up -X-Codestra-User
+				header_up -X-Codestra-Role
+				header_up -X-Codestra-Gateway-Secret
+				header_up -X-Internal-Service
+				header_up -X-Admin
+				header_up -X-Consumer-ID
+				header_up -X-Consumer-Username
+				header_up -X-Consumer-Custom-ID
+				header_up -X-Credential-Identifier
+				header_up -X-Anonymous-Consumer
+				header_up -X-Codestra-Contract-Operation
+				header_up -X-Codestra-Expected-Azp
+				header_up -X-Codestra-Required-Scope
+				transport http {
+					dial_timeout 5s
+					response_header_timeout 30s
+				}
+			}
+		}
+
+		handle {
+			respond "Not Found" 404
+		}
+	}
+
+	import access_log api-breero
+}

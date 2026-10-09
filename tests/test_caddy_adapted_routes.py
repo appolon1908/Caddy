@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,42 @@ CI_ENVIRONMENT = {
     "CADDY_SUPERSET_UPSTREAM": "127.0.0.1:18088",
     "CADDY_OPENBAO_UPSTREAM": "127.0.0.1:18200",
     "CADDY_OPENBAO_ALLOWED_CIDRS": "192.0.2.0/24 198.51.100.0/24",
+    "CADDY_PUBLIC_BIND": "127.0.0.1",
+    "CADDY_PRIVATE_METRICS_BIND": "127.0.0.3",
+    "CADDY_PRIVATE_INGRESS_BIND": "127.0.0.2",
+    "CADDY_KLYROW_SOURCE_CIDRS": "192.0.2.4/32",
+    "CADDY_VICIDIAL_SOURCE_CIDRS": "192.0.2.2/32",
+    "CADDY_STAGING_EVENT_SOURCE_CIDRS": "198.51.100.7/32",
+    "CADDY_KEYCLOAK_UPSTREAM": "127.0.0.1:18103",
+    "CADDY_CRM_RESELLER_UPSTREAM": "127.0.0.1:18104",
+    "CADDY_CRM_UPSTREAM": "127.0.0.1:18105",
+    "CADDY_N8N_UPSTREAM": "127.0.0.1:18106",
+    "CADDY_N8N_STAGING_UPSTREAM": "127.0.0.1:18107",
+    "CADDY_STAGING_API_UPSTREAM": "127.0.0.1:18108",
+    "CADDY_STAGING_PORTAL_UPSTREAM": "127.0.0.1:18109",
+    "CADDY_STAGING_KEYCLOAK_UPSTREAM": "127.0.0.1:18110",
+    "CADDY_STAGING_ODOO_UPSTREAM": "127.0.0.1:18111",
+    "CADDY_MIDDLEWARE_CALLBACK_UPSTREAM": "127.0.0.1:18112",
+    "CADDY_AGENT_GATEWAY_UPSTREAM": "127.0.0.1:18113",
+    "CADDY_AGENT_UI_UPSTREAM": "127.0.0.1:18114",
+    "CADDY_MONITORING_UPSTREAM": "127.0.0.1:18115",
+    "CADDY_KLYROW_EVENTS_UPSTREAM": "127.0.0.1:18180",
 }
+_PKI: dict[str, str] = {}
+
+
+def ci_environment() -> dict[str, str]:
+    """CI values plus disposable private-listener certificates for --validate."""
+    if not _PKI:
+        if os.environ.get("CADDY_MIDDLEWARE_PKI_DIR") and os.environ.get("CADDY_KLYROW_PKI_DIR"):
+            _PKI.update({name: os.environ[name] for name in ("CADDY_MIDDLEWARE_PKI_DIR", "CADDY_KLYROW_PKI_DIR")})
+        else:
+            spec = importlib.util.spec_from_file_location("synthetic_private_pki", ROOT / "scripts" / "synthetic_private_pki.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            directory = Path(tempfile.mkdtemp(prefix="caddy-synthetic-pki-"))
+            _PKI.update({name: str(path) for name, path in module.generate(directory).items()})
+    return {**os.environ, **CI_ENVIRONMENT, **_PKI}
 
 
 def real_adapted_document() -> dict | None:
@@ -36,7 +72,7 @@ def real_adapted_document() -> dict | None:
         [binary, "adapt", "--config", str(ROOT / "Caddyfile"), "--adapter", "caddyfile", "--validate"],
         capture_output=True,
         text=True,
-        env={**os.environ, **CI_ENVIRONMENT},
+        env=ci_environment(),
         cwd=ROOT,
         check=True,
     )

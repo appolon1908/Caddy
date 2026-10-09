@@ -17,8 +17,8 @@ def require(condition, message):
 
 def validate(contract, site, runtime):
     require(contract['schema'] == 'kyyow.ingress.v1', 'schema mismatch')
-    require(contract['principalRepository'] == 'ingtrader21-spec/Caddy', 'ingress authority mismatch')
-    require(contract['identityRepository'] == 'ingtrader21-spec/Keycloak', 'identity authority mismatch')
+    require(contract['principalRepository'] == 'appolon1908/Caddy', 'ingress authority mismatch')
+    require(contract['identityRepository'] == 'appolon1908/Keycloak', 'identity authority mismatch')
     require(contract['activation'] == {
         'repositoryConfigurationOnly': True, 'dnsChangeAuthorized': False,
         'liveReloadAuthorized': False, 'productionCutoverAuthorized': False,
@@ -43,7 +43,7 @@ def validate(contract, site, runtime):
 def main():
     try:
         validate(json.loads((ROOT / 'config/kyyow-ingress.v1.json').read_text()),
-                 (ROOT / 'sites/kyyow.com.caddy').read_text(),
+                 (ROOT / 'sites-pending/kyyow.com.caddy').read_text(),
                  (ROOT / 'config/runtime-values.example').read_text())
     except (KeyError, ValueError, OSError) as error:
         raise SystemExit(f'KYYOW_INGRESS_CONTRACT=FAIL: {error}') from error

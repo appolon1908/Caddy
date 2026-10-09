@@ -6,6 +6,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+from caddy_site_source import read_site  # noqa: E402
 from mission5_desired_state import (  # noqa: E402
     Mission5ContractError,
     build_plan,
@@ -169,7 +170,8 @@ def test_validation_workflow_serializes_validation_runs() -> None:
 
 def test_exact_release_identity_is_required() -> None:
     workflow = (ROOT / ".github" / "workflows" / "production-readonly-canary-v2.yml").read_text(encoding="utf-8")
-    assert "scripts/config_digest.py" in workflow
+    # The canary binds the checkout to the configuration identity the image ships.
+    assert "scripts/stage_image_config.py --digest" in workflow
     assert "CADDY_CANARY_SOURCE_SHA" in workflow
     assert "CADDY_CANARY_CONFIG_SHA256" in workflow
     assert "CONFIG_SHA256" in workflow
@@ -177,8 +179,8 @@ def test_exact_release_identity_is_required() -> None:
 
 def test_m1_to_m4_contracts_remain_in_desired_state() -> None:
     caddyfile = (ROOT / "Caddyfile").read_text(encoding="utf-8")
-    api = (ROOT / "sites" / "api.codestra.co.caddy").read_text(encoding="utf-8")
-    assert "admin 127.0.0.1:2019" in caddyfile
+    api = read_site(ROOT / "sites" / "api.codestra.co.caddy")
+    assert "admin unix//run/caddy/admin.sock" in caddyfile
     assert "reverse_proxy {$CADDY_KONG_UPSTREAM}" in api
     assert "Authorization delete" in api
     assert (ROOT / "docs" / "mission4-observability-operational-control.md").exists()

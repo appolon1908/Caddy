@@ -55,7 +55,8 @@ def api_site(fallback):
         "api.codestra.co",
         respond(404, path=["/metrics", "/metrics/*", "/internal/*"]),
         proxy(KONG, method=["GET"], path_regexp={"name": "canonical_get", "pattern": "^/platform/v1/tenants$"}),
-        proxy(KONG, path=["/platform/v1*", "/v2/automation*"]),
+        respond(404, method=["POST"], path_regexp={"name": "contract_denied_post", "pattern": "^/v1/integrations/n8n/commands$"}),
+        proxy(KONG, method=["POST"], path_regexp={"name": "kong_owned_00", "pattern": r"^/platform/v1/campaign\-engine/plan$"}),
         proxy(REALTIME, path=["/ws/agent", "/healthz"]),
         fallback,
     )
@@ -73,7 +74,8 @@ def test_current_edge_shape_is_fully_classified_but_reports_the_fallback():
     assert labels == [
         "PRIVATE_OR_DENIED_404",
         "CANONICAL_CONTRACT",
-        "CANONICAL_KONG_MANAGED",
+        "CONTRACT_DENIED_404",
+        "CANONICAL_CONTRACT",
         "TRANSITIONAL_APPROVED",
         "UNKNOWN_ROUTE_FALLBACK",
     ]
@@ -102,10 +104,16 @@ def test_retired_fallback_answers_404_and_passes_pas177_mode(tmp_path):
     assert module.main(args + ["--require-no-fallback"]) == 1
 
 
-def test_kong_prefix_outside_the_contract_is_unclassified():
-    doc = document(site("api.codestra.co", proxy(KONG, path=["/platform/v1*", "/api/v9/shadow*"])))
-    _, summary = run(doc)
-    assert summary["UNCLASSIFIED_PUBLIC_ROUTES"] == 1
+def test_any_kong_prefix_fallback_is_unclassified():
+    for paths in (["/platform/v1*"], ["/api/v9/shadow*"], ["/v1/crm*"]):
+        _, summary = run(document(site("api.codestra.co", proxy(KONG, path=paths))))
+        assert summary["UNCLASSIFIED_PUBLIC_ROUTES"] == 1, paths
+
+
+def test_ambiguous_path_rejection_is_classified():
+    results, summary = run(document(site("api.codestra.co", respond(400, vars_regexp={"{http.request.uri.path}": {"pattern": "//"}}))))
+    assert [r.classification for r in results] == ["AMBIGUOUS_PATH_400"]
+    assert summary["UNCLASSIFIED_PUBLIC_ROUTES"] == 0
 
 
 def test_legacy_upstream_on_a_named_path_is_unclassified():

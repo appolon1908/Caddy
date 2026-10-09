@@ -32,34 +32,7 @@ graf.codestra.media {
 		}
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/graf-codestra-media-access.log {
-			roll_size 20MiB
-			roll_keep 5
-		}
-		format filter {
-			request>headers>Authorization delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>uri query {
-				delete access_token
-				delete code
-				delete id_token
-				delete session_state
-				delete state
-				delete token
-				delete apikey
-				delete api_key
-				delete refresh_token
-				delete client_secret
-				delete password
-				delete secret
-			}
-			resp_headers>Set-Cookie delete
-		}
-	}
+	import access_log graf-codestra-media
 }
 
 supe.codestra.media {
@@ -93,34 +66,7 @@ supe.codestra.media {
 		}
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/supe-codestra-media-access.log {
-			roll_size 20MiB
-			roll_keep 5
-		}
-		format filter {
-			request>headers>Authorization delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>uri query {
-				delete access_token
-				delete code
-				delete id_token
-				delete session_state
-				delete state
-				delete token
-				delete apikey
-				delete api_key
-				delete refresh_token
-				delete client_secret
-				delete password
-				delete secret
-			}
-			resp_headers>Set-Cookie delete
-		}
-	}
+	import access_log supe-codestra-media
 }
 
 bao.codestra.media {
@@ -162,34 +108,5 @@ bao.codestra.media {
 		respond "Forbidden" 403
 	}
 
-	log {
-		output file {$CADDY_LOG_DIR:/var/log/caddy}/bao-codestra-media-access.log {
-			roll_size 20MiB
-			roll_keep 10
-		}
-		format filter {
-			request>headers>Authorization delete
-			request>headers>Apikey delete
-			request>headers>X-Api-Key delete
-			request>headers>Proxy-Authorization delete
-			request>headers>Cookie delete
-			request>headers>X-Vault-Token delete
-			request>headers>X-Bao-Token delete
-			request>uri query {
-				delete access_token
-				delete code
-				delete id_token
-				delete session_state
-				delete state
-				delete token
-				delete apikey
-				delete api_key
-				delete refresh_token
-				delete client_secret
-				delete password
-				delete secret
-			}
-			resp_headers>Set-Cookie delete
-		}
-	}
+	import access_log bao-codestra-media
 }

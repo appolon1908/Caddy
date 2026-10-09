@@ -1,0 +1,42 @@
+crm.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	request_body {
+		max_size 25MB
+	}
+	encode gzip
+
+	@reseller path /reseller /reseller/*
+	handle @reseller {
+		vars edge_route_id edge.crm.reseller
+		uri strip_prefix /reseller
+		reverse_proxy {$CADDY_CRM_RESELLER_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	handle {
+		vars edge_route_id edge.crm
+		reverse_proxy {$CADDY_CRM_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	import access_log crm-codestra-agency
+}

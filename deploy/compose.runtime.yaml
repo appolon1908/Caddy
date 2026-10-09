@@ -1,0 +1,112 @@
+name: codestra-caddy-edge
+
+# Canonical production runtime: one immutable, signed, non-root Caddy image on
+# the host network. A release replaces the image digest; rollback restores the
+# previous digest (config/release-baseline.v1.json, scripts/verify-rollback-baseline.sh).
+x-codestra-runtime-authority:
+  schema: codestra.caddy-compose.v1
+  canonical_file: deploy/compose.runtime.yaml
+  service: caddy
+  configuration_root: /etc/caddy
+
+services:
+  caddy:
+    container_name: codestra-caddy
+    image: "ghcr.io/appolon1908-hue/codestra-caddy@sha256:${CADDY_IMAGE_SHA256:?set the approved 64-character image digest}"
+    read_only: true
+    user: "65532:65532"
+    init: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      io.codestra.caddy.source.sha: "${CADDY_REVIEWED_SHA:?set the protected production SHA}"
+      io.codestra.caddy.image.digest: "sha256:${CADDY_IMAGE_SHA256:?set the approved image digest}"
+      io.codestra.caddy.config.sha256: "${CADDY_CONFIG_SHA256:?set the reviewed configuration digest}"
+      io.codestra.caddy.release.id: "${CADDY_RELEASE_ID:?set the immutable release identifier}"
+    environment:
+      XDG_DATA_HOME: /data
+      XDG_CONFIG_HOME: /config
+      CADDY_RELEASE_SHA: "${CADDY_REVIEWED_SHA:?set the protected production SHA}"
+      CADDY_CONFIGURATION_SHA256: "${CADDY_CONFIG_SHA256:?set the reviewed configuration digest}"
+      CADDY_AGENT_GATEWAY_UPSTREAM: "${CADDY_AGENT_GATEWAY_UPSTREAM:?set CADDY_AGENT_GATEWAY_UPSTREAM}"
+      CADDY_AGENT_UI_UPSTREAM: "${CADDY_AGENT_UI_UPSTREAM:?set CADDY_AGENT_UI_UPSTREAM}"
+      CADDY_CRM_RESELLER_UPSTREAM: "${CADDY_CRM_RESELLER_UPSTREAM:?set CADDY_CRM_RESELLER_UPSTREAM}"
+      CADDY_CRM_UPSTREAM: "${CADDY_CRM_UPSTREAM:?set CADDY_CRM_UPSTREAM}"
+      CADDY_EDITOR_ADMIN_CIDRS: "${CADDY_EDITOR_ADMIN_CIDRS:?set CADDY_EDITOR_ADMIN_CIDRS}"
+      CADDY_GRAFANA_UPSTREAM: "${CADDY_GRAFANA_UPSTREAM:?set CADDY_GRAFANA_UPSTREAM}"
+      CADDY_KEYCLOAK_UPSTREAM: "${CADDY_KEYCLOAK_UPSTREAM:?set CADDY_KEYCLOAK_UPSTREAM}"
+      CADDY_KLYROW_EVENTS_UPSTREAM: "${CADDY_KLYROW_EVENTS_UPSTREAM:?set CADDY_KLYROW_EVENTS_UPSTREAM}"
+      CADDY_KLYROW_SOURCE_CIDRS: "${CADDY_KLYROW_SOURCE_CIDRS:?set CADDY_KLYROW_SOURCE_CIDRS}"
+      CADDY_KONG_UPSTREAM: "${CADDY_KONG_UPSTREAM:?set CADDY_KONG_UPSTREAM}"
+      CADDY_MIDDLEWARE_CALLBACK_UPSTREAM: "${CADDY_MIDDLEWARE_CALLBACK_UPSTREAM:?set CADDY_MIDDLEWARE_CALLBACK_UPSTREAM}"
+      CADDY_MONITORING_UPSTREAM: "${CADDY_MONITORING_UPSTREAM:?set CADDY_MONITORING_UPSTREAM}"
+      CADDY_N8N_EDITOR_HOST: "${CADDY_N8N_EDITOR_HOST:?set CADDY_N8N_EDITOR_HOST}"
+      CADDY_N8N_EDITOR_MAX_REQUEST_BODY: "${CADDY_N8N_EDITOR_MAX_REQUEST_BODY:?set CADDY_N8N_EDITOR_MAX_REQUEST_BODY}"
+      CADDY_N8N_OAUTH2_PROXY_UPSTREAM: "${CADDY_N8N_OAUTH2_PROXY_UPSTREAM:?set CADDY_N8N_OAUTH2_PROXY_UPSTREAM}"
+      CADDY_N8N_STAGING_UPSTREAM: "${CADDY_N8N_STAGING_UPSTREAM:?set CADDY_N8N_STAGING_UPSTREAM}"
+      CADDY_N8N_UPSTREAM: "${CADDY_N8N_UPSTREAM:?set CADDY_N8N_UPSTREAM}"
+      CADDY_OPENBAO_ALLOWED_CIDRS: "${CADDY_OPENBAO_ALLOWED_CIDRS:?set CADDY_OPENBAO_ALLOWED_CIDRS}"
+      CADDY_OPENBAO_UPSTREAM: "${CADDY_OPENBAO_UPSTREAM:?set CADDY_OPENBAO_UPSTREAM}"
+      CADDY_PRIVATE_INGRESS_BIND: "${CADDY_PRIVATE_INGRESS_BIND:?set CADDY_PRIVATE_INGRESS_BIND}"
+      CADDY_PRIVATE_METRICS_BIND: "${CADDY_PRIVATE_METRICS_BIND:?set CADDY_PRIVATE_METRICS_BIND}"
+      CADDY_PUBLIC_BIND: "${CADDY_PUBLIC_BIND:?set CADDY_PUBLIC_BIND}"
+      CADDY_REALTIME_UPSTREAM: "${CADDY_REALTIME_UPSTREAM:?set CADDY_REALTIME_UPSTREAM}"
+      CADDY_STAGING_API_UPSTREAM: "${CADDY_STAGING_API_UPSTREAM:?set CADDY_STAGING_API_UPSTREAM}"
+      CADDY_STAGING_EVENT_SOURCE_CIDRS: "${CADDY_STAGING_EVENT_SOURCE_CIDRS:?set CADDY_STAGING_EVENT_SOURCE_CIDRS}"
+      CADDY_STAGING_KEYCLOAK_UPSTREAM: "${CADDY_STAGING_KEYCLOAK_UPSTREAM:?set CADDY_STAGING_KEYCLOAK_UPSTREAM}"
+      CADDY_STAGING_ODOO_UPSTREAM: "${CADDY_STAGING_ODOO_UPSTREAM:?set CADDY_STAGING_ODOO_UPSTREAM}"
+      CADDY_STAGING_PORTAL_UPSTREAM: "${CADDY_STAGING_PORTAL_UPSTREAM:?set CADDY_STAGING_PORTAL_UPSTREAM}"
+      CADDY_SUPERSET_UPSTREAM: "${CADDY_SUPERSET_UPSTREAM:?set CADDY_SUPERSET_UPSTREAM}"
+      CADDY_VICIDIAL_SOURCE_CIDRS: "${CADDY_VICIDIAL_SOURCE_CIDRS:?set CADDY_VICIDIAL_SOURCE_CIDRS}"
+    tmpfs:
+      - /var/log/caddy:uid=65532,gid=65532,mode=0700
+      - /tmp:uid=65532,gid=65532,mode=0700
+    volumes:
+      # The admin socket appears at the same path on the host so host-side
+      # read-only validation and control tooling reach it; nothing else does.
+      - type: bind
+        source: /run/caddy
+        target: /run/caddy
+        bind:
+          create_host_path: false
+      # ACME accounts and certificates persist across releases and rollbacks.
+      - type: bind
+        source: "${CADDY_DATA_DIR:-/var/lib/codestra/caddy/data}"
+        target: /data
+      - type: bind
+        source: "${CADDY_CONFIG_DIR:-/var/lib/codestra/caddy/runtime-config}"
+        target: /config
+      - type: bind
+        source: /etc/caddy/private/klyrow-events
+        target: /etc/caddy/private/klyrow-events
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /etc/codestra/pki/middleware-private-ingress
+        target: /etc/codestra/pki/middleware-private-ingress
+        read_only: true
+        bind:
+          create_host_path: false
+    network_mode: host
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "/usr/bin/caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 20s
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      driver: local
+      options:
+        max-size: 20m
+        max-file: "5"

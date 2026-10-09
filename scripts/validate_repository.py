@@ -9,6 +9,7 @@ from mission5_desired_state import (
     build_plan, classify_drift, configuration_identity, desired_state_paths,
     desired_state_material, plan_outcome, promotion_allowed, validate_plan,
 )
+from caddy_site_source import read_site
 from caddy_kong_contract import (
     validate_exact_kong_routes,
     validate_identity_header_boundary,
@@ -66,18 +67,18 @@ for path in (
 
 README = README_PATH.read_text(encoding="utf-8")
 SITE = SITE_PATH.read_text(encoding="utf-8")
-N8N_SITE = N8N_SITE_PATH.read_text(encoding="utf-8")
+N8N_SITE = read_site(N8N_SITE_PATH)
 CADDYFILE = ROOT_CADDYFILE.read_text(encoding="utf-8")
 CONTRACT = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 N8N_CONTRACT = json.loads(N8N_CONTRACT_PATH.read_text(encoding="utf-8"))
 RUNTIME = RUNTIME_EXAMPLE.read_text(encoding="utf-8")
 
 required_repositories = (
-    "ingtrader21-spec/Caddy",
-    "ingtrader21-spec/Kong",
-    "ingtrader21-spec/Keycloak",
-    "ingtrader21-spec/Middleware-",
-    "appolon1908-hue/codestra-production-platform",
+    "appolon1908/Caddy",
+    "appolon1908/Kong",
+    "appolon1908/Keycloak",
+    "appolon1908/Middleware-",
+    "appolon1908/codestra-production-platform",
 )
 for value in required_repositories:
     if value not in README:
@@ -85,11 +86,11 @@ for value in required_repositories:
 
 if CONTRACT.get("schema") != "codestra.caddy-kong-edge.v1":
     raise SystemExit("CADDY_AUTHORITY_ERROR=unsupported_contract_schema")
-if CONTRACT.get("principalRepository") != "ingtrader21-spec/Caddy":
+if CONTRACT.get("principalRepository") != "appolon1908/Caddy":
     raise SystemExit("CADDY_AUTHORITY_ERROR=caddy_not_principal")
-if CONTRACT.get("gatewayRepository") != "ingtrader21-spec/Kong":
+if CONTRACT.get("gatewayRepository") != "appolon1908/Kong" or CONTRACT.get("gatewayRepositoryId") != 1347790742:
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_gateway_principal")
-if CONTRACT.get("referenceRepository") != "appolon1908-hue/codestra-production-platform":
+if CONTRACT.get("referenceRepository") != "appolon1908/codestra-production-platform":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_reference_repository")
 if CONTRACT.get("canonicalHost") != "api.codestra.co":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_canonical_host")
@@ -138,7 +139,9 @@ if "{$CADDY_KONG_UPSTREAM}" not in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=kong_handoff_missing")
 if "header_up Host {host}" not in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=kong_host_preservation_missing")
-if "Authorization delete" not in SITE:
+if "import access_log api-codestra-co" not in SITE or "request>headers>Authorization delete" not in (
+    ROOT / "snippets" / "access_log.caddy"
+).read_text(encoding="utf-8"):
     raise SystemExit("CADDY_AUTHORITY_ERROR=authorization_log_redaction_missing")
 if "header_up Authorization" in SITE or "header_up -Authorization" in SITE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=authorization_forwarding_modified")
@@ -172,14 +175,12 @@ for forbidden_target in (
     if forbidden_target in SITE:
         raise SystemExit(f"CADDY_AUTHORITY_ERROR=direct_middleware_target:{forbidden_target}")
 
-managed_paths = CONTRACT.get("kongManagedPathPrefixes")
-if not isinstance(managed_paths, list) or not managed_paths:
-    raise SystemExit("CADDY_AUTHORITY_ERROR=missing_kong_managed_paths")
-for path_prefix in managed_paths:
-    if not isinstance(path_prefix, str) or not path_prefix.startswith("/"):
-        raise SystemExit("CADDY_AUTHORITY_ERROR=invalid_kong_path")
+if "kongManagedPathPrefixes" in CONTRACT:
+    raise SystemExit("CADDY_AUTHORITY_ERROR=prefix_fallback_forbidden")
+if not CONTRACT.get("kongOwnedRoutes"):
+    raise SystemExit("CADDY_AUTHORITY_ERROR=missing_kong_owned_routes")
 try:
-    validate_exact_kong_routes(SITE, managed_paths)
+    validate_exact_kong_routes(SITE, CONTRACT)
 except ValueError as exc:
     raise SystemExit(f"CADDY_AUTHORITY_ERROR={exc}") from exc
 
@@ -203,9 +204,9 @@ if N8N_CONTRACT.get("contract_id") != "codestra.n8n-community-editor-edge":
     raise SystemExit("CADDY_AUTHORITY_ERROR=wrong_n8n_editor_contract")
 expected_n8n_contract = {
     "status": "PREPARED_NOT_APPLIED",
-    "principal_repository": "ingtrader21-spec/Caddy",
-    "runtime_repository": "ingtrader21-spec/N8N",
-    "identity_repository": "ingtrader21-spec/Keycloak",
+    "principal_repository": "appolon1908/Caddy",
+    "runtime_repository": "appolon1908/N8N",
+    "identity_repository": "appolon1908/Keycloak",
     "identity_provider": "Keycloak",
     "authentication_gateway": "oauth2-proxy",
     "issuer": "https://auth.codestra.co/realms/codestra",
@@ -266,7 +267,7 @@ for env_name in (
 if "CADDY_N8N_EDITOR_MAX_REQUEST_BODY=16777216" not in RUNTIME:
     raise SystemExit("CADDY_AUTHORITY_ERROR=n8n_editor_body_limit_example_drift")
 
-if "admin 127.0.0.1:2019" not in CADDYFILE:
+if "admin unix//run/caddy/admin.sock" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=admin_api_not_private")
 if "import snippets/*.caddy" not in CADDYFILE or "import sites/*.caddy" not in CADDYFILE:
     raise SystemExit("CADDY_AUTHORITY_ERROR=canonical_imports_missing")
@@ -279,7 +280,7 @@ m4 = {name: path.read_text(encoding="utf-8") for name, path in MISSION4_CONTRACT
 m5 = {name: path.read_text(encoding="utf-8") for name, path in MISSION5_CONTRACTS.items()}
 if "records Caddy request UUIDs" not in m4["correlation"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=correlation_implementation_status_missing")
-if "loopback Admin API" not in m4["metrics"]:
+if "private Admin API socket" not in m4["metrics"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=metrics_implementation_status_missing")
 if "Prometheus" not in m4["monitoring"]:
     raise SystemExit("CADDY_AUTHORITY_ERROR=monitoring_boundary_missing")
@@ -400,10 +401,10 @@ for path in ROOT.rglob("*"):
             raise SystemExit(f"CADDY_AUTHORITY_ERROR=possible_secret:{path.relative_to(ROOT)}")
 
 print("CADDY_REPOSITORY_AUTHORITY=PASS")
-print("CADDY_PRINCIPAL=ingtrader21-spec/Caddy")
+print("CADDY_PRINCIPAL=appolon1908/Caddy")
 print("CADDY_TO_KONG_CONTRACT=PASS")
 print("KONG_ROUTE_CONTRACT_BIDIRECTIONAL=PASS")
-print("KONG_PRINCIPAL=ingtrader21-spec/Kong")
+print("KONG_PRINCIPAL=appolon1908/Kong")
 print("N8N_COMMUNITY_EDITOR_EDGE=PREPARED_NOT_APPLIED")
 print("N8N_DIRECT_PUBLIC_UPSTREAM=DENIED")
 print("N8N_EDITOR_BODY_LIMIT=RUNTIME_ALIGNED")

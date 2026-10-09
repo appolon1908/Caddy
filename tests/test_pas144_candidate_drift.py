@@ -149,3 +149,19 @@ def test_control_service_runtime_inventory(tmp_path: Path):
     )
     assert service.runtime_routes()["paths"] == ["/v2/automation/*"]
     assert service.runtime_upstreams()["upstreams"] == ["127.0.0.1:8000"]
+
+
+def test_candidate_builder_adapts_without_runtime_validation_side_effects(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("CADDY_BIN", raising=False)
+    caddyfile = tmp_path / "Caddyfile"
+    caddyfile.write_text("example.invalid { respond 200 }\n")
+    output = tmp_path / "candidate.json"
+    observed = {}
+
+    def runner(args, **_kwargs):
+        observed["args"] = list(args)
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout=json.dumps({"apps": {}}), stderr="")
+
+    CandidateBuilder(caddyfile=caddyfile, output=output, runner=runner).build()
+    assert observed["args"][:2] == ["caddy", "adapt"]
+    assert "--validate" not in observed["args"]

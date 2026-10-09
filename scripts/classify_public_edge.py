@@ -122,17 +122,12 @@ def load_authorities() -> dict[str, Any]:
                 if path.endswith("*"):
                     denied.add(path.rstrip("*").rstrip("/") + "/*")
     return {
-        "kong_prefixes": tuple(kong["kongManagedPathPrefixes"]),
         "transitional_paths": frozenset(kong["transitionalPaths"]),
         "denied_paths": frozenset(denied),
         "editor_host": kong["editorHost"]["host"],
         "observability": {r["host"]: r["upstreamEnvironmentVariable"] for r in observability["publicRoutes"]},
         "kyyow": {host: spec["upstream"] for host, spec in kyyow["publicHosts"].items()},
     }
-
-
-def _kong_managed(pattern: str, prefixes: Iterable[str]) -> bool:
-    return any(pattern in (prefix, prefix + "*") for prefix in prefixes)
 
 
 def _classify_api(terminal: Terminal, env: Mapping[str, str], auth: Mapping[str, Any]) -> tuple[str, str]:
@@ -142,11 +137,11 @@ def _classify_api(terminal: Terminal, env: Mapping[str, str], auth: Mapping[str,
     if terminal.status == 404 and not terminal.paths and not terminal.path_regexp:
         # The PAS-177 target state of edge.unknown-fallback.
         return "UNKNOWN_DENIED_404", "public-edge-registry.edge.unknown-fallback.target_state"
-    if target == "CADDY_KONG_UPSTREAM":
-        if terminal.path_regexp and terminal.methods:
-            return "CANONICAL_CONTRACT", "middleware-public-api-route-contract"
-        if terminal.paths and all(_kong_managed(p, auth["kong_prefixes"]) for p in terminal.paths):
-            return "CANONICAL_KONG_MANAGED", "caddy-kong-contract.kongManagedPathPrefixes"
+    if terminal.status == 404 and terminal.path_regexp and terminal.methods:
+        return "CONTRACT_DENIED_404", "middleware-public-api-route-contract.denied+private_only"
+    if target == "CADDY_KONG_UPSTREAM" and terminal.path_regexp and terminal.methods:
+        # validate_exact_kong_routes binds every such matcher to the contract or Kong's own routes.
+        return "CANONICAL_CONTRACT", "middleware-public-api-route-contract+kong-owned-edge-routes"
     if target == "CADDY_REALTIME_UPSTREAM" and terminal.paths and set(terminal.paths) <= auth["transitional_paths"]:
         return "TRANSITIONAL_APPROVED", "caddy-kong-contract.transitionalPaths"
     if target == "CADDY_LEGACY_API_UPSTREAM" and not terminal.paths and not terminal.path_regexp:
@@ -166,6 +161,10 @@ def classify(
         if terminal.hosts is not None and not terminal.hosts:
             # Ancestor host matchers are disjoint; Caddy can never select it.
             results.append(Classified(terminal, "-", "UNREACHABLE", "host-intersection-empty"))
+            continue
+        if terminal.status == 400 and terminal.upstream is None:
+            # public_boundary: a path that matcher cleaning would change never leaves the edge.
+            results.append(Classified(terminal, "*", "AMBIGUOUS_PATH_400", "snippets/public_boundary"))
             continue
         for host in sorted(terminal.hosts or {"*"}):
             target = env.get(terminal.upstream or "")

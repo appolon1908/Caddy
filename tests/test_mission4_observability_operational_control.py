@@ -27,17 +27,18 @@ def read(path: str) -> str:
 
 
 def test_structured_logging_and_sensitive_redaction_are_configured() -> None:
+    snippet = read("snippets/access_log.caddy")
+    assert "log {" in snippet and "output file" in snippet and "format filter" in snippet and "wrap json" in snippet
+    assert all(directive in snippet for directive in SENSITIVE_LOG_DIRECTIVES)
+    assert all(directive in snippet for directive in SENSITIVE_QUERY_DIRECTIVES)
     for site_path in SITES:
         source = site_path.read_text(encoding="utf-8")
-        assert "log {" in source
-        assert "output file" in source
-        assert "format filter" in source
-        assert all(directive in source for directive in SENSITIVE_LOG_DIRECTIVES)
-        assert all(directive in source for directive in SENSITIVE_QUERY_DIRECTIVES)
+        assert "\tlog {" not in source, site_path.name
+        assert source.count("import access_log ") == source.count("import security_headers"), site_path.name
 
 
 def test_authorization_and_secret_material_are_not_persisted() -> None:
-    combined = "\n".join(path.read_text(encoding="utf-8") for path in SITES)
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in SITES) + read("snippets/access_log.caddy")
     assert "request>headers>Authorization delete" in combined
     assert "request>headers>Proxy-Authorization delete" in combined
     assert "request>headers>Cookie delete" in combined
@@ -56,7 +57,7 @@ def test_correlation_contract_does_not_claim_unimplemented_runtime_features() ->
 
 def test_metrics_contract_rejects_high_cardinality_designs_by_policy() -> None:
     contract = read("docs/metrics-contract-v1.md")
-    assert "loopback Admin API" in contract
+    assert "private Admin API socket" in contract
     assert "user ID" in contract
     assert "correlation ID" in contract
     assert "unbounded query values" in contract
@@ -65,15 +66,15 @@ def test_metrics_contract_rejects_high_cardinality_designs_by_policy() -> None:
 def test_health_and_readiness_contract_is_present() -> None:
     routes = read("config/caddy-kong-contract.v1.json")
     api = read("sites/api.codestra.co.caddy")
-    assert "/api/v1/health" in routes
     assert "/healthz" in routes
     assert "/readyz" in api
     assert "health/readiness" in read("docs/mission4-observability-operational-control.md")
 
 
-def test_admin_api_is_loopback_only() -> None:
+def test_admin_api_is_private_socket_only() -> None:
     caddyfile = read("Caddyfile")
-    assert "admin 127.0.0.1:2019" in caddyfile
+    assert "admin unix//run/caddy/admin.sock" in caddyfile
+    assert "admin 127.0.0.1:2019" not in caddyfile
     assert "admin :2019" not in caddyfile
     assert "admin 0.0.0.0:2019" not in caddyfile
 

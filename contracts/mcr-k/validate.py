@@ -16,7 +16,8 @@ PRESERVE = ['authorization', 'idempotency-key', 'x-correlation-id', 'traceparent
 STRIP = ['x-user-id', 'x-username', 'x-email', 'x-roles', 'x-scopes',
          'x-authenticated-*', 'x-codestra-tenant', 'x-codestra-scopes',
          'x-codestra-gateway-secret', 'x-internal-service', 'x-admin',
-         'x-consumer-*', 'x-credential-identifier', 'x-anonymous-consumer']
+         'x-consumer-*', 'x-credential-identifier', 'x-anonymous-consumer',
+         'x-codestra-contract-operation', 'x-codestra-expected-azp', 'x-codestra-required-scope']
 FORWARDED = ['forwarded', 'x-forwarded-*', 'x-real-ip']
 REDACT = ['authorization', 'proxy-authorization', 'cookie', 'set-cookie',
           'access_token', 'refresh_token', 'id_token', 'password', 'secret',

@@ -1,0 +1,697 @@
+{
+  "schema": "codestra.caddy.kong-route-ingress-decisions.v1",
+  "kongRepository": "appolon1908/Kong",
+  "kongRepositoryId": 1347790742,
+  "kongSourceSha": "d2aa66104c53353bd935573198d6afa9e308deed",
+  "kongInventories": [
+    "config/kong-production-route-inventory.v2.json",
+    "config/kong-mcr-routes.v1.json",
+    "deploy/kong/control-plane.yml",
+    "config/kong-intake-routes.json"
+  ],
+  "rule": "Every Kong public route has an explicit Caddy ingress decision; denials fail closed with 404 until a reviewed route contract exists.",
+  "decisions": [
+    {
+      "route": "breero-production-api-route",
+      "decision": "FORWARD_TO_KONG",
+      "reason": "the Breero API reaches Kong; its health probe is read-only, so non-GET /health is denied at the edge",
+      "probes": [
+        {
+          "host": "api.breero.com",
+          "method": "GET",
+          "path": "/health",
+          "expect": "kong"
+        },
+        {
+          "host": "api.breero.com",
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "expect": "kong"
+        },
+        {
+          "host": "api.breero.com",
+          "method": "POST",
+          "path": "/health",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "codestra-callback-control",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/control/callbacks",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-callback-read",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/callbacks",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-campaign-policy-check",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/automation/policy-check",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-campaign-result-submit",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/integrations/n8n/results",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-communication-canonical-read",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/messages",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-communication-canonical-write",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/control/messages",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/results/messages",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-email-standby-route",
+      "decision": "NOT_AN_EDGE_HOST",
+      "reason": "private Kong standby host; no Caddy site serves kong-standby.internal.codestra.agency",
+      "probes": [
+        {
+          "host": "kong-standby.internal.codestra.agency",
+          "method": "POST",
+          "path": "/v1/email",
+          "expect": "no_site"
+        }
+      ]
+    },
+    {
+      "route": "codestra-email-webhook-standby-route",
+      "decision": "NOT_AN_EDGE_HOST",
+      "reason": "private Kong standby host; no Caddy site serves kong-standby.internal.codestra.agency",
+      "probes": [
+        {
+          "host": "kong-standby.internal.codestra.agency",
+          "method": "POST",
+          "path": "/v1/webhooks/email",
+          "expect": "no_site"
+        }
+      ]
+    },
+    {
+      "route": "codestra-intake-leads",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/v1/intake/leads",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/intake/leads",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-intake-survey-responses",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/v1/intake/surveys/responses",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/intake/surveys/responses",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "codestra-mail-api",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "Kong marks it activation-blocked: no authentication or request-size limit on an administrative path",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/mail",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/admin/mail",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "codestra-n8n-command-read",
+      "decision": "DENY_MIDDLEWARE_CONTRACT",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/integrations/n8n/operations",
+          "expect": 404
+        }
+      ],
+      "reason": "the Middleware public route contract classifies this operation as denied, so Caddy answers 404 and never forwards it"
+    },
+    {
+      "route": "codestra-n8n-command-submit",
+      "decision": "DENY_MIDDLEWARE_CONTRACT",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/v1/integrations/n8n/commands",
+          "expect": 404
+        }
+      ],
+      "reason": "the Middleware public route contract classifies this operation as denied, so Caddy answers 404 and never forwards it"
+    },
+    {
+      "route": "codestra-sms-standby-route",
+      "decision": "NOT_AN_EDGE_HOST",
+      "reason": "private Kong standby host; no Caddy site serves kong-standby.internal.codestra.agency",
+      "probes": [
+        {
+          "host": "kong-standby.internal.codestra.agency",
+          "method": "POST",
+          "path": "/v1/sms",
+          "expect": "no_site"
+        }
+      ]
+    },
+    {
+      "route": "codestra-sms-webhook-standby-route",
+      "decision": "NOT_AN_EDGE_HOST",
+      "reason": "private Kong standby host; no Caddy site serves kong-standby.internal.codestra.agency",
+      "probes": [
+        {
+          "host": "kong-standby.internal.codestra.agency",
+          "method": "POST",
+          "path": "/v1/webhooks/sms",
+          "expect": "no_site"
+        }
+      ]
+    },
+    {
+      "route": "codestra-token-validation-certification",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "certification-only identity route with no public route contract",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/identity-token-certification",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/v1/identity-token-certification",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "codestra-website-api-route",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "Kong's fail-closed migration to Middleware 8095 has no public route contract yet",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/api/v1/demo-requests",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/api/v1/localization/country",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "communication-message-read",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/messages/M-TEST-SYN",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/api/v1/messages/M-TEST-SYN",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-control",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "PATCH",
+          "path": "/api/v1/control/campaigns/C-TEST-SYN",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "PATCH",
+          "path": "/api/v1/control/campaigns/C-TEST-SYN",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-events",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/events/delivery",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/api/v1/events/delivery",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-health",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/health",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/api/v1/health",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-health-write",
+      "decision": "DENY_METHOD",
+      "reason": "Kong's health route is GET only",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/health",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "control-plane-reconciliation",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/api/v1/reconciliation",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/api/v1/reconciliation",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-results",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/api/v1/results",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/api/v1/results",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "control-plane-system-admin",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/admin/system",
+          "expect": "kong"
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/v1/admin/system",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "crm-route",
+      "decision": "DENY_KONG_DEPRECATED",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/crm",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/crm",
+          "expect": 404
+        }
+      ],
+      "reason": "Kong classifies this route LEGACY/DEPRECATE at d2aa661; Caddy answers 404 and does not forward it"
+    },
+    {
+      "route": "email-route",
+      "decision": "DENY_KONG_DEPRECATED",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/email",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/email",
+          "expect": 404
+        }
+      ],
+      "reason": "Kong classifies this route LEGACY/DEPRECATE at d2aa661; Caddy answers 404 and does not forward it"
+    },
+    {
+      "route": "gateway-test-route",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "Kong marks it activation-blocked: a test upstream with no owner",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "GET",
+          "path": "/v1/test",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "mcr-delivery-events",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/platform/v1/delivery-events",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-eligible-leads",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/platform/v1/campaigns/TEST-SYN-CAMPAIGN/eligible-leads",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-execute",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/platform/v1/campaign-engine/execute",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-journey",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/platform/v1/leads/TEST-SYN-LEAD/journey",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-next-action",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/platform/v1/leads/TEST-SYN-LEAD/next-action",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-plan",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/platform/v1/campaign-engine/plan",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-status",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/platform/v1/campaign-engine/status",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "mcr-suppressions",
+      "decision": "FORWARD_TO_KONG",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/platform/v1/suppressions",
+          "expect": "kong"
+        }
+      ]
+    },
+    {
+      "route": "sms-dlr-telnexa-route",
+      "decision": "DENY_KONG_DEPRECATED",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/v1/sms/dlr/telnexa",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/sms/dlr/telnexa",
+          "expect": 404
+        }
+      ],
+      "reason": "Kong classifies this route LEGACY/DEPRECATE at d2aa661; Caddy answers 404 and does not forward it"
+    },
+    {
+      "route": "sms-route",
+      "decision": "DENY_KONG_DEPRECATED",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "GET",
+          "path": "/v1/sms",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/sms",
+          "expect": 404
+        }
+      ],
+      "reason": "Kong classifies this route LEGACY/DEPRECATE at d2aa661; Caddy answers 404 and does not forward it"
+    },
+    {
+      "route": "webhooks-route",
+      "decision": "DENY_KONG_DEPRECATED",
+      "probes": [
+        {
+          "host": "api.codestra.co",
+          "method": "POST",
+          "path": "/v1/webhooks",
+          "expect": 404
+        },
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/webhooks",
+          "expect": 404
+        }
+      ],
+      "reason": "Kong classifies this route LEGACY/DEPRECATE at d2aa661; Caddy answers 404 and does not forward it"
+    },
+    {
+      "route": "website-form-demo-request",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "website form route with no public route contract; no edge lineage has exposed it",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/forms/demo-request",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "website-form-electronic-billing",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "website form route with no public route contract; no edge lineage has exposed it",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/forms/electronic-billing-application",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "website-form-electronic-billing-registration",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "website form route with no public route contract; no edge lineage has exposed it",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/forms/electronic-billing-registration",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "website-form-pricing-request",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "website form route with no public route contract; no edge lineage has exposed it",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/forms/pricing-request",
+          "expect": 404
+        }
+      ]
+    },
+    {
+      "route": "website-form-sales-contact",
+      "decision": "DENY_PENDING_CONTRACT",
+      "reason": "website form route with no public route contract; no edge lineage has exposed it",
+      "probes": [
+        {
+          "host": "api.codestra.agency",
+          "method": "POST",
+          "path": "/v1/forms/sales-contact",
+          "expect": 404
+        }
+      ]
+    }
+  ]
+}

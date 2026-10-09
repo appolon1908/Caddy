@@ -1,0 +1,70 @@
+{
+  "schema": "codestra.caddy-header-policy.v1",
+  "rule": "The public boundary deletes every strip header on every host before any route runs; every Kong handoff deletes strip.identity again. Preserved headers pass unchanged. Kong mints trusted identity only after verification.",
+  "preserve": [
+    {"header": "Authorization", "reason": "Kong verifies the bearer token; Middleware re-authorizes"},
+    {"header": "Idempotency-Key", "reason": "Middleware command idempotency"},
+    {"header": "X-Correlation-ID", "reason": "end-to-end correlation"},
+    {"header": "traceparent", "reason": "W3C trace context"},
+    {"header": "tracestate", "reason": "W3C trace context"},
+    {"header": "Content-Type", "reason": "request semantics"},
+    {"header": "X-Tenant-ID", "reason": "client tenant selector that Kong requires on every MCR route (contracts/mcr-k/edge.v1.json); Middleware authorizes it against the verified token, so it is never trusted identity"},
+    {"header": "X-Causation-ID", "reason": "Kong MCR causation chain"},
+    {"header": "X-Codestra-Event-ID", "reason": "signed delivery-event triple verified by Kong"},
+    {"header": "X-Codestra-Timestamp", "reason": "signed delivery-event triple verified by Kong"},
+    {"header": "X-Codestra-Signature", "reason": "signed delivery-event triple verified by Kong"}
+  ],
+  "strip": {
+    "identity": [
+      "X-User-ID",
+      "X-Username",
+      "X-Email",
+      "X-Roles",
+      "X-Scopes",
+      "X-Authenticated-UserID",
+      "X-Authenticated-User",
+      "X-Authenticated-Client",
+      "X-Authenticated-Subject",
+      "X-Authenticated-Tenant",
+      "X-Authenticated-Campaign",
+      "X-Authenticated-Role",
+      "X-Authenticated-Email",
+      "X-Codestra-Tenant",
+      "X-Codestra-Scopes",
+      "X-Codestra-User",
+      "X-Codestra-Role",
+      "X-Codestra-Gateway-Secret",
+      "X-Internal-Service",
+      "X-Admin",
+      "X-Consumer-ID",
+      "X-Consumer-Username",
+      "X-Consumer-Custom-ID",
+      "X-Credential-Identifier",
+      "X-Anonymous-Consumer",
+      "X-Codestra-Contract-Operation",
+      "X-Codestra-Expected-Azp",
+      "X-Codestra-Required-Scope"
+    ],
+    "proxy_identity": [
+      "Forwarded",
+      "X-Auth-Request-User",
+      "X-Auth-Request-Email",
+      "X-Auth-Request-Groups",
+      "X-Forwarded-User",
+      "X-Forwarded-Email",
+      "X-Forwarded-Groups"
+    ]
+  },
+  "generated_by_caddy": ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host", "X-Real-IP"],
+  "generated_by_kong": [
+    "X-Consumer-ID",
+    "X-Consumer-Username",
+    "X-Consumer-Custom-ID",
+    "X-Credential-Identifier",
+    "X-Anonymous-Consumer",
+    "X-Codestra-Contract-Operation",
+    "X-Codestra-Expected-Azp",
+    "X-Codestra-Required-Scope"
+  ],
+  "forbidden": ["X-Codestra-Gateway-Secret", "X-Internal-Service", "X-Admin"]
+}

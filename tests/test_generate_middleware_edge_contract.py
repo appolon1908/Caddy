@@ -17,7 +17,7 @@ def test_generator_render_matches_checked_in_edge_contract_and_site():
     # the generated route block in sites/api.codestra.co.caddy. If it drifts from
     # the checked-in files, re-running it would silently rewrite reviewed edge
     # policy (this guard was added after it regressed the /metrics/* denial).
-    edge, site = generator.render()
+    edge, site, _agency = generator.render()
     assert edge == generator.EDGE.read_text(encoding="utf-8")
     assert site == generator.SITE.read_text(encoding="utf-8")
 
