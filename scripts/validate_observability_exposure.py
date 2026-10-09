@@ -46,6 +46,20 @@ KYYOW_PUBLIC = {
     "auth.kyyow.com",
     "status.kyyow.com",
 }
+PLATFORM_PUBLIC = {
+    "codestra.co",
+    "www.codestra.co",
+    "crm.codestra.agency",
+    "app.klyrow.com",
+    "klyrow.com",
+    "www.klyrow.com",
+    "grafana.codestra.co",
+    "analytics.codestra.co",
+    "auth.codestra.co",
+    "monitoring.codestra.co",
+    "prometheus.codestra.co",
+    "alerts.codestra.co",
+}
 
 
 class ExposureError(ValueError):
@@ -266,6 +280,7 @@ def validate(contract: dict[str, Any], site: str, all_sites: str, runtime: str, 
         "{$CADDY_N8N_EDITOR_HOST}",
         *PUBLIC,
         *KYYOW_PUBLIC,
+        *PLATFORM_PUBLIC,
     }
     if top_level_addresses != reviewed_addresses:
         unexpected = sorted(top_level_addresses - reviewed_addresses)

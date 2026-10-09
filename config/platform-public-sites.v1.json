@@ -1,0 +1,102 @@
+{
+  "schema": "codestra.platform-public-sites.v1",
+  "routes": [
+    {
+      "host": "codestra.co",
+      "kind": "proxy",
+      "service": "codestra-web",
+      "upstreamEnvironmentVariable": "CADDY_CODESTRA_WEB_UPSTREAM",
+      "authentication": "application"
+    },
+    {
+      "host": "www.codestra.co",
+      "kind": "redirect",
+      "location": "https://codestra.co{uri}"
+    },
+    {
+      "host": "crm.codestra.agency",
+      "kind": "proxy",
+      "service": "odoo20-crm",
+      "upstreamEnvironmentVariable": "CADDY_ODOO_CRM_UPSTREAM",
+      "authentication": "odoo-session",
+      "databaseManagerPublic": false
+    },
+    {
+      "host": "app.klyrow.com",
+      "kind": "proxy",
+      "service": "klyrow",
+      "upstreamEnvironmentVariable": "CADDY_KLYROW_UPSTREAM",
+      "authentication": "application"
+    },
+    {
+      "host": "klyrow.com",
+      "kind": "proxy-with-browser-redirect",
+      "service": "klyrow",
+      "upstreamEnvironmentVariable": "CADDY_KLYROW_UPSTREAM",
+      "browserRedirect": "https://app.klyrow.com{uri}"
+    },
+    {
+      "host": "www.klyrow.com",
+      "kind": "redirect",
+      "location": "https://klyrow.com{uri}"
+    },
+    {
+      "host": "grafana.codestra.co",
+      "kind": "proxy",
+      "service": "grafana",
+      "upstreamEnvironmentVariable": "CADDY_GRAFANA_UPSTREAM",
+      "authentication": "native"
+    },
+    {
+      "host": "analytics.codestra.co",
+      "kind": "proxy",
+      "service": "superset",
+      "upstreamEnvironmentVariable": "CADDY_SUPERSET_UPSTREAM",
+      "authentication": "native"
+    },
+    {
+      "host": "auth.codestra.co",
+      "kind": "proxy",
+      "service": "keycloak",
+      "upstreamEnvironmentVariable": "CADDY_KEYCLOAK_UPSTREAM",
+      "authentication": "native"
+    },
+    {
+      "host": "monitoring.codestra.co",
+      "kind": "redirect",
+      "location": "https://grafana.codestra.co{uri}"
+    },
+    {
+      "host": "prometheus.codestra.co",
+      "kind": "proxy",
+      "service": "prometheus",
+      "upstreamEnvironmentVariable": "CADDY_PROMETHEUS_UPSTREAM",
+      "authentication": "edge-basic"
+    },
+    {
+      "host": "alerts.codestra.co",
+      "kind": "proxy",
+      "service": "alertmanager",
+      "upstreamEnvironmentVariable": "CADDY_ALERTMANAGER_UPSTREAM",
+      "authentication": "edge-basic"
+    }
+  ],
+  "privateOnlyServices": [
+    "loki",
+    "tempo",
+    "alloy",
+    "opentelemetry",
+    "node-exporter",
+    "cadvisor",
+    "postgres-exporter",
+    "redis-exporter",
+    "blackbox-exporter"
+  ],
+  "safety": {
+    "privatePaths404": true,
+    "identityHeadersStripped": true,
+    "upstreamsEnvironmentSupplied": true,
+    "liveIpLiteralsProhibited": true,
+    "liveCredentialHashesProhibited": true
+  }
+}
