@@ -1,0 +1,489 @@
+# Canonical Codestra customer, CRM, Klyrow and protected operator URLs.
+# Upstreams are private/environment-supplied. No native backend port is a public
+# authority by itself; Caddy is the TLS and request-boundary authority.
+
+codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	reverse_proxy {$CADDY_CODESTRA_WEB_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 45s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+www.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	route {
+		redir https://codestra.co{uri} permanent
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/www-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+crm.codestra.agency {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	route {
+		@database_admin path /web/database /web/database/*
+		respond @database_admin 403
+
+		reverse_proxy {$CADDY_ODOO_CRM_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto https
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 45s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/crm-codestra-agency-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+app.klyrow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	reverse_proxy {$CADDY_KLYROW_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/app-klyrow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+klyrow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	route {
+		@browser path / /login /signup /forgot-password /verify-email /reset-password /logged-out /app /app/* /admin /admin/* /auth /auth/* /terms /privacy
+		redir @browser https://app.klyrow.com{uri} 302
+
+		reverse_proxy {$CADDY_KLYROW_UPSTREAM} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto https
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/klyrow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+www.klyrow.com {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	route {
+		redir https://klyrow.com{uri} permanent
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/www-klyrow-com-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+grafana.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	reverse_proxy {$CADDY_GRAFANA_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/grafana-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+analytics.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	reverse_proxy {$CADDY_SUPERSET_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 60s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/analytics-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+auth.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	reverse_proxy {$CADDY_KEYCLOAK_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/auth-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+monitoring.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+
+	route {
+		redir https://grafana.codestra.co{uri} 302
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/monitoring-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+prometheus.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	basic_auth {
+		codestra-admin {$CADDY_MONITORING_ADMIN_HASH}
+	}
+
+	reverse_proxy {$CADDY_PROMETHEUS_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/prometheus-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}
+
+alerts.codestra.co {
+	import security_headers
+	import edge_observability
+	import public_boundary
+	encode zstd gzip
+
+	basic_auth {
+		codestra-admin {$CADDY_MONITORING_ADMIN_HASH}
+	}
+
+	reverse_proxy {$CADDY_ALERTMANAGER_UPSTREAM} {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/alerts-codestra-co-access.log
+		format filter {
+			request>headers>Authorization delete
+			request>headers>Apikey delete
+			request>headers>X-Api-Key delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
+			request>uri query {
+				delete apikey
+				delete api_key
+				delete access_token
+				delete refresh_token
+				delete id_token
+				delete client_secret
+				delete password
+				delete secret
+				delete token
+			}
+			resp_headers>Set-Cookie delete
+		}
+	}
+}

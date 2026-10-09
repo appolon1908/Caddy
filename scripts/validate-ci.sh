@@ -11,6 +11,8 @@ python3 scripts/validate_repository.py
 python3 scripts/validate_community_n8n.py
 python3 scripts/test_observability_exposure.py
 python3 scripts/validate_observability_exposure.py --check
+python3 scripts/validate_platform_public_sites.py
+python3 -m pytest -q tests/test_platform_public_sites.py
 
 docker_root_parent="${HOME}/.cache"
 mkdir -p "$docker_root_parent"
@@ -31,6 +33,13 @@ common_args=(
   -e CADDY_GRAFANA_UPSTREAM=127.0.0.1:18003
   -e CADDY_SUPERSET_UPSTREAM=127.0.0.1:18088
   -e CADDY_OPENBAO_UPSTREAM=127.0.0.1:18200
+  -e CADDY_CODESTRA_WEB_UPSTREAM=127.0.0.1:13080
+  -e CADDY_ODOO_CRM_UPSTREAM=127.0.0.1:18069
+  -e CADDY_KLYROW_UPSTREAM=127.0.0.1:18081
+  -e CADDY_KEYCLOAK_UPSTREAM=127.0.0.1:18180
+  -e CADDY_PROMETHEUS_UPSTREAM=127.0.0.1:19090
+  -e CADDY_ALERTMANAGER_UPSTREAM=127.0.0.1:19093
+  -e 'CADDY_MONITORING_ADMIN_HASH=$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
   -e 'CADDY_OPENBAO_ALLOWED_CIDRS=192.0.2.0/24 198.51.100.0/24'
   -e CADDY_KYYOW_APP_UPSTREAM=127.0.0.1:18300
   -e CADDY_KYYOW_API_UPSTREAM=127.0.0.1:18301
@@ -80,4 +89,4 @@ export PATH="$docker_root:$PATH"
 mkdir -p "$CADDY_LOG_DIR"
 python3 -m pytest -q
 
-git diff --check
+git -c safe.directory="$ROOT_DIR" -C "$ROOT_DIR" diff --check
