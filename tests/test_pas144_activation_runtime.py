@@ -60,7 +60,7 @@ def test_runtime_requires_loopback_admin_api():
 
 def test_runtime_status_hashes_live_config():
     transport = FakeTransport({"apps": {"http": {"servers": {"srv0": {}}}}})
-    status = CaddyRuntime(transport=transport).status()
+    status = CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport).status()
     assert status["admin_api"] == "AVAILABLE"
     assert status["server_count"] == 1
     assert status["config_sha256"] == sha256_json(transport.config)
@@ -78,7 +78,7 @@ def test_execution_store_round_trip_and_corruption(tmp_path: Path):
 def test_dry_run_detects_change_without_mutation(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -87,12 +87,12 @@ def test_dry_run_detects_change_without_mutation(tmp_path: Path):
     result = manager.dry_run()
     assert result["status"] == "CHANGE"
     assert result["mutation_performed"] is False
-    assert all(call[0] != "POST" for call in transport.calls)
+    assert not any(call[1].endswith("/load") for call in transport.calls)
 
 
 def test_apply_disabled_by_default(tmp_path: Path):
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=FakeTransport({})),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=FakeTransport({})),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {}),
@@ -105,7 +105,7 @@ def test_apply_disabled_by_default(tmp_path: Path):
 def test_apply_readback_and_idempotency(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -122,7 +122,7 @@ def test_idempotency_conflict_fails_closed(tmp_path: Path):
     transport = FakeTransport({"old": True})
     path = candidate(tmp_path, {"one": 1})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         candidate_path=path,
         mutation_enabled=True,
@@ -137,7 +137,7 @@ def test_readback_mismatch_triggers_rollback(tmp_path: Path):
     original = {"old": True}
     transport = FakeTransport(original.copy(), mismatch_after_load=True)
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -152,7 +152,7 @@ def test_readback_mismatch_triggers_rollback(tmp_path: Path):
 def test_manual_rollback_restores_pre_state(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -168,7 +168,7 @@ def test_manual_rollback_restores_pre_state(tmp_path: Path):
 def test_manual_rollback_rejects_stale_execution_after_runtime_advances(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -183,7 +183,7 @@ def test_manual_rollback_rejects_stale_execution_after_runtime_advances(tmp_path
 def test_failed_idempotency_replay_remains_failure(tmp_path: Path):
     transport = FakeTransport({"old": True}, mismatch_after_load=True)
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -197,7 +197,7 @@ def test_failed_idempotency_replay_remains_failure(tmp_path: Path):
 
 def _control_service(tmp_path: Path, *, mutation_enabled=True):
     transport = FakeTransport({"old": True})
-    runtime = CaddyRuntime(transport=transport)
+    runtime = CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport)
     path = candidate(tmp_path, {"new": True})
     service = ControlService(
         runtime=runtime,
@@ -224,7 +224,8 @@ def test_reconcile_plan_never_mutates_runtime(tmp_path):
     result = service.reconcile(mode="plan", idempotency_key="")
     assert result["status"] == "PLANNED"
     after = len([x for x in transport.calls if x[0] == "POST"])
-    assert after == before
+    assert not any(method == "POST" and url.endswith("/load") for method, url, _ in transport.calls)
+    assert after == before + 1
 
 def test_reconcile_apply_requires_idempotency_key(tmp_path):
     service, transport = _control_service(tmp_path)
@@ -235,7 +236,7 @@ def test_reconcile_apply_requires_idempotency_key(tmp_path):
 def test_apply_rejects_stale_source_sha_before_load(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-b",
         candidate_path=candidate(tmp_path, {"new": True}, source_sha="source-a"),
@@ -248,7 +249,7 @@ def test_apply_rejects_stale_source_sha_before_load(tmp_path: Path):
 def test_apply_validates_candidate_before_load(tmp_path: Path):
     transport = FakeTransport({"old": True})
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=candidate(tmp_path, {"new": True}),
@@ -263,7 +264,7 @@ def test_apply_rejects_candidate_digest_tamper(tmp_path: Path):
     path = candidate(tmp_path, {"new": True})
     path.write_text(json.dumps({"tampered": True}), encoding="utf-8")
     manager = ActivationManager(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         source_sha_provider=lambda: "source-a",
         candidate_path=path,
@@ -286,7 +287,7 @@ def test_control_service_preflight_rejects_stale_plan(tmp_path):
     transport = FakeTransport({"old": True})
     path = candidate(tmp_path, {"new": True}, source_sha="old-source")
     service = ControlService(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         candidate_path=path,
         source_sha_provider=lambda: "new-source",
@@ -316,7 +317,7 @@ def test_reexecute_key_is_fenced_to_original_candidate(tmp_path: Path):
     transport = FakeTransport({"old": True})
     path = candidate(tmp_path, {"version": 1})
     service = ControlService(
-        runtime=CaddyRuntime(transport=transport),
+        runtime=CaddyRuntime(health_urls=("http://127.0.0.1/health",), health_check=lambda *_: True, transport=transport),
         store=ExecutionStore(tmp_path / "evidence"),
         candidate_path=path,
         source_sha_provider=lambda: "source-a",

@@ -22,7 +22,7 @@ def runner_for(active,fail_reload=False):
             reloads+=1
             if fail_reload and reloads==1:return CommandResult(1,stderr="reload rejected")
             text=Path(argv[argv.index("--config")+1]).read_text()
-            active["value"]=json.dumps({"config":text}).encode()
+            active["value"]=(json.dumps({"config":text}).encode() if "--adapter" in argv else text.encode())
         return CommandResult(0)
     return run
 
@@ -60,11 +60,15 @@ def test_reload_failure_rolls_back_and_verifies_active_runtime(tmp_path):
     assert live.read_text()=="old\n"; assert rt.history()[0]["kind"]=="AUTO_ROLLBACK"
 
 def test_manual_rollback_has_history_and_active_digest(tmp_path):
-    active={"value":b'{"config":"old\\n"}'}; rt,live,state,_=runtime(tmp_path,lambda a:CommandResult(0)); rt.runtime_get=lambda *_:active["value"]; rt.runner=runner_for(active)
-    live.parent.mkdir(); live.write_text("old\n"); state.mkdir(); (state/"last-known-good.caddy").write_text("known-good\n")
-    r=rt.rollback(expected_active_digest=rt.active_readback()["active_runtime_sha256"])
+    active={"value":b'{"config":"known-good\\n"}'}
+    rt,live,state,_=runtime(tmp_path,lambda a:CommandResult(0))
+    rt.runtime_get=lambda *_:active["value"]; rt.runner=runner_for(active)
+    live.parent.mkdir(); live.write_text("known-good\n")
+    candidate=tmp_path/"candidate"; candidate.write_text("new\n")
+    first=rt.apply(candidate,source_sha=SOURCE,candidate_digest=sha256_file(candidate),idempotency_key="before-rollback")
+    r=rt.rollback(execution_id=first["execution_id"], expected_active_digest=rt.active_readback()["active_runtime_sha256"])
     assert r["kind"]=="MANUAL_ROLLBACK" and r["active_runtime_sha256"]
-    assert live.read_text()=="known-good\n"
+    assert json.loads(active["value"])["config"]=="known-good\n"
 
 
 def test_idempotent_retry_precedes_stale_expected_digest(tmp_path):
