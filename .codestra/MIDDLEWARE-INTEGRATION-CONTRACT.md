@@ -19,7 +19,7 @@ Public client -> Caddy -> Kong -> Middleware integration API :8095 -> /platform/
 9. Observability: monitoring components consume telemetry; they do not perform business/provider effects.
 10. Contracts: API repos maintain generated/drift-checked OpenAPI, Postman and route-authority artifacts where applicable.
 11. Production safety: calling, SMS/email writes, billing/money movement, social/provider writes and other production effects are default-deny until explicit certification passes.
-12. Promotion: Development -> Testing -> Staging -> Production requires immutable SHA/image identity, readback, observability and rollback proof.
+12. Promotion: the implemented desired-state engine accepts lowercase `development -> staging -> production`, as defined in `scripts/mission5_desired_state.py` and `docs/environment-promotion-contract-v1.md`. Each promotion requires immutable SHA/image identity, readback, observability and rollback proof. The planned `testing` environment requires matching engine, contract, and CI support before it can accept candidates; documentation alone does not enable it.
 
 ## Repository role classification
 
