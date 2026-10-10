@@ -84,7 +84,7 @@ def test_native_edge_http_streaming_headers_metrics_reload_rollback_and_postman(
         os.chdir(original_cwd)
     log = (tmp_path / 'process.log').open('w')
     process = subprocess.Popen([binary, 'run', '--config', str(candidate)], stdout=log, stderr=log)
-    service = ControlService(runtime=CaddyRuntime(f'http://127.0.0.1:{admin_port}'), store=ExecutionStore(tmp_path / 'history'), candidate_path=candidate, candidate_builder=builder, source_sha_provider=lambda: 'a' * 40, mutation_enabled=False)
+    service = ControlService(runtime=CaddyRuntime(f'http://127.0.0.1:{admin_port}', health_urls=(f'http://127.0.0.1:{edge_port}/platform/v1/activity',)), store=ExecutionStore(tmp_path / 'history'), candidate_path=candidate, candidate_builder=builder, source_sha_provider=lambda: 'a' * 40, mutation_enabled=False)
     class TestHandler(Handler):
         pass
     TestHandler.service = service
