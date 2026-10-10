@@ -2,7 +2,9 @@
 
 Canonical source SHA: `74c5035627a960c190dcdaf84ec3ac1a18181e0a`
 
-Certification result: **PASS**
+Certification result: **NO-GO for production**
+
+The source checks below passed at the recorded historical SHA. They do not clear the release blockers in `docs/CADDY_CANONICAL_CONVERGENCE.md`: the pinned image has 6 critical and 75 high vulnerabilities and requires patched-image certification. Production approval remains blocked until that evidence is collected.
 
 ## Evidence
 
@@ -15,7 +17,8 @@ Certification result: **PASS**
 - Kong route contract bidirectional parity: `PASS`
 - Adapted route matrix: `PASS` (`11 canonical`, `28 fail-closed`, `1 unknown-route probe`)
 - Private `/internal` and `/metrics` namespaces: fail-closed
-- PostgreSQL/Redis/NATS/Temporal/OpenBao internal services: no public Caddy exposure
+- PostgreSQL/Redis/NATS/Temporal internal services: no public Caddy exposure
+- OpenBao: `bao.codestra.media` is an allowlisted public ingress; unauthorized clients are denied. It is not a private-only service.
 - Identity header stripping and private-boundary enforcement: `PASS`
 - Observability URL contract: `PASS`
 - Kyyow ingress contract: `PASS`
@@ -37,7 +40,7 @@ Safe-local environment SHA-256:
 
 This certificate covers source implementation, edge routing, API/Postman behavior, runtime reload/rollback harness behavior, and database/control-plane public-denial guarantees.
 
-The following remain intentionally authorization-gated and are not certification failures:
+The following remain authorization-gated and do not constitute production certification:
 
 - `LIVE_RELOAD_AUTHORIZED=NO`
 - `N8N_COMMUNITY_EDITOR_EDGE=PREPARED_NOT_APPLIED`
