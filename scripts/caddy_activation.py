@@ -275,13 +275,18 @@ class ActivationManager:
         expected_current = record.get("result_state_sha256")
         if record.get("status") != "COMPLETED" or not expected_current:
             raise ActivationError("ROLLBACK_EXECUTION_NOT_COMPLETED", "only a completed activation can be rolled back")
-        current_sha = sha256_json(self.runtime.config())
+        current_config = self.runtime.config()
+        current_sha = sha256_json(current_config)
         if current_sha != expected_current:
             raise ActivationError("STALE_ROLLBACK_RUNTIME_ADVANCED", "runtime no longer matches the selected execution result")
+        try:
+            self.coordinator.baseline(current_config)
+        except CoordinationError as exc:
+            raise ActivationError("RESTART_AUTHORITY_MISMATCH", str(exc)) from exc
         self.runtime.validate_json(pre_state)
         journal_id = str(uuid.uuid4())
         journal = {"kind": "ACTIVATION_ROLLBACK", "status": "RUNNING",
-                   "rollback_of": execution_id, "pre_state": self.runtime.config(),
+                   "rollback_of": execution_id, "pre_state": current_config,
                    "target_state_sha256": sha256_json(pre_state),
                    "mutation_performed": False, "created_at": utc_now()}
         self._record(journal_id, journal)
@@ -295,10 +300,23 @@ class ActivationManager:
             self._health()
             self.coordinator.persist(pre_state)
         except Exception as exc:
+            recovery_error = None
+            try:
+                self.runtime.load_json(current_config)
+                if canonical_json(self.runtime.config()) != canonical_json(current_config):
+                    raise ActivationError("RECOVERY_READBACK_MISMATCH", "rollback recovery readback differs")
+                self._health()
+                self.coordinator.persist(current_config)
+            except Exception as recovery_exc:
+                recovery_error = str(recovery_exc)
             record.update({"rollback_status": "ROLLBACK_FAILED", "rollback_error": str(exc),
+                           "rollback_recovery_verified": recovery_error is None,
+                           "rollback_recovery_error": recovery_error,
                            "rollback_completed_at": utc_now()})
             self._record(execution_id, record)
-            journal.update(status="FAILED", error={"code": getattr(exc, "code", "ROLLBACK_FAILED"),
+            journal.update(status="FAILED" if recovery_error is None else "RUNNING",
+                           recovery_verified=recovery_error is None, recovery_error=recovery_error,
+                           error={"code": getattr(exc, "code", "ROLLBACK_FAILED"),
                            "message": str(exc)}, mutation_performed=True, rollback_status="ROLLBACK_FAILED")
             self._record(journal_id, journal)
             raise ActivationError(getattr(exc, "code", "ROLLBACK_FAILED"), str(exc)) from exc

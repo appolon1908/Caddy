@@ -87,6 +87,97 @@ def test_restart_authority_tracks_apply_and_manual_rollback(tmp_path):
     assert rt.probes[-1] == 0
 
 
+def test_failed_json_rollback_restores_healthy_current_config(tmp_path):
+    mgr, rt = manager(tmp_path)
+    first = mgr.apply(idempotency_key='rollback-recovery')
+    rt.fail_version = 0
+    with pytest.raises(ActivationError):
+        mgr.rollback(first['execution_id'])
+    assert rt.current == {'version': 1}
+    assert json.loads(mgr.coordinator.active_path.read_text()) == rt.current
+    assert mgr.execution(first['execution_id'])['rollback_recovery_verified'] is True
+
+
+def test_json_rollback_rejects_live_state_older_than_checkpoint(tmp_path):
+    mgr, rt = manager(tmp_path)
+    first = mgr.apply(idempotency_key='checkpoint-fence')
+    mgr.coordinator.persist({'version': 2})
+    count = len(rt.loads)
+    with pytest.raises(ActivationError, match='restart authority'):
+        mgr.rollback(first['execution_id'])
+    assert len(rt.loads) == count
+
+
+def test_failed_file_rollback_restores_healthy_current_config(tmp_path):
+    from caddy_runtime import sha256_file
+    runtime, path, value = file_engine(tmp_path)
+    first = runtime.apply(path, source_sha='a' * 40, candidate_digest=sha256_file(path),
+                          idempotency_key='rollback-recovery')
+    accepted = value['current'].copy()
+    runtime.health_check = lambda *_: value['current'] == accepted
+    with pytest.raises(RuntimeApplyError):
+        runtime.rollback(execution_id=first['execution_id'])
+    assert value['current'] == accepted
+    assert json.loads(runtime.coordinator.active_path.read_text()) == accepted
+
+
+def test_file_rollback_rejects_live_state_older_than_checkpoint(tmp_path):
+    from caddy_runtime import sha256_file
+    runtime, path, value = file_engine(tmp_path)
+    first = runtime.apply(path, source_sha='a' * 40, candidate_digest=sha256_file(path),
+                          idempotency_key='checkpoint-fence')
+    accepted = value['current'].copy()
+    runtime.coordinator.persist({'config': 'later accepted'})
+    with pytest.raises(RuntimeApplyError, match='restart authority'):
+        runtime.rollback(execution_id=first['execution_id'])
+    assert value['current'] == accepted
+
+
+def test_json_rollback_failed_recovery_fences_further_mutation(tmp_path):
+    mgr, rt = manager(tmp_path)
+    first = mgr.apply(idempotency_key='double-failure')
+    def fail_load(value):
+        rt.current = value
+        raise RuntimeError('admin unavailable after load')
+    rt.load_json = fail_load
+    with pytest.raises(ActivationError):
+        mgr.rollback(first['execution_id'])
+    with pytest.raises(ActivationError, match='recovery'):
+        mgr.apply(idempotency_key='must-be-fenced')
+    assert json.loads(mgr.coordinator.active_path.read_text()) == {'version': 1}
+
+
+def test_json_rollback_can_recover_an_unhealthy_current_config(tmp_path):
+    mgr, rt = manager(tmp_path)
+    first = mgr.apply(idempotency_key='unhealthy-current')
+    rt.fail_version = 1
+    mgr.rollback(first['execution_id'])
+    assert rt.current == {'version': 0}
+
+
+def test_file_rollback_can_recover_an_unhealthy_current_config(tmp_path):
+    from caddy_runtime import sha256_file
+    runtime, path, value = file_engine(tmp_path)
+    first = runtime.apply(path, source_sha='a' * 40, candidate_digest=sha256_file(path),
+                          idempotency_key='unhealthy-current')
+    runtime.health_check = lambda *_: value['current'] == {'config': 'old'}
+    runtime.rollback(execution_id=first['execution_id'])
+    assert value['current'] == {'config': 'old'}
+
+
+def test_file_rollback_failed_recovery_fences_further_mutation(tmp_path):
+    from caddy_runtime import sha256_file
+    runtime, path, value = file_engine(tmp_path)
+    first = runtime.apply(path, source_sha='a' * 40, candidate_digest=sha256_file(path),
+                          idempotency_key='double-failure')
+    runtime._restore_json = lambda *_: (_ for _ in ()).throw(RuntimeError('admin unavailable'))
+    with pytest.raises(RuntimeApplyError):
+        runtime.rollback(execution_id=first['execution_id'])
+    with pytest.raises(RuntimeApplyError, match='recovery'):
+        runtime.apply(path, source_sha='a' * 40, candidate_digest=sha256_file(path),
+                      idempotency_key='must-be-fenced')
+
+
 def test_completed_idempotency_survives_dry_run_retention_churn(tmp_path):
     mgr, rt = manager(tmp_path)
     first = mgr.apply(idempotency_key='forever')

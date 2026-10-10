@@ -256,6 +256,13 @@ class CaddyRuntime:
         if (current != original.get("active_runtime_sha256")
                 or (expected_active_digest and current != expected_active_digest)):
             raise RuntimeApplyError("stale_rollback_active_runtime_changed")
+        current_config = self._config()
+        if sha256_bytes(json.dumps(current_config, sort_keys=True, separators=(",", ":")).encode()) != current:
+            raise RuntimeApplyError("stale_rollback_active_runtime_changed")
+        try:
+            self.coordinator.baseline(current_config)
+        except CoordinationError as exc:
+            raise RuntimeApplyError(str(exc)) from exc
         pre_state = original.get("pre_state")
         if not isinstance(pre_state, dict):
             raise RuntimeApplyError("rollback_state_missing")
@@ -263,14 +270,21 @@ class CaddyRuntime:
             raise RuntimeApplyError("activation_health_not_configured")
         record = {"schema": "codestra.caddy.execution.v2", "execution_id": str(uuid.uuid4()),
                   "kind": "MANUAL_ROLLBACK", "status": "RUNNING", "outcome": "RUNNING",
-                  "rollback_of": execution_id, "pre_state": self._config(), "runtime_mutated": False}
+                  "rollback_of": execution_id, "pre_state": current_config, "runtime_mutated": False}
         self._history(record)
         try:
             self._restore_json(pre_state)
             record.update(status="COMPLETED", outcome="ROLLED_BACK", runtime_mutated=True,
                           health_verified=True, **self.active_readback())
         except Exception as exc:
-            record.update(status="FAILED", outcome="ROLLBACK_FAILED", error=str(exc), runtime_mutated=True)
+            recovery_error = None
+            try:
+                self._restore_json(current_config)
+            except Exception as recovery_exc:
+                recovery_error = str(recovery_exc)
+            record.update(status="FAILED" if recovery_error is None else "RUNNING",
+                          outcome="ROLLBACK_FAILED", error=str(exc), runtime_mutated=True,
+                          recovery_verified=recovery_error is None, recovery_error=recovery_error)
             self._history(record)
             raise RuntimeApplyError(f"rollback_failed: {exc}") from exc
         self._history(record)
