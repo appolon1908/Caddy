@@ -3,7 +3,7 @@ name: Validate Caddy source authority
 on:
   pull_request:
   push:
-    branches: [main, development, test, production]
+    branches: [main, development, test, testing, staging, production]
 
 permissions:
   contents: read

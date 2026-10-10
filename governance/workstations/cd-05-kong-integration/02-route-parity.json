@@ -1,0 +1,24 @@
+{
+  "workstation": "caddy::cd-05-kong-integration::02-route-parity",
+  "product": "caddy",
+  "section": "cd-05-kong-integration",
+  "subsection": "02-route-parity",
+  "branch": "subsection/cd-05-kong-integration--02-route-parity",
+  "parent_branch": "section/cd-05-kong-integration",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-05-kong-integration/subsections/02-route-parity/repo",
+  "depends_on": [
+    "caddy::cd-04-trusted-proxy-security::03-private-surfaces",
+    "caddy::cd-05-kong-integration::01-edge-chain"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

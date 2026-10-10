@@ -2,7 +2,7 @@
 #
 # Apply the canonical protection for the Caddy promotion chain:
 #
-#   feature/* -> development -> test -> staging -> production -> main
+#   subsection/* -> section/* -> development -> testing -> staging -> production
 #
 # Run through .github/workflows/apply-branch-protection.yml, which supplies a
 # repository-administration token and archives the read-back as evidence.
@@ -29,21 +29,21 @@
 # branch it is required for.
 set -Eeuo pipefail
 
-repository="${1:-ingtrader21-spec/Caddy}"
+repository="${1:-appolon1908/Caddy}"
 owner="${repository%%/*}"
 repo="${repository#*/}"
 
 # Reported by validate.yml on every pull request, whatever the base branch.
 readonly base_contexts='"validate-source","validate"'
 # Reported by the promotion and release gates carried on the promotion chain.
-readonly promotion_contexts='"promotion-guard","immutable-release-gate"'
+readonly promotion_contexts='"promotion-guard","control-plane-certification"'
 
 contexts_for() {
   case "$1" in
     main)
-      # Mirrors config/github/main-ruleset.json, which
-      # scripts/validate_observability_exposure.py asserts independently.
-      printf '["validate-source","validate-merge-result"]' ;;
+      # Main remains bootstrap-capable only for PR #203; after bootstrap the
+      # promotion guard intentionally rejects all ordinary PRs to main.
+      printf '["validate-source","validate-merge-result","promotion-guard","control-plane-certification"]' ;;
     production)
       printf '[%s,%s,"staging-certification"]' "$base_contexts" "$promotion_contexts" ;;
     *)
@@ -52,7 +52,7 @@ contexts_for() {
 }
 
 # main and production are the branches where the last pusher must not also be
-# the approver. development and test stay workable by a single maintainer.
+# the approver. development and testing stay workable by a single maintainer.
 last_push_approval_for() {
   case "$1" in
     main|production) printf 'true' ;;
@@ -96,6 +96,17 @@ apply() {
       approvals:.protection.required_pull_request_reviews.required_approving_review_count}'
 }
 
-for branch in development test staging production main; do
+for branch in development testing staging production main; do
   apply "$branch"
 done
+
+# The first promotion hop is subsection/* -> matching section/*, so every
+# existing section branch must carry the same mandatory governance contexts.
+# Enumerate from GitHub rather than maintaining a second static section list.
+section_branches="$(
+  gh api --paginate "/repos/${owner}/${repo}/branches?per_page=100" --jq '.[].name'
+)"
+while IFS= read -r branch; do
+  [[ "$branch" == section/* ]] || continue
+  apply "$branch"
+done <<< "$section_branches"

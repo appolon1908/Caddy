@@ -1,0 +1,24 @@
+{
+  "workstation": "caddy::cd-04-trusted-proxy-security::02-forwarded-identity",
+  "product": "caddy",
+  "section": "cd-04-trusted-proxy-security",
+  "subsection": "02-forwarded-identity",
+  "branch": "subsection/cd-04-trusted-proxy-security--02-forwarded-identity",
+  "parent_branch": "section/cd-04-trusted-proxy-security",
+  "order": 2,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-04-trusted-proxy-security/subsections/02-forwarded-identity/repo",
+  "depends_on": [
+    "caddy::cd-03-proxy::03-header-contract",
+    "caddy::cd-04-trusted-proxy-security::01-trusted-proxies"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}

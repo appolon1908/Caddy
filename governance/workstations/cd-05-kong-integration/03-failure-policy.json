@@ -1,0 +1,24 @@
+{
+  "workstation": "caddy::cd-05-kong-integration::03-failure-policy",
+  "product": "caddy",
+  "section": "cd-05-kong-integration",
+  "subsection": "03-failure-policy",
+  "branch": "subsection/cd-05-kong-integration--03-failure-policy",
+  "parent_branch": "section/cd-05-kong-integration",
+  "order": 3,
+  "worktree": "/srv/codestra/workstations/Caddy/sections/cd-05-kong-integration/subsections/03-failure-policy/repo",
+  "depends_on": [
+    "caddy::cd-04-trusted-proxy-security::03-private-surfaces",
+    "caddy::cd-05-kong-integration::02-route-parity"
+  ],
+  "status": "NOT_STARTED",
+  "required_gates": [
+    "lint",
+    "unit",
+    "integration",
+    "contract",
+    "security",
+    "clean_tree",
+    "remote_sha_match"
+  ]
+}
