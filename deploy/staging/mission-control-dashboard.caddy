@@ -1,0 +1,72 @@
+# SOURCE ONLY; do not import into Caddy's live Caddyfile before staging GO.
+# This hostname resolves on the private staging fabric and uses its local CA.
+# Kong alone owns dashboard authorization; the backend also validates JWT.
+dashboard.staging.internal.codestra.agency {
+    tls internal
+    encode zstd gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+
+    route {
+        @private_only path /metrics /metrics/* /internal /internal/* /debug/* /admin/*
+        handle @private_only {
+            respond 404
+        }
+
+        @dashboard_get {
+            method GET
+            path /platform/v1/dashboard/contract /platform/v1/dashboard/repositories /platform/v1/dashboard/repository /platform/v1/dashboard/agents /platform/v1/dashboard/tasks /platform/v1/dashboard/task /platform/v1/dashboard/local-work /platform/v1/dashboard/sources /platform/v1/dashboard/notifications
+        }
+        handle @dashboard_get {
+            reverse_proxy {$CADDY_KONG_UPSTREAM} {
+                header_up Host dashboard.staging.internal.codestra.agency
+                header_up -X-User-ID
+                header_up -X-Username
+                header_up -X-Email
+                header_up -X-Roles
+                header_up -X-Scopes
+                header_up -X-Authenticated-User
+                header_up -X-Authenticated-Subject
+                header_up -X-Authenticated-Tenant
+                header_up -X-Codestra-Tenant
+                header_up -X-Codestra-Scopes
+                header_up -X-Codestra-Gateway-Secret
+                header_up -X-Internal-Service
+                header_up -X-Admin
+                header_up -X-Consumer-ID
+                header_up -X-Consumer-Username
+                header_up -X-Codestra-Contract-Operation
+                header_up -X-Codestra-Required-Scope
+                transport http {
+                    dial_timeout 3s
+                    response_header_timeout 8s
+                }
+            }
+        }
+
+        # Unknown API routes and every non-GET method fail closed, never
+        # fall back to static frontend routing.
+        @dashboard_unknown path /platform/v1/dashboard /platform/v1/dashboard/*
+        handle @dashboard_unknown {
+            respond 404
+        }
+
+        @frontend_read method GET HEAD
+        handle @frontend_read {
+            reverse_proxy {$CADDY_MISSION_CONTROL_FRONTEND_UPSTREAM} {
+                header_up Host {host}
+                transport http {
+                    dial_timeout 3s
+                    response_header_timeout 8s
+                }
+            }
+        }
+        handle {
+            respond 405
+        }
+    }
+}
