@@ -9,7 +9,7 @@ mkdir -p "$BUILD"
 git clone --filter=blob:none https://github.com/caddyserver/caddy.git "$BUILD/caddy-source"
 git -C "$BUILD/caddy-source" checkout --detach "$CADDY_SOURCE_SHA"
 pushd "$BUILD/caddy-source" >/dev/null
-go get golang.org/x/crypto@v0.55.0 golang.org/x/net@v0.58.0 golang.org/x/text@v0.41.0 google.golang.org/grpc@v1.83.2
+go get golang.org/x/crypto@v0.55.0 golang.org/x/net@v0.60.0 golang.org/x/text@v0.41.0 google.golang.org/grpc@v1.83.2
 go mod tidy
 CGO_ENABLED=0 go build -trimpath -ldflags '-s -w' -o "$BUILD/caddy" ./cmd/caddy
 CGO_ENABLED=0 go build -trimpath -ldflags '-s -w' -o "$BUILD/codestra-http3-probe" "$ROOT/build-tools/http3-probe/main.go"
