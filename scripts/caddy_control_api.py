@@ -215,21 +215,33 @@ class ControlService:
     def activation_dry_run(self) -> dict[str, Any]:
         return self.activation.dry_run()
 
-    def activation_apply(self, idempotency_key: str) -> dict[str, Any]:
-        return self.activation.apply(idempotency_key=idempotency_key)
+    def activation_apply(self, idempotency_key: str, expected_active_digest: str | None = None) -> dict[str, Any]:
+        return self.activation.apply(idempotency_key=idempotency_key,
+                                     expected_active_digest=expected_active_digest)
 
     def activation_rollback(self, execution_id: str) -> dict[str, Any]:
         return self.activation.rollback(execution_id)
 
     def execution(self, execution_id: str) -> dict[str, Any]:
-        return self.store.get(execution_id)
+        try:
+            return self.activation.coordinator.ledger.get(execution_id)
+        except ExecutionStoreError as exc:
+            if str(exc) != "execution_not_found":
+                raise
+            return self.store.get(execution_id)
+
+    def _execution_rows(self):
+        # Recovery can update the shared ledger after a controller crash; it must
+        # override compatibility mirrors, and include both activation engines.
+        identifiers = dict.fromkeys(self.activation.coordinator.ledger.list_ids() + self.store.list_ids())
+        return [self.execution(identifier) for identifier in identifiers]
 
     def executions(self) -> dict[str, Any]:
-        rows = [self.store.get(execution_id) for execution_id in self.store.list_ids()]
+        rows = self._execution_rows()
         return {"schema": "codestra.caddy.execution-list.v1", "executions": rows}
 
     def telemetry(self) -> dict[str, Any]:
-        rows = [self.store.get(execution_id) for execution_id in self.store.list_ids()]
+        rows = self._execution_rows()
         counters: dict[str, int] = {}
         for row in rows:
             key = f"{row.get('kind', 'UNKNOWN')}:{row.get('status', 'UNKNOWN')}"
@@ -355,7 +367,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._run(self.service.activation_dry_run)
         if path == "/platform/v1/caddy/activation/apply":
             key = (self.headers.get("Idempotency-Key") or "").strip()
-            return self._run(lambda: {"execution": self.service.activation_apply(key)})
+            return self._run(lambda: {"execution": self.service.activation_apply(
+                key, (self.headers.get("If-Match") or "").strip('"') or None)})
         if path == "/platform/v1/caddy/reconcile":
             mode = (self.headers.get("X-Caddy-Reconcile-Mode") or "plan").strip().lower()
             key = (self.headers.get("Idempotency-Key") or "").strip()

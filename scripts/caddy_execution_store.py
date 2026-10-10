@@ -28,7 +28,7 @@ class ExecutionStore:
         return self.root / f"{execution_id}.json"
 
     def _atomic_write(self, path: Path, payload: dict[str, Any]) -> None:
-        self.root.mkdir(parents=True, exist_ok=True)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         fd, temp_name = tempfile.mkstemp(prefix=".execution.", suffix=".tmp", dir=self.root)
         try:
@@ -37,6 +37,11 @@ class ExecutionStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temp_name, path)
+            directory = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
         finally:
             if os.path.exists(temp_name):
                 os.unlink(temp_name)
@@ -76,6 +81,15 @@ class ExecutionStore:
         return [path.stem for path in rows]
 
     def _prune(self) -> None:
-        ids = self.list_ids()
+        # Preserve every mutation/recovery/idempotency receipt indefinitely.
+        # max_records bounds only disposable observations and plans.
+        ids = [execution_id for execution_id in self.list_ids()
+               if not self._retained(self.get(execution_id))]
         for execution_id in ids[self.max_records :]:
             self._path(execution_id).unlink(missing_ok=True)
+
+    @staticmethod
+    def _retained(record: dict[str, Any]) -> bool:
+        return bool(record.get("idempotency_key") or "pre_state" in record
+                    or record.get("mutation_performed") or record.get("runtime_mutated")
+                    or record.get("kind") in {"ACTIVATION_APPLY", "APPLY", "AUTO_ROLLBACK", "MANUAL_ROLLBACK"})

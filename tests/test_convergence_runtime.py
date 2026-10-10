@@ -61,6 +61,7 @@ def test_concurrent_control_mutations_are_serialized(tmp_path):
             if self.validations == 1:
                 entered.set()
                 assert release.wait(5)
+        def check_health(self): pass
         def load_json(self, config):
             self.loads += 1
             self.current = config

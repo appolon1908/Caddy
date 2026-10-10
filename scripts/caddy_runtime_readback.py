@@ -55,6 +55,19 @@ def validate_configuration(config: dict[str, Any]) -> None:
             raise RuntimeReadbackError("CONFIG_VALIDATION_FAILED", "Caddy configuration validation failed")
 
 
+def functional_health(url: str, timeout: float) -> bool:
+    # Only a successful response is healthy; redirects must not hide a login gate.
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+    try:
+        request = urllib.request.Request(url, method="GET")
+        with urllib.request.build_opener(NoRedirect).open(request, timeout=timeout) as response:
+            return response.status == 200
+    except (OSError, ValueError):
+        return False
+
+
 Transport = Callable[[str, str, bytes | None, str | None], tuple[int, bytes]]
 
 
@@ -117,9 +130,20 @@ def extract_runtime_inventory(config: dict[str, Any]) -> dict[str, Any]:
 
 
 class CaddyRuntime:
-    def __init__(self, base_url: str = "http://127.0.0.1:2019", *, transport: Transport = default_transport) -> None:
+    def __init__(self, base_url: str = "http://127.0.0.1:2019", *,
+                 transport: Transport = default_transport, health_urls=None,
+                 health_check=None) -> None:
         self.base_url = _validate_admin_base(base_url)
         self.transport = transport
+        self.health_urls = tuple(health_urls if health_urls is not None else
+                                 os.environ.get("CADDY_ACTIVATION_HEALTH_URLS", "").split())
+        self.health_check = health_check or functional_health
+
+    def check_health(self) -> None:
+        if not self.health_urls:
+            raise RuntimeReadbackError("HEALTH_NOT_CONFIGURED", "activation health probes are required")
+        if not all(self.health_check(url, 3.0) for url in self.health_urls):
+            raise RuntimeReadbackError("HEALTH_FAILED", "functional health check failed")
 
     def config(self) -> dict[str, Any]:
         status, raw = self.transport("GET", f"{self.base_url}/config/", None, None)
