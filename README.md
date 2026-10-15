@@ -139,3 +139,7 @@ Before any Caddy cutover:
 8. A failed validation must leave the running configuration untouched.
 9. A merge does not automatically authorize a production reload, DNS/TLS change, or traffic cutover.
 10. `codestra-production-platform` may be consulted for historical evidence, but new Caddy source changes belong here.
+
+## Governance Git hooks
+
+Enable the shared pre-push checks from your approved workstation using the [hook setup and lease instructions](docs/governance-git-hooks.md). Activation is explicit for each clone; existing CI and publication requirements still apply.
