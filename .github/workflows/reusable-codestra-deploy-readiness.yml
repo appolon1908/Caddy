@@ -74,7 +74,7 @@ env:
 jobs:
   source-ci:
     name: deploy-readiness / source-ci
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read
@@ -395,7 +395,7 @@ jobs:
 
   secret-scan:
     name: deploy-readiness / secret-scan
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -465,7 +465,7 @@ jobs:
       (github.event_name == 'push' &&
        (github.ref_name == 'main' || github.ref_name == 'staging' || github.ref_name == 'production')) ||
       (github.event_name == 'workflow_dispatch' && inputs.operation != 'verify')
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 75
     permissions:
       contents: write
@@ -480,6 +480,7 @@ jobs:
       - name: Restrict release authority
         run: |
           set -Eeuo pipefail
+          test "${GITHUB_REPOSITORY}" = "appolon1908/Caddy"
           case "${GITHUB_REF}" in
             refs/heads/main|refs/heads/staging|refs/heads/production) ;;
             *) echo "RELEASE_ERROR=release authority requires main, staging, or production" >&2; exit 1 ;;
@@ -528,6 +529,10 @@ jobs:
           source_tree="$(git rev-parse HEAD^{tree})"
           test "$source_sha" = "$GITHUB_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
+
+          # GitHub's OIDC certificate identifies this called workflow at its
+          # full protected ref, not the caller name or the former owner.
+          identity_pattern="^https://github\.com/appolon1908/Caddy/\.github/workflows/reusable-codestra-deploy-readiness\.yml@${GITHUB_REF}$"
 
           owner="${GITHUB_REPOSITORY%%/*}"
           raw_name="${GITHUB_REPOSITORY#*/}"
@@ -661,22 +666,20 @@ jobs:
             subject="${image_repo}@${digest}"
 
             "$RUNNER_TEMP/cosign" sign --yes "$subject"
-            caller_identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/codestra-deploy-readiness.yml@${GITHUB_REF}"
-            called_identity_pattern='^https://github.com/ingtrader21-spec/(Infustruction-repo|Caddy)/.github/workflows/reusable-codestra-deploy-readiness.yml@.*$'
             "$RUNNER_TEMP/cosign" verify \
-              --certificate-identity-regexp "^(${caller_identity}|${called_identity_pattern#^})" \
+              --certificate-identity-regexp "$identity_pattern" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
               "$subject" > evidence/signature-verification.json
             "$RUNNER_TEMP/cosign" attest --yes --type spdxjson --predicate evidence/sbom.spdx.json "$subject"
             "$RUNNER_TEMP/cosign" attest --yes --type https://slsa.dev/provenance/v1 --predicate evidence/provenance.json "$subject"
             "$RUNNER_TEMP/cosign" verify-attestation \
               --type spdxjson \
-              --certificate-identity-regexp "^(${caller_identity}|${called_identity_pattern#^})" \
+              --certificate-identity-regexp "$identity_pattern" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
               "$subject" > evidence/sbom-attestation-verification.json
             "$RUNNER_TEMP/cosign" verify-attestation \
               --type https://slsa.dev/provenance/v1 \
-              --certificate-identity-regexp "^(${caller_identity}|${called_identity_pattern#^})" \
+              --certificate-identity-regexp "$identity_pattern" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
               "$subject" > evidence/provenance-attestation-verification.json
 
@@ -851,7 +854,6 @@ jobs:
               encoding="utf-8",
           )
           PY
-            identity_pattern="^https://github.com/(${GITHUB_REPOSITORY}/.github/workflows/codestra-deploy-readiness.yml@${GITHUB_REF#refs/heads/}|ingtrader21-spec/(Infustruction-repo|Caddy)/.github/workflows/reusable-codestra-deploy-readiness.yml@.*)$"
             "$RUNNER_TEMP/cosign" sign-blob --yes --bundle evidence/source-release-manifest.sigstore.json "$manifest"
             "$RUNNER_TEMP/cosign" verify-blob \
               --bundle evidence/source-release-manifest.sigstore.json \
