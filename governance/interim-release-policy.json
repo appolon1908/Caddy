@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "policy_kind": "source_merge",
+  "repository": "appolon1908/Caddy",
+  "authorization_date": "2026-11-02",
+  "required_checks": [
+    {
+      "context": "validate",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/validate.yml"
+    },
+    {
+      "context": "deploy-readiness / deploy-readiness / source-ci",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/codestra-deploy-readiness.yml"
+    },
+    {
+      "context": "deploy-readiness / deploy-readiness / secret-scan",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/codestra-deploy-readiness.yml"
+    },
+    {
+      "context": "validate-source",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/validate.yml"
+    },
+    {
+      "context": "validate-merge-result",
+      "integration_id": 15368,
+      "workflow": ".github/workflows/validate.yml"
+    }
+  ],
+  "replaces_contexts": [
+    "promotion-guard",
+    "control-plane-certification"
+  ],
+  "preserve": [
+    "other_required_checks",
+    "review_requirements",
+    "ref_conditions",
+    "bypass_actors",
+    "enforcement",
+    "force_push_protection",
+    "deletion_protection",
+    "deployment_authority"
+  ],
+  "production_activation_authorized": false,
+  "note": "GitHub rulesets remain the enforcement authority. The current replacement applies only to refs/heads/main; preserve all other branches and their promotion/runtime gates through a main-only ruleset split. The earlier source migration retired codestra-control-plane and codestra/control-plane; that historical retirement is unchanged. All five listed native source checks, verified signatures and fresh independent review remain required. This source-validation policy is not custom-controller certification or deployment authorization."
+}

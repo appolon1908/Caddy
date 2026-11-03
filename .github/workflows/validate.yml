@@ -20,7 +20,7 @@ jobs:
   validate-source:
     name: validate-source
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -55,7 +55,7 @@ jobs:
   validate-merge-result:
     name: validate-merge-result
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       EXPECTED_SHA: ${{ github.sha }}
@@ -91,7 +91,7 @@ jobs:
     name: validate
     if: always()
     needs: [validate-source, validate-merge-result]
-    runs-on: [self-hosted, Linux, X64, codestra-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Preserve the protected legacy aggregate context
